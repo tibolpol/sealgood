@@ -1,0 +1,12 @@
+#!/bin/bash
+N=~/2024Q4_grotte/LE_PAUL241116_2_0_1_QGIS.pdf
+N=$( $(dirname $0)/sealgood date $N |
+#tee /dev/stderr |
+cut -d' ' -f 4-)
+eval pdftotext $N - | awk '/awk/{next}
+/BEGIN SEALGOOD BASE64/ {
+  sub(".*BEGIN SEALGOOD BASE64:","")
+  printf("%s", "### BEGIN SEALGOOD ")
+  system("base64 -d <<END"ORS $1 ORS "END")
+  exit
+}'

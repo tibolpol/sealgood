@@ -1,0 +1,45 @@
+#!/bin/bash
+#set -x
+#set -euo pipefail
+
+trap "rm -rf $TMP" exit
+FICHIER="$1"
+TSR="$2"
+
+extract_tsr_dumpasn1(){
+  TMP=$(mktemp -d)
+
+  # 1. Dump ASN.1
+  dumpasn1 "$TSR" > "$TMP/dump"
+
+  # 2. Serial number (premier integer de grande taille)
+  awk '$3=="INTEGER" && length($4)>1{print $4;exit}' < "$TMP/dump"
+
+  # 3. Timestamp (via OpenSSL, plus simple)
+  openssl ts -reply -in "$TSR" -text | grep "Time stamp:" | sed 's/^.*: //'
+
+  # 4. Signature offset : dernier INTEGER de grande taille
+  # 5. Extraction binaire (signature brute)
+  # 6. Signature encodée
+  tac "$TMP/dump" |
+  awk '$3=="INTEGER" && length($4) > 1 { system("set -x;dd if='$TSR' bs=1 skip="$1" count="$2);exit }' FS="[ :]*" |
+  base64 | tr -d '\n=' | tr '+/' '-_'
+}
+
+# 2. Extraction des composants
+exec < <(extract_tsr_dumpasn1 "$TSR")
+read -r SERIAL
+read -r TIMESTAMP
+read -r SIG64
+
+# 3. Signature SHA256 pour réduction
+SIGHASH=$(echo -n "$SIG64" |
+  base64 -d 2>/dev/null |
+  openssl dgst -sha256 -binary |
+  base64 | tr -d '\n=' | tr '+/' '-_' | cut -c1-22)
+
+# 4. Nom final
+EXT="${FICHIER##*.}"
+BASE="${FICHIER%.*}"
+
+mv -v "$BASE"{,"_t:${SERIAL}_${SIGHASH}_$(date -d"$TIMESTAMP" -Is)"}.$EXT

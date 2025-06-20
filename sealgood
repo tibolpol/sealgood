@@ -1,0 +1,254 @@
+#!/bin/bash
+################################################
+# <$1 : genkey | sign | date                   #
+# <$2 : file                                   #
+# <stdin : passphrase                          #
+# <$HOME/.ssh/ed25519_*.pem : Ed25519 keys     #
+# <$HOME/.ssh/id_rsa.pub : identity clear text #
+# >stdout : "rename tmp.file -> signed.file"   #
+# >stderr : errors                             #
+################################################
+
+myexit(){
+  rc=$1
+  shift
+  echo "Error "$(basename "$0")" rc=$rc $*" >&2
+  exit $rc
+}
+
+# Clés
+PRIVATE_KEY=($HOME/.ssh/ed25519_private*.pem)
+PUBLIC_KEY=($HOME/.ssh/ed25519_public*.pem)
+REPOS_KEY="$(cat $HOME/.ssh/ed25519_public*.url)"
+
+####################################
+# Génération des clés ed25519      #
+# > $HOME/.ssh/ed25519_private.pem #
+# > $HOME/.ssh/ed25519_public.pem  #
+####################################
+genkeys() {
+    [ -s $PRIVATE_KEY ] && myexit 4 "$PRIVATE_KEY existe déjà et a une taille non nulle"
+
+    read -p"Cette clé servira à signer des documents, mentionnez le nom du signataire : " SIGNATAIRE
+
+    PRIVATE_KEY=$HOME/.ssh/ed25519_private_${SIGNATAIRE// /_}.pem
+    PUBLIC_KEY=$HOME/.ssh/ed25519_public_${SIGNATAIRE// /_}.pem
+
+    [ -s $PRIVATE_KEY ] && myexit 4 "$PRIVATE_KEY existe déjà et a une taille non nulle"
+
+    # 1. Générer la clé privée chiffrée avec AES-256
+    # 2. Extraire la clé publique
+    openssl genpkey -algorithm ed25519 -aes-256-cbc -out "$PRIVATE_KEY"
+    openssl pkey -in "$PRIVATE_KEY" -pubout -out "$PUBLIC_KEY"
+
+    # 3. Horodater la clé publique
+    PUBLIC_KEY=$(date_doc "$PUBLIC_KEY" | cut -s' ' -f4-)
+
+    fmt <<END
+Vous pouvez (devez) diffuser $PUBLIC_KEY
+sur un référentiel public de confiance, et mentionner son URL dans
+$HOME/.ssh/ed25519_public_${SIGNATAIRE// /_}.url
+Ainsi vos signatures de document seront non répudiables, donc acceptées.
+END
+}
+
+#############################################################################
+# PAYLOAD : Explications détaillées non intrusives sur les vues du document #
+# C'est juste du plaintext qui commence et termine par délimiteurs          #
+#############################################################################
+get_payload() { cat <<EOD
+### BEGIN SEALGOOD SIGNATURE ###
+
+AVERTISSEMENT :  Comme dans la vraie vie, vérifier l'authenticité et la
+  signature est plus difficile que de signer.  L'essentiel est de garantir que
+  les moyens existent, et qu'ils soient disponibles gratuitement et
+  publiquement.
+
+Si le nom de ce fichier contient _a: suivi d'une séquence en base64,
+l'identité du signataire peut être prouvée.
+
+Déclaration de signataire : $(cut -d' ' -f3- < /home/tlp/.ssh/id_rsa.pub)
+
+ATTENTION !  La déclaration de signataire lisible ici peut avoir été forgée. 
+  Ce qui fait foi est un tiers de confiance associé à cette clé (site web,
+  échange personnel, blockchain, etc.)
+
+## Élément de vérification 1 :  URL de présentation la clé, présentée par le
+  signataire comme de confiance, afin que celui-ci ne fasse pas opposition à
+  cette signature (non répudiation) :
+  $REPOS_KEY
+
+## Élément de vérification 2 : clé publique certifiant la clé privée du signataire
+# COPIER trois lignes ci-dessous et COLLER dans le fichier /tmp/$(basename "$PUBLIC_KEY")
+# ou télécharger $REPOS_KEY vers /tmp/$(basename "$PUBLIC_KEY")
+-----BEGIN PUBLIC KEY-----
+$(grep -v "PUBLIC KEY" "$PUBLIC_KEY" | tr -d '\n')
+-----END PUBLIC KEY-----
+
+## Élément de vérification 3 : hash du fichier signé par la clé privée, codée dans le nom du fichier
+# COPIER {sig64url} dans "\$nom_de_fichier_a:{sig64url}.pdf" et COLLER dans le fichier /tmp/sig64url
+awk '{sub("=*$","");P=4-((L=length(\$0))%4);printf("%s==",substr(\$0,0,L+P))}' < /tmp/sig64url | tr '_-' '/+' | openssl base64 -d -A > /tmp/sig # reconstituer le hash binaire
+
+## Élément de vérification 4 : hash du fichier actuel
+openssl pkeyutl -verify -pubin -inkey /tmp/\$(basename "\$PUBLIC_KEY") -sigfile /tmp/sig -rawin -in "\$nom_de_fichier_a:{sig64url}.pdf" # vérifier le hash binaire
+
+### BEGIN SEALGOOD TIMESTAMP ###
+
+Si le nom de ce fichier contient _t: suivi d'une séquence en base64, la date
+de signature peut être prouvée.
+
+Déclaration de signataire : $(cut -d' ' -f3- < /home/tlp/.ssh/id_rsa.pub)
+
+#::timestamp_request_context::
+# declared_purpose: preuve d'antériorité
+# local_clock: $(date -Is)
+# file_uid: $(cat /proc/sys/kernel/random/uuid)
+# ts_request_mode: no_nonce_minimal_naming
+#::end_context::
+
+## Élément de vérification 1 : certificat racine de l'autorité TSA
+# COPIER les trois lignes ci-dessous et COLLER dans le fichier /tmp/freetsa_cacert.pem
+# ou télécharger https://freetsa.org/files/cacert.pem vers /tmp/freetsa_cacert.pem
+$(curl -s https://freetsa.org/files/cacert.pem | awk '$1~"^-----"{if(buf){print buf;buf=""};print;next}{buf=buf $0}END{printf("%s",buf)}')
+
+## Élément de vérification 2 : hash du fichier signé par TSA, codé dans le nom du fichier
+# COPIER {tsr64url} dans "\$nom_de_fichier_t:{tsr64url}.pdf" et COLLER dans le fichier /tmp/tsr64url
+awk '{sub("=*$","");P=4-((L=length(\$0))%4);printf("%s==",substr(\$0,0,L+P))}' < /tmp/sig64url | tr '_-' '/+' | openssl base64 -d -A > /tmp/sig # reconstituer le hash binaire
+
+## Élément de vérification 4 : hash du fichier actuel
+openssl ts -query -data "\$nom_de_fichier_t:{signature64}.pdf" -sha256 -no_nonce -cert
+
+### END SEALGOOD ###
+EOD
+}
+
+##################################################################
+# Injection d'informations cachées dans une copie du fichier html #
+# <$1 : nom de fichier input                                     #
+# <$2 : nom de fichier output                                    #
+# >$2 : contenu du fichier output                                #
+##################################################################
+inject_html() {
+  ext="${1##*.}"
+  if true || [[ $ext != html ]] || grep -q 'BEGIN SEALGOOD' "$1" ; then
+    cp "$1" "$2"
+  else
+    # MuPDF insert_textbox est imprévisible, on passe le maximum en base64 
+    export payload="### BEGIN SEALGOOD BASE64:$(get_payload | awk '{sub("### BEGIN SEALGOOD ","");print}' | base64 -w0)
+pdftotext \$this_file.pdf - | awk '/awk/ {next} /BEGIN SEALGOOD BASE64/ { sub(\".*BEGIN SEALGOOD BASE64:\",\"\");printf(\"%s\", \"### BEGIN SEALGOOD \"); system(\"base64 -d <<END\"ORS \$1 ORS \"END\"); exit }'"
+    # Utilisation de PyMuPDF (fitz)
+    python3 - "$1" "$2" <<EOF
+import fitz, os, sys
+doc = fitz.open(sys.argv[1])
+# Boîte englobante dans le bas de la page, police microscopique et blanc sur blanc : c'est pour le cliboard et pdftotext
+doc[0].insert_textbox(fitz.Rect(0, doc[0].rect.height - 60, 4000, doc[0].rect.height - 5), os.environ["payload"], fontsize=0.1, color=(1,1,1), align=fitz.TEXT_ALIGN_LEFT)
+doc.save(sys.argv[2])
+EOF
+  fi
+}
+
+##################################################################
+# Injection d'informations cachées dans une copie du fichier pdf #
+# <$1 : nom de fichier input                                     #
+# <$2 : nom de fichier output                                    #
+# >$2 : contenu du fichier output                                #
+##################################################################
+inject_pdf() {
+  ext="${1##*.}"
+  if [[ $ext != pdf ]] || pdftotext "$1" - | grep -q 'BEGIN SEALGOOD' ; then
+    cp "$1" "$2"
+  else
+    # MuPDF insert_textbox est imprévisible, on passe le maximum en base64 
+    export payload="### BEGIN SEALGOOD BASE64:$(get_payload | awk '{sub("### BEGIN SEALGOOD ","");print}' | base64 -w0)
+pdftotext \$this_file.pdf - | awk '/awk/ {next} /BEGIN SEALGOOD BASE64/ { sub(\".*BEGIN SEALGOOD BASE64:\",\"\");printf(\"%s\", \"### BEGIN SEALGOOD \"); system(\"base64 -d <<END\"ORS \$1 ORS \"END\"); exit }'"
+    # Utilisation de PyMuPDF (fitz)
+    python3 - "$1" "$2" <<EOF
+import fitz, os, sys
+doc = fitz.open(sys.argv[1])
+# Boîte englobante dans le bas de la page, police microscopique et blanc sur blanc : c'est pour le cliboard et pdftotext
+doc[0].insert_textbox(fitz.Rect(0, doc[0].rect.height - 60, 4000, doc[0].rect.height - 5), os.environ["payload"], fontsize=0.1, color=(1,1,1), align=fitz.TEXT_ALIGN_LEFT)
+doc.save(sys.argv[2])
+EOF
+  fi
+}
+
+##############################################################
+# Injection d'informations cachées dans une copie du fichier #
+# <$1 : nom de fichier input                                 #
+# <$2 : nom de fichier output                                #
+# >$2 : contenu du fichier output                            #
+##############################################################
+inject_info() {
+  ext="${1##*.}"
+  if [[ $ext == pdf ]] ; then
+      inject_pdf "$@"
+  elif [[ $ext == html ]] ; then
+      inject_html "$@"
+  else
+    cp "$1" "$2"
+  fi
+}
+
+########################################################
+# Signature d'un document (watermark, hash, signature) #
+# <$1.ext : fichier à signer                           #
+# >$1_a:sig64url.ext : fichier renommé = signature     #
+########################################################
+sign_doc() {
+    local file="$1"
+    grep -q "ENCRYPTED" "$PRIVATE_KEY" || myexit 4 "$PRIVATE_KEY non chiffrée" 
+    sig64url="$( openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in "$file" |
+            openssl base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')"
+    base="${file%.*}"
+    ext="${file##*.}"
+    mv -v "${base}"{,"_a:${sig64url}"}.${ext} 2>&1
+}
+
+#########################################################
+# Horodatage d'un document (watermark, hash, signature) #
+# <$1.ext : fichier à horodater                         #
+# >$1_t:tsr64url.ext : fichier renommé = horodaté       #
+#########################################################
+date_doc() {
+    local file="$1"
+    tsr64url="$(
+    openssl ts -query -data "$file" -sha256 -no_nonce -cert |
+    curl -s -H "Content-Type: application/timestamp-query" --data-binary @- --output - https://freetsa.org/tsr |
+    openssl ts -reply -in /dev/stdin -text | grep -e "Serial number:" -e "Time stamp:" |
+    openssl base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')"
+    base="${file%.*}"
+    ext="${file##*.}"
+    mv -v "${base}"{,"_t:${tsr64url}"}.${ext} 2>&1
+}
+
+###################################################
+# MAIN                                            #
+# <$1 : opération (genkey | sign | date | inject) #
+# <$2 : file                                      #
+###################################################
+case "$1" in
+    genkeys)
+        genkeys
+        ;;
+    inject)
+        file="$2"
+        rename="no"
+        tmp="/tmp/$(basename "$2")"
+        inject_info "$file" "$tmp"
+        ;;
+    date)
+        file="$2"
+        tmp="/tmp/$(basename "$2")"
+        inject_info "$file" "$tmp"
+        date_doc "$tmp"
+        ;;
+    sign)
+        file="$2"
+        tmp="/tmp/$(basename "$2")"
+        inject_info "$file" "$tmp"
+        sign_doc "$tmp"
+        ;;
+    *)
+        echo "Usage : $0 {genkeys | {sign | date | inject} fichier .pdf}"
+        ;;
+esac
