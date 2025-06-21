@@ -1,4 +1,8 @@
 #!/bin/bash
+# <$1 : fichier horodaté
+# <$2 : fichier tsr
+# >${BASE}_t:${SERIAL}_${SIGHASH}_$(date -d"$TIMESTAMP" -Is).$EXT
+
 #set -x
 #set -euo pipefail
 
@@ -22,7 +26,7 @@ extract_tsr_dumpasn1(){
   # 5. Extraction binaire (signature brute)
   # 6. Signature encodée
   tac "$TMP/dump" |
-  awk '$3=="INTEGER" && length($4) > 1 { system("set -x;dd if='$TSR' bs=1 skip="$1" count="$2);exit }' FS="[ :]*" |
+  awk '$3=="INTEGER" && length($4) > 1 { system("set -x;dd if=tsr bs=1 skip="$1" count="$2);exit }' FS="[ :]*" |
   base64 | tr -d '\n=' | tr '+/' '-_'
 }
 

@@ -1,0 +1,9 @@
+#!/bin/bash
+# <$1 : tsr
+# <$2 : tsr
+# >stdout : diff contenu sans les offset
+diff -w <(
+  dumpasn1 -adtuh "$1" | grep -v '{$' | cut -c5-
+) <(
+  dumpasn1 -adtuh "$2" | grep -v '{$' | cut -c5- 
+)

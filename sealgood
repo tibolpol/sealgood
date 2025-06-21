@@ -73,9 +73,9 @@ ATTENTION !  La déclaration de signataire lisible ici peut avoir été forgée.
   Ce qui fait foi est un tiers de confiance associé à cette clé (site web,
   échange personnel, blockchain, etc.)
 
-## Élément de vérification 1 :  URL de présentation la clé, présentée par le
-  signataire comme de confiance, afin que celui-ci ne fasse pas opposition à
-  cette signature (non répudiation) :
+## Élément de vérification 1 :  URL de présentation de la clé, présentée par
+  le signataire comme de confiance, afin que celui-ci ne fasse pas opposition
+  à cette signature (non répudiation) :
   $REPOS_KEY
 
 ## Élément de vérification 2 : clé publique certifiant la clé privée du signataire
@@ -111,7 +111,11 @@ Déclaration de signataire : $(cut -d' ' -f3- < /home/tlp/.ssh/id_rsa.pub)
 # ou télécharger https://freetsa.org/files/cacert.pem vers /tmp/freetsa_cacert.pem
 $(curl -s https://freetsa.org/files/cacert.pem | awk '$1~"^-----"{if(buf){print buf;buf=""};print;next}{buf=buf $0}END{printf("%s",buf)}')
 
-## Élément de vérification 2 : hash du fichier signé par TSA, codé dans le nom du fichier
+## Élément de vérification 2 : encodage d'un tsr à blanc validé avec le même TSA
+# COPIER la ligne ci-dessous et COLLER dans le fichier /tmp/faketsr64
+$(base64 -w 0 /tmp/faketsr)
+
+## Élément de vérification 3 : hash du fichier signé par TSA, codé dans le nom du fichier
 # COPIER {tsr64url} dans "\$nom_de_fichier_t:{tsr64url}.pdf" et COLLER dans le fichier /tmp/tsr64url
 awk '{sub("=*$","");P=4-((L=length(\$0))%4);printf("%s==",substr(\$0,0,L+P))}' < /tmp/sig64url | tr '_-' '/+' | openssl base64 -d -A > /tmp/sig # reconstituer le hash binaire
 
@@ -120,6 +124,16 @@ openssl ts -query -data "\$nom_de_fichier_t:{signature64}.pdf" -sha256 -no_nonce
 
 ### END SEALGOOD ###
 EOD
+}
+
+########################
+# Calcule un timestamp #
+# <$1 : file           #
+# >stdout : tsr        #
+########################
+timestamp(){
+  openssl ts -query -data "$1" -sha256 -cert |
+  curl -s -H "Content-Type: application/timestamp-query" --data-binary @- --output - https://freetsa.org/tsr
 }
 
 ##################################################################
@@ -134,7 +148,7 @@ inject_html() {
     cp "$1" "$2"
   else
     # MuPDF insert_textbox est imprévisible, on passe le maximum en base64 
-    export payload="### BEGIN SEALGOOD BASE64:$(get_payload | awk '{sub("### BEGIN SEALGOOD ","");print}' | base64 -w0)
+    export payload="### BEGIN SEALGOOD BASE64:$(get_payload "$1" | awk '{sub("### BEGIN SEALGOOD ","");print}' | base64 -w0)
 pdftotext \$this_file.pdf - | awk '/awk/ {next} /BEGIN SEALGOOD BASE64/ { sub(\".*BEGIN SEALGOOD BASE64:\",\"\");printf(\"%s\", \"### BEGIN SEALGOOD \"); system(\"base64 -d <<END\"ORS \$1 ORS \"END\"); exit }'"
     # Utilisation de PyMuPDF (fitz)
     python3 - "$1" "$2" <<EOF
@@ -159,7 +173,7 @@ inject_pdf() {
     cp "$1" "$2"
   else
     # MuPDF insert_textbox est imprévisible, on passe le maximum en base64 
-    export payload="### BEGIN SEALGOOD BASE64:$(get_payload | awk '{sub("### BEGIN SEALGOOD ","");print}' | base64 -w0)
+    export payload="### BEGIN SEALGOOD BASE64:$(get_payload "$1" | awk '{sub("### BEGIN SEALGOOD ","");print}' | base64 -w0)
 pdftotext \$this_file.pdf - | awk '/awk/ {next} /BEGIN SEALGOOD BASE64/ { sub(\".*BEGIN SEALGOOD BASE64:\",\"\");printf(\"%s\", \"### BEGIN SEALGOOD \"); system(\"base64 -d <<END\"ORS \$1 ORS \"END\"); exit }'"
     # Utilisation de PyMuPDF (fitz)
     python3 - "$1" "$2" <<EOF
@@ -198,10 +212,34 @@ sign_doc() {
     local file="$1"
     grep -q "ENCRYPTED" "$PRIVATE_KEY" || myexit 4 "$PRIVATE_KEY non chiffrée" 
     sig64url="$( openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in "$file" |
-            openssl base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')"
+    openssl base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')"
     base="${file%.*}"
     ext="${file##*.}"
     mv -v "${base}"{,"_a:${sig64url}"}.${ext} 2>&1
+}
+
+#################################################
+# Extraction des infos du TSR                   #
+# <stdin  : TSR                                 #
+# >stdout : Serial number, Timestamp, Signature #
+#################################################
+extract_tsr(){
+  TMP=$(mktemp -d)
+  trap "rm -rf $TMP" return
+  cd "$TMP"
+  # 1. Dump ASN.1
+  # 2. Serial number (premier integer de grande taille)
+  # 3. Timestamp (via OpenSSL)
+  cat > tsr; 2>/dev/null dumpasn1 tsr  > dump
+  2>/dev/null openssl ts -reply -in tsr -text |
+  awk -n '/Serial number:/ { printf("%d"ORS, $NF) }
+  /Time stamp:/ { $1=$2=""; "date -d \""$0"\" -Is" | getline timestamp;print timestamp }'
+  # 4. Signature offset : dernier INTEGER de grande taille
+  # 5. Extraction binaire (signature brute)
+  # 6. Signature encodée
+  tac dump |
+  2>/dev/null awk '$3=="INTEGER" && length($4) > 1 { system("dd if=tsr bs=1 skip="$1" count="$2);exit }' FS="[ :]*" |
+  base64 | tr -d '\n=' | tr '+/' '-_'
 }
 
 #########################################################
@@ -211,14 +249,8 @@ sign_doc() {
 #########################################################
 date_doc() {
     local file="$1"
-    tsr64url="$(
-    openssl ts -query -data "$file" -sha256 -no_nonce -cert |
-    curl -s -H "Content-Type: application/timestamp-query" --data-binary @- --output - https://freetsa.org/tsr |
-    openssl ts -reply -in /dev/stdin -text | grep -e "Serial number:" -e "Time stamp:" |
-    openssl base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')"
-    base="${file%.*}"
-    ext="${file##*.}"
-    mv -v "${base}"{,"_t:${tsr64url}"}.${ext} 2>&1
+    timestamp "$file" > /tmp/zistsr
+    bsdiff /tmp/faketsr /tmp/zistsr /tmp/patchtsr
 }
 
 ###################################################
@@ -234,19 +266,26 @@ case "$1" in
         file="$2"
         rename="no"
         tmp="/tmp/$(basename "$2")"
+        [ -f /tmp/faketsr ] || timestamp "$file" >/tmp/faketsr 
         inject_info "$file" "$tmp"
         ;;
     date)
         file="$2"
         tmp="/tmp/$(basename "$2")"
+        [ -f /tmp/faketsr ] || timestamp "$file" >/tmp/faketsr 
         inject_info "$file" "$tmp"
         date_doc "$tmp"
         ;;
     sign)
         file="$2"
         tmp="/tmp/$(basename "$2")"
+        [ -f /tmp/faketsr ] || timestamp "$file" >/tmp/faketsr 
         inject_info "$file" "$tmp"
         sign_doc "$tmp"
+        ;;
+    extract_tsr)
+        tsr="$2"
+        extract_tsr < "$tsr"
         ;;
     *)
         echo "Usage : $0 {genkeys | {sign | date | inject} fichier .pdf}"
