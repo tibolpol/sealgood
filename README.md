@@ -19,7 +19,7 @@
 *(ou "Comment j'ai arrêté de me faire chier avec les signatures)*  
 
 ## En gros c'est quoi ?  
-Un truc qui met ta signature dans le nom de fichier, et ça marche.  
+Un truc qui met ta signature dans le fichier, et ça marche.  
 
 ## Pourquoi c'est cool ?  
 - Ça dégage les vieux certificats pourris  
