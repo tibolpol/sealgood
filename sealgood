@@ -25,9 +25,11 @@ if [[ .$PWD != .$tmpdir ]]; then
 fi
 
 # Clés
-PRIVATE_KEY=($HOME/.ssh/ed25519_private*.pem)
-PUBLIC_KEY=($HOME/.ssh/ed25519_public*.pem)
-REPOS_KEY="$(cat $HOME/.ssh/ed25519_public*.url)"
+list=($HOME/.ssh/ed25519_private*.pem)
+export PRIVATE_KEY="${list[0]}" # nom local de la clé privée
+list=($HOME/.ssh/ed25519_public*.pem)
+export PUBLIC_KEY="${list[0]}" # nom local de la clé publique
+export REPOS_KEY="$(cat $HOME/.ssh/ed25519_public*.url)" # nom web de la clé publique
 
 ####################################
 # Génération des clés ed25519      #
@@ -59,38 +61,57 @@ END
 
 #############################################################################
 # PAYLOAD : Explications détaillées non intrusives sur les vues du document #
-# C'est juste du plaintext qui commence et termine par délimiteurs          #
+# C'est juste du plaintext qui commence et termine par des balises          #
+# <$REPOS_KEY : nom web de la clé publique                                  #
+# <$PUBLIC_KEY : nom local de la clé publique                               #
+# <$HOME/.ssh/id_rsa.pub : emplacement du nom du signataire                 #
+# <https://freetsa.org/files/cacert.pem : cartificat racine de la TSA       #
 # >stdout : payload                                                         #
 #############################################################################
 get_payload() { cat <<EOD
 ### BEGIN SEALGOOD SIGNATURE ###
+SealGood - The 100% DIY Document Authenticator
+https://github.com/tibolpol/sealgood/
 
-AVERTISSEMENT :  Comme dans la vraie vie, vérifier l'authenticité et la
-signature est plus difficile que de signer.  L'essentiel est de garantir que
-les moyens existent, qu'ils soient disponibles gratuitement et publiquement,
-et qu'ils utilisent à chaque étape des outils reconnus, documentés et
-standards, pour la transparence de la preuve.  Chaque étape est donc à
-réaliser fastidieusement à la main à partir de ce guide.
+AVERTISSEMENT :  Comme pour un document matériel, vérifier l'authenticité et
+la signature est plus difficile que de signer.  L'essentiel est de garantir
+que les moyens existent, qu'ils soient disponibles gratuitement et
+publiquement, et qu'ils utilisent à chaque étape des outils reconnus,
+documentés et standards, pour la transparence de la preuve.  Chaque étape est
+donc à réaliser fastidieusement à la main à l'aide de ce guide.
+
+Outils de vérification :
+- standard POSIX : awk, base64, file, wc
+- non POSIX mais standard reconnu : openssl
+
+Le document signé a les propriétés suivantes :
+file -bi : $(clean | lookup)
+wc       : $(clean | wc -)
+
+Déclaration de signataire : $(cut -d' ' -f3- < /home/tlp/.ssh/id_rsa.pub)
+Clé publique ed25519 du signataire : $REPOS_KEY
+
+ATTENTION !  La déclaration de signataire lisible ici pourrait avoir été forgée. 
+Ce qui fait foi est le tiers de confiance associé à cette clé (site web,
+échange personnel, blockchain, clé publique scellée et publiée sur
+une adresse irrépudiable par le signataire).
+
+La signature et l'horodatage restent valides tant que le contenu hors des
+balises BEGIN SEALGOOD et END SEALGOOD n'est pas altéré.
 
 Si l'élément de vérification 4 n'est pas un PLACEHOLDER mais un code de
 signature en base64, l'identité du signataire peut être prouvée.
-
-Déclaration de signataire : $(cut -d' ' -f3- < /home/tlp/.ssh/id_rsa.pub)
-
-ATTENTION !  La déclaration de signataire lisible ici peut avoir été forgée. 
-Ce qui fait foi est un tiers de confiance associé à cette clé (site web,
-échange personnel, blockchain, etc.)
 
 ## Élément de vérification 1 :  URL de présentation de la clé, présentée par
 # le signataire comme de confiance, afin que celui-ci ne fasse pas opposition
 # à cette signature (non répudiation) :
 # $REPOS_KEY
 
-## Élément de vérification 2 : clé publique certifiant la clé privée du signataire
+## Élément de vérification 2 :  clé publique ed25519 du signataire
 # COPIER trois lignes ci-dessous et COLLER dans le fichier /tmp/$(basename "$PUBLIC_KEY")
 # ou télécharger $REPOS_KEY vers /tmp/$(basename "$PUBLIC_KEY")
 -----BEGIN PUBLIC KEY-----
-$(grep -v "PUBLIC KEY" "$PUBLIC_KEY" | tr -d '\n')
+$(awk '/^-----BEGIN PUBLIC KEY/{getline;print;exit}' "$PUBLIC_KEY")
 -----END PUBLIC KEY-----
 
 ## Élément de vérification 3 : fichier non signé sans payload (juste avant la signature)
@@ -110,25 +131,24 @@ openssl pkeyutl -verify -pubin -inkey /tmp/\$(basename "\$PUBLIC_KEY") -sigfile 
 Si l'élément de vérification 2 n'est pas un PLACEHOLDER mais un code en
 base64, la date de signature peut être prouvée.
 
-Déclaration de signataire : $(cut -d' ' -f3- < /home/tlp/.ssh/id_rsa.pub)
-
 ## Élément de vérification 1 : certificat racine de l'autorité TSA
 # COPIER les trois lignes ci-dessous et COLLER dans le fichier /tmp/freetsa_cacert.pem
 # ou télécharger https://freetsa.org/files/cacert.pem vers /tmp/freetsa_cacert.pem
 $(curl -s https://freetsa.org/files/cacert.pem | awk '$1~"^-----"{if(buf){print buf;buf=""};print;next}{buf=buf $0}END{printf("%s",buf)}')
+openssl x509 -reply -text -in /tmp/freetsa_cacert.pem # montrer les détails du certificat
 
 ## Élément de vérification 2 : encodage 64 du tsr validé par la TSA
 # COPIER la ligne ci-dessous et COLLER dans le fichier /tmp/tsr.64
 PLACEHOLDER - FICHIER NON HORODATÉ
 base64 -d < /tmp/tsr.64 > /tmp/tsr.bin
+openssl ts -reply -text -in /tmp/tsr.bin # montrer les détails de l'horodatage 
 
 ## Élément de vérification 3 : fichier non horodaté sans payload (juste avant l'horodatage)
-awk '/### END SEALGOOD SIGNATURE ###/{state=1}state{print}' < "\$nom_de_fichier.pdf" > /tmp/\$nom_de_fichier.pdf # fichier non signé sans payload
+awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "\$nom_de_fichier.pdf" > /tmp/\$nom_de_fichier.pdf # fichier non signé sans payload
 
 ## Vérification finale : hash du fichier actuel et validation de la correspondance à l'aide du tsr et de la chaîne de certificats
 # Lie le hash du fichier à la date du tsr dans la chaîne de confiance de la TSA
 openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/\$nom_de_fichier.pdf # vérifier l'horodatage
-openssl ts -reply -in tsr.bin -text -noout # monter les détails de l'horodatage 
 
 ### END SEALGOOD ###
 EOD
@@ -183,8 +203,8 @@ inject_info() {
 
 ######################################################
 # Signature d'un document (payload, hash, signature) #
-# <input.raw                                         #
-# <$PRIVATE_KEY                                      #
+# <injected : copie avec payload                     #
+# <$PRIVATE_KEY : nom local de la clé privée         #
 # >stdout : copie signée avec payload                #
 ######################################################
 sign_doc() {
@@ -192,21 +212,21 @@ sign_doc() {
     grep -q "ENCRYPTED" "$PRIVATE_KEY" || myexit 4 "$PRIVATE_KEY non chiffrée" 
     <injected sed "s|^PLACEHOLDER.*SIGNÉ|$(signature | base64 -w 0)|"
   else
-    echo "Déja signé" >&2
+    echo "Déjà signé" >&2
     cat injected
   fi
 }
 
 #######################################################
 # Horodatage d'un document (payload, hash, signature) #
-# <input.raw                                          #
+# <injected : copie avec payload                      #
 # >stdout : copie horodatée avec payload              #
 #######################################################
 date_doc() {
   if <injected grep -aq "^PLACEHOLDER.*HORODATÉ"; then
     <injected sed "s|^PLACEHOLDER.*HORODATÉ|$(timestamp | base64 -w 0)|"
   else
-    echo "Déja horodaté" >&2
+    echo "Déjà horodaté" >&2
     cat injected
   fi
 }
@@ -254,11 +274,11 @@ check_crypto_file() {
   echo "$result"
 }
 
-##################################
-# Restitue le input.raw original #
-# <input.raw                     #
-# >stdout : original             #
-##################################
+######################################
+# Restitue le input.raw sans payload #
+# <input.raw                         #
+# >stdout : original                 #
+######################################
 clean(){
   awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' <input.raw
 }
@@ -296,25 +316,37 @@ lookup(){
   echo "$result"
 }
 
-###########################################################
-# MAIN                                                    #
-# <$1 : opération (genkey | sign | date | inject | clean) #
-# <stdin : input.raw                                      #
-# >stdout : output.raw                                    #
-###########################################################
+##################################################
+# Vérification de sealgood signature & timestamp #
+# <input.raw : data avec payload                 #
+# >stderr : statut de la vérification            #
+##################################################
+verify() {
+  echo "NoT YeT ImPlEmEnTeD" >&2
+}
+
+####################################################################
+# MAIN                                                             #
+# <$1 : opération (genkey | sign | date | inject | clean | verify) #
+# <stdin : input.raw                                               #
+# >stdout : output.raw                                             #
+####################################################################
+input="$(lookup)"
 case "$1" in
   genkeys)      genkeys                        ;;
   inject)       inject_info                    ;;
   date)         inject_info>injected;date_doc  ;;
   sign)         inject_info>injected;sign_doc  ;;
   clean)        clean                          ;;
-  *)            result="$(lookup)"
-                echo "Type of data: $result"
-                if [[ $result =~ pdf ]];then
-                  read -p "$myname { sign | date | inject | clean } ? " </dev/tty
+  verify)       verify                         ;;
+  *)            if [[ $input =~ pdf ]];then
+                  read -p "$myname { sign | date | inject | clean | verify. } ? " </dev/tty
                   exec "$mypath" "$REPLY"
                 else
-                  echo "Usage : $myname { genkeys | sign | date | inject | clean }"
+                  echo "Input: $input" >&2
+                  echo "Usage : $myname { genkeys | sign | date | inject | clean | verify. }" >&2
                 fi
                 ;;
-esac
+esac |
+tee >(cat > output && mv output input.raw && echo "Output: $(lookup)" >&2) |
+cat
