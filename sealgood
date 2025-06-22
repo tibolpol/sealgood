@@ -150,7 +150,8 @@ timestamp(){
 # >signature.bin        #
 #########################
 signature(){
-  clean | openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in /dev/stdin
+  clean > input.clean
+  openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in input.clean
 }
 
 ##################################################################
@@ -158,12 +159,12 @@ signature(){
 # <input.raw                                                     #
 # >stdout : copie avec payload & PLACEHOLDER                     #
 ##################################################################
-inject_pdf() {
+inject_after_eod() {
+  cat input.raw
   filetype="$(lookup)"
   if [[ ! $filetype =~ sealgood ]];then
     get_payload
   fi
-  cat input.raw
 }
 
 ##############################################################
@@ -174,7 +175,9 @@ inject_pdf() {
 inject_info() {
   filetype="$(lookup)"
   if [[ $filetype =~ pdf ]];then
-    inject_pdf
+    inject_after_eod
+  elif [[ $filetype =~ PEM..Clé.publique ]];then
+    inject_after_eod
   fi
 }
 
@@ -254,7 +257,7 @@ check_crypto_file() {
 ##################################
 # Restitue le input.raw original #
 # <input.raw                     #
-# >stdout : original           #
+# >stdout : original             #
 ##################################
 clean(){
   awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' <input.raw
@@ -305,7 +308,6 @@ case "$1" in
   date)         inject_info>injected;date_doc  ;;
   sign)         inject_info>injected;sign_doc  ;;
   clean)        clean                          ;;
-  extract_tsr)  extract_tsr                    ;;            
   *)            result="$(lookup)"
                 echo "Type of data: $result"
                 if [[ $result =~ pdf ]];then
