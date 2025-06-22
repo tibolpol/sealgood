@@ -1,11 +1,10 @@
 #!/bin/bash
 ################################################
 # <$1 : genkey | sign | date                   #
-# <$2 : file                                   #
-# <stdin : passphrase                          #
+# <stdin : data to sign | timestamp
 # <$HOME/.ssh/ed25519_*.pem : Ed25519 keys     #
 # <$HOME/.ssh/id_rsa.pub : identity clear text #
-# >stdout : "rename tmp.file -> signed.file"   #
+# >stdout : signed | timestamp data            #
 # >stderr : errors                             #
 ################################################
 
@@ -15,6 +14,15 @@ myexit(){
   echo "Error "$(basename "$0")" rc=$rc $*" >&2
   exit $rc
 }
+
+myname=$(basename $0)
+mypath="$(readlink -f "$0")"
+if [[ .$PWD != .$tmpdir ]]; then
+  export tmpdir=$(mktemp -d)
+  trap "rm -rf $tmpdir" exit
+  cd $tmpdir
+  cat > input.raw
+fi
 
 # Clés
 PRIVATE_KEY=($HOME/.ssh/ed25519_private*.pem)
@@ -41,9 +49,6 @@ genkeys() {
     openssl genpkey -algorithm ed25519 -aes-256-cbc -out "$PRIVATE_KEY"
     openssl pkey -in "$PRIVATE_KEY" -pubout -out "$PUBLIC_KEY"
 
-    # 3. Horodater la clé publique
-    PUBLIC_KEY=$(date_doc "$PUBLIC_KEY" | cut -s' ' -f4-)
-
     fmt <<END
 Vous pouvez (devez) diffuser $PUBLIC_KEY
 sur un référentiel public de confiance, et mentionner son URL dans
@@ -55,28 +60,31 @@ END
 #############################################################################
 # PAYLOAD : Explications détaillées non intrusives sur les vues du document #
 # C'est juste du plaintext qui commence et termine par délimiteurs          #
+# >stdout : payload                                                         #
 #############################################################################
 get_payload() { cat <<EOD
 ### BEGIN SEALGOOD SIGNATURE ###
 
 AVERTISSEMENT :  Comme dans la vraie vie, vérifier l'authenticité et la
-  signature est plus difficile que de signer.  L'essentiel est de garantir que
-  les moyens existent, et qu'ils soient disponibles gratuitement et
-  publiquement.
+signature est plus difficile que de signer.  L'essentiel est de garantir que
+les moyens existent, qu'ils soient disponibles gratuitement et publiquement,
+et qu'ils utilisent à chaque étape des outils reconnus, documentés et
+standards, pour la transparence de la preuve.  Chaque étape est donc à
+réaliser fastidieusement à la main à partir de ce guide.
 
-Si le nom de ce fichier contient _a: suivi d'une séquence en base64,
-l'identité du signataire peut être prouvée.
+Si l'élément de vérification 4 n'est pas un PLACEHOLDER mais un code de
+signature en base64, l'identité du signataire peut être prouvée.
 
 Déclaration de signataire : $(cut -d' ' -f3- < /home/tlp/.ssh/id_rsa.pub)
 
 ATTENTION !  La déclaration de signataire lisible ici peut avoir été forgée. 
-  Ce qui fait foi est un tiers de confiance associé à cette clé (site web,
-  échange personnel, blockchain, etc.)
+Ce qui fait foi est un tiers de confiance associé à cette clé (site web,
+échange personnel, blockchain, etc.)
 
 ## Élément de vérification 1 :  URL de présentation de la clé, présentée par
-  le signataire comme de confiance, afin que celui-ci ne fasse pas opposition
-  à cette signature (non répudiation) :
-  $REPOS_KEY
+# le signataire comme de confiance, afin que celui-ci ne fasse pas opposition
+# à cette signature (non répudiation) :
+# $REPOS_KEY
 
 ## Élément de vérification 2 : clé publique certifiant la clé privée du signataire
 # COPIER trois lignes ci-dessous et COLLER dans le fichier /tmp/$(basename "$PUBLIC_KEY")
@@ -85,42 +93,42 @@ ATTENTION !  La déclaration de signataire lisible ici peut avoir été forgée.
 $(grep -v "PUBLIC KEY" "$PUBLIC_KEY" | tr -d '\n')
 -----END PUBLIC KEY-----
 
-## Élément de vérification 3 : hash du fichier signé par la clé privée, codée dans le nom du fichier
-# COPIER {sig64url} dans "\$nom_de_fichier_a:{sig64url}.pdf" et COLLER dans le fichier /tmp/sig64url
-awk '{sub("=*$","");P=4-((L=length(\$0))%4);printf("%s==",substr(\$0,0,L+P))}' < /tmp/sig64url | tr '_-' '/+' | openssl base64 -d -A > /tmp/sig # reconstituer le hash binaire
+## Élément de vérification 3 : fichier non signé sans payload (juste avant la signature)
+awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "\$nom_de_fichier.pdf" > /tmp/\$nom_de_fichier.pdf # fichier non signé sans payload
 
-## Élément de vérification 4 : hash du fichier actuel
-openssl pkeyutl -verify -pubin -inkey /tmp/\$(basename "\$PUBLIC_KEY") -sigfile /tmp/sig -rawin -in "\$nom_de_fichier_a:{sig64url}.pdf" # vérifier le hash binaire
+## Élément de vérification 4 : signature du hash original du fichier
+# COPIER la ligne ci-dessous et COLLER dans le fichier /tmp/sig.64
+PLACEHOLDER - FICHIER NON SIGNÉ
+base64 -d < /tmp/sig.64 > /tmp/sig.bin
+
+## Vérification finale : hash du fichier actuel et validation de la correspondance à l'aide de la clé publique
+# Lie le hash du fichier à la chaîne de confiance du possesseur de la clé privée
+openssl pkeyutl -verify -pubin -inkey /tmp/\$(basename "\$PUBLIC_KEY") -sigfile /tmp/sig.bin -rawin -in /tmp/file.pdf # vérifier la signature
 
 ### BEGIN SEALGOOD TIMESTAMP ###
 
-Si le nom de ce fichier contient _t: suivi d'une séquence en base64, la date
-de signature peut être prouvée.
+Si l'élément de vérification 2 n'est pas un PLACEHOLDER mais un code en
+base64, la date de signature peut être prouvée.
 
 Déclaration de signataire : $(cut -d' ' -f3- < /home/tlp/.ssh/id_rsa.pub)
-
-#::timestamp_request_context::
-# declared_purpose: preuve d'antériorité
-# local_clock: $(date -Is)
-# file_uid: $(cat /proc/sys/kernel/random/uuid)
-# ts_request_mode: no_nonce_minimal_naming
-#::end_context::
 
 ## Élément de vérification 1 : certificat racine de l'autorité TSA
 # COPIER les trois lignes ci-dessous et COLLER dans le fichier /tmp/freetsa_cacert.pem
 # ou télécharger https://freetsa.org/files/cacert.pem vers /tmp/freetsa_cacert.pem
 $(curl -s https://freetsa.org/files/cacert.pem | awk '$1~"^-----"{if(buf){print buf;buf=""};print;next}{buf=buf $0}END{printf("%s",buf)}')
 
-## Élément de vérification 2 : encodage d'un tsr à blanc validé avec le même TSA
-# COPIER la ligne ci-dessous et COLLER dans le fichier /tmp/faketsr64
-$(base64 -w 0 /tmp/faketsr)
+## Élément de vérification 2 : encodage 64 du tsr validé par la TSA
+# COPIER la ligne ci-dessous et COLLER dans le fichier /tmp/tsr.64
+PLACEHOLDER - FICHIER NON HORODATÉ
+base64 -d < /tmp/tsr.64 > /tmp/tsr.bin
 
-## Élément de vérification 3 : hash du fichier signé par TSA, codé dans le nom du fichier
-# COPIER {tsr64url} dans "\$nom_de_fichier_t:{tsr64url}.pdf" et COLLER dans le fichier /tmp/tsr64url
-awk '{sub("=*$","");P=4-((L=length(\$0))%4);printf("%s==",substr(\$0,0,L+P))}' < /tmp/sig64url | tr '_-' '/+' | openssl base64 -d -A > /tmp/sig # reconstituer le hash binaire
+## Élément de vérification 3 : fichier non horodaté sans payload (juste avant l'horodatage)
+awk '/### END SEALGOOD SIGNATURE ###/{state=1}state{print}' < "\$nom_de_fichier.pdf" > /tmp/\$nom_de_fichier.pdf # fichier non signé sans payload
 
-## Élément de vérification 4 : hash du fichier actuel
-openssl ts -query -data "\$nom_de_fichier_t:{signature64}.pdf" -sha256 -no_nonce -cert
+## Vérification finale : hash du fichier actuel et validation de la correspondance à l'aide du tsr et de la chaîne de certificats
+# Lie le hash du fichier à la date du tsr dans la chaîne de confiance de la TSA
+openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/\$nom_de_fichier.pdf # vérifier l'horodatage
+openssl ts -reply -in tsr.bin -text -noout # monter les détails de l'horodatage 
 
 ### END SEALGOOD ###
 EOD
@@ -128,166 +136,183 @@ EOD
 
 ########################
 # Calcule un timestamp #
-# <$1 : file           #
-# >stdout : tsr        #
+# <input.raw           #
+# >stdout : tsr.bin    #
 ########################
 timestamp(){
-  openssl ts -query -data "$1" -sha256 -cert |
+  clean | openssl ts -query -data /dev/stdin -sha256 -cert |
   curl -s -H "Content-Type: application/timestamp-query" --data-binary @- --output - https://freetsa.org/tsr
 }
 
-##################################################################
-# Injection d'informations cachées dans une copie du fichier html #
-# <$1 : nom de fichier input                                     #
-# <$2 : nom de fichier output                                    #
-# >$2 : contenu du fichier output                                #
-##################################################################
-inject_html() {
-  ext="${1##*.}"
-  if true || [[ $ext != html ]] || grep -q 'BEGIN SEALGOOD' "$1" ; then
-    cp "$1" "$2"
-  else
-    # MuPDF insert_textbox est imprévisible, on passe le maximum en base64 
-    export payload="### BEGIN SEALGOOD BASE64:$(get_payload "$1" | awk '{sub("### BEGIN SEALGOOD ","");print}' | base64 -w0)
-pdftotext \$this_file.pdf - | awk '/awk/ {next} /BEGIN SEALGOOD BASE64/ { sub(\".*BEGIN SEALGOOD BASE64:\",\"\");printf(\"%s\", \"### BEGIN SEALGOOD \"); system(\"base64 -d <<END\"ORS \$1 ORS \"END\"); exit }'"
-    # Utilisation de PyMuPDF (fitz)
-    python3 - "$1" "$2" <<EOF
-import fitz, os, sys
-doc = fitz.open(sys.argv[1])
-# Boîte englobante dans le bas de la page, police microscopique et blanc sur blanc : c'est pour le cliboard et pdftotext
-doc[0].insert_textbox(fitz.Rect(0, doc[0].rect.height - 60, 4000, doc[0].rect.height - 5), os.environ["payload"], fontsize=0.1, color=(1,1,1), align=fitz.TEXT_ALIGN_LEFT)
-doc.save(sys.argv[2])
-EOF
-  fi
+#########################
+# Calcule une signature #
+# <input.raw            #
+# >signature.bin        #
+#########################
+signature(){
+  clean | openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in /dev/stdin
 }
 
 ##################################################################
 # Injection d'informations cachées dans une copie du fichier pdf #
-# <$1 : nom de fichier input                                     #
-# <$2 : nom de fichier output                                    #
-# >$2 : contenu du fichier output                                #
+# <input.raw                                                     #
+# >stdout : copie avec payload & PLACEHOLDER                     #
 ##################################################################
 inject_pdf() {
-  ext="${1##*.}"
-  if [[ $ext != pdf ]] || pdftotext "$1" - | grep -q 'BEGIN SEALGOOD' ; then
-    cp "$1" "$2"
-  else
-    # MuPDF insert_textbox est imprévisible, on passe le maximum en base64 
-    export payload="### BEGIN SEALGOOD BASE64:$(get_payload "$1" | awk '{sub("### BEGIN SEALGOOD ","");print}' | base64 -w0)
-pdftotext \$this_file.pdf - | awk '/awk/ {next} /BEGIN SEALGOOD BASE64/ { sub(\".*BEGIN SEALGOOD BASE64:\",\"\");printf(\"%s\", \"### BEGIN SEALGOOD \"); system(\"base64 -d <<END\"ORS \$1 ORS \"END\"); exit }'"
-    # Utilisation de PyMuPDF (fitz)
-    python3 - "$1" "$2" <<EOF
-import fitz, os, sys
-doc = fitz.open(sys.argv[1])
-# Boîte englobante dans le bas de la page, police microscopique et blanc sur blanc : c'est pour le cliboard et pdftotext
-doc[0].insert_textbox(fitz.Rect(0, doc[0].rect.height - 60, 4000, doc[0].rect.height - 5), os.environ["payload"], fontsize=0.1, color=(1,1,1), align=fitz.TEXT_ALIGN_LEFT)
-doc.save(sys.argv[2])
-EOF
+  filetype="$(lookup)"
+  if [[ ! $filetype =~ sealgood ]];then
+    get_payload
   fi
+  cat input.raw
 }
 
 ##############################################################
 # Injection d'informations cachées dans une copie du fichier #
-# <$1 : nom de fichier input                                 #
-# <$2 : nom de fichier output                                #
-# >$2 : contenu du fichier output                            #
+# <input.raw                                                 #
+# >stdout : copie avec payload & PLACEHOLDER                 #
 ##############################################################
 inject_info() {
-  ext="${1##*.}"
-  if [[ $ext == pdf ]] ; then
-      inject_pdf "$@"
-  elif [[ $ext == html ]] ; then
-      inject_html "$@"
-  else
-    cp "$1" "$2"
+  filetype="$(lookup)"
+  if [[ $filetype =~ pdf ]];then
+    inject_pdf
   fi
 }
 
-########################################################
-# Signature d'un document (watermark, hash, signature) #
-# <$1.ext : fichier à signer                           #
-# >$1_a:sig64url.ext : fichier renommé = signature     #
-########################################################
+######################################################
+# Signature d'un document (payload, hash, signature) #
+# <input.raw                                         #
+# <$PRIVATE_KEY                                      #
+# >stdout : copie signée avec payload                #
+######################################################
 sign_doc() {
-    local file="$1"
+  if <injected grep -aq "^PLACEHOLDER.*SIGNÉ"; then
     grep -q "ENCRYPTED" "$PRIVATE_KEY" || myexit 4 "$PRIVATE_KEY non chiffrée" 
-    sig64url="$( openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in "$file" |
-    openssl base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')"
-    base="${file%.*}"
-    ext="${file##*.}"
-    mv -v "${base}"{,"_a:${sig64url}"}.${ext} 2>&1
+    <injected sed "s|^PLACEHOLDER.*SIGNÉ|$(signature | base64 -w 0)|"
+  else
+    echo "Déja signé" >&2
+    cat injected
+  fi
 }
 
-#################################################
-# Extraction des infos du TSR                   #
-# <stdin  : TSR                                 #
-# >stdout : Serial number, Timestamp, Signature #
-#################################################
-extract_tsr(){
-  TMP=$(mktemp -d)
-  trap "rm -rf $TMP" return
-  cd "$TMP"
-  # 1. Dump ASN.1
-  # 2. Serial number (premier integer de grande taille)
-  # 3. Timestamp (via OpenSSL)
-  cat > tsr; 2>/dev/null dumpasn1 tsr  > dump
-  2>/dev/null openssl ts -reply -in tsr -text |
-  awk -n '/Serial number:/ { printf("%d"ORS, $NF) }
-  /Time stamp:/ { $1=$2=""; "date -d \""$0"\" -Is" | getline timestamp;print timestamp }'
-  # 4. Signature offset : dernier INTEGER de grande taille
-  # 5. Extraction binaire (signature brute)
-  # 6. Signature encodée
-  tac dump |
-  2>/dev/null awk '$3=="INTEGER" && length($4) > 1 { system("dd if=tsr bs=1 skip="$1" count="$2);exit }' FS="[ :]*" |
-  base64 | tr -d '\n=' | tr '+/' '-_'
-}
-
-#########################################################
-# Horodatage d'un document (watermark, hash, signature) #
-# <$1.ext : fichier à horodater                         #
-# >$1_t:tsr64url.ext : fichier renommé = horodaté       #
-#########################################################
+#######################################################
+# Horodatage d'un document (payload, hash, signature) #
+# <input.raw                                          #
+# >stdout : copie horodatée avec payload              #
+#######################################################
 date_doc() {
-    local file="$1"
-    timestamp "$file" > /tmp/zistsr
-    bsdiff /tmp/faketsr /tmp/zistsr /tmp/patchtsr
+  if <injected grep -aq "^PLACEHOLDER.*HORODATÉ"; then
+    <injected sed "s|^PLACEHOLDER.*HORODATÉ|$(timestamp | base64 -w 0)|"
+  else
+    echo "Déja horodaté" >&2
+    cat injected
+  fi
 }
 
-###################################################
-# MAIN                                            #
-# <$1 : opération (genkey | sign | date | inject) #
-# <$2 : file                                      #
-###################################################
+######################################
+# Lookup des types de fichier crypto #
+# <input.raw                         #
+# >stdout : type de fichier          #
+######################################
+check_crypto_file() {
+  local result=""
+  if [[ $1 =~ octet-stream ]] ; then
+    if (openssl pkcs12 -password pass: -in input.raw -info -noout;(($?==1 || $?==0))) &>/dev/null ; then
+      result="[PKCS#12] Conteneur de clé+certificat"
+    elif (openssl x509 -password pass: -in input.raw -noout;(($?==1 || $?==0))) &>/dev/null; then
+      #local algo=$(openssl x509 -password pass: -in input.raw -noout -text | grep "Public Key Algorithm")
+      result="[X.509] Certificat"
+    elif (openssl pkey -password pass: -in input.raw -noout;(($?==1 || $?==0))) &>/dev/null; then
+      #local algo=$(openssl pkey -in "$file" -noout -text | grep "algorithm")
+      result="[PKEY] Clé privée"
+    elif (openssl req -password pass: -in input.raw -noout;(($?==1 || $?==0))) &>/dev/null; then
+      result="[CSR] Demande de signature de certificat"
+    fi
+  elif [[ $1 =~ text/plain ]] ; then
+    if grep -q "BEGIN CERTIFICATE REQUEST" input.raw; then
+      result="[CSR] Demande de signature de certificat"
+    elif grep -q "BEGIN CERTIFICATE" input.raw; then
+      result="[PEM] Certificat"
+    elif grep -q "BEGIN OPENSSH PRIVATE KEY" input.raw; then
+      result="[OPENSSH] Clé privée"
+    elif grep -q "BEGIN PRIVATE KEY" input.raw; then
+      result="[PEM] Clé privée NON chiffrée"
+    elif grep -q "BEGIN ENCRYPTED PRIVATE KEY" input.raw; then
+      result="[PEM] Clé privée chiffrée"
+    elif grep -q "BEGIN PUBLIC KEY" input.raw; then
+      result="[PEM] Clé publique"
+    elif grep -q "BEGIN RSA PUBLIC KEY" input.raw; then
+      result="[RSA] Clé publique"
+    elif grep -q "BEGIN RSA PRIVATE KEY" input.raw; then
+      result="[RSA] Clé privée"
+    elif gdalinfo input.raw &>/dev/null; then
+      result="Fichier DEM (format GDAL)"
+    fi
+  fi
+  echo "$result"
+}
+
+##################################
+# Restitue le input.raw original #
+# <input.raw                     #
+# >stdout : original           #
+##################################
+clean(){
+  awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' <input.raw
+}
+
+#########################################
+# Scan l'input pour valider les actions #
+# <input.raw                            #
+# >stdout : type de fichier             #
+#########################################
+lookup(){
+  local result="$(file -b -i input.raw)"
+  if [[ $result =~ application/octet-stream ]];then
+    if grep -aq '^%PDF-' input.raw && grep -aq '^%%EOF' input.raw ; then
+      result="${result/octet-stream/pdf+octet-stream}"
+    else
+      result="${result/octet-stream/$(check_crypto_file "$result")+octet-stream}"
+    fi
+  fi
+  if [[ $result =~ application/pdf ]];then
+    if grep -aq '^### BEGIN SEALGOOD' input.raw;then
+      result="${result/pdf/sealgood+pdf}"
+    elif pdftotext input.raw - | grep -aq '^### BEGIN SEALGOOD';then
+      result="${result/pdf/sealgood-old+pdf}"
+    fi
+  elif [[ $result =~ text/plain ]];then
+    if grep -aq '^-----BEGIN' input.raw;then
+      result="${result/plain/$(check_crypto_file "$result")+plain}"
+    fi
+  fi
+  if [[ ! $result =~ sealgood ]];then
+    if grep -aq '^### BEGIN SEALGOOD' input.raw;then
+      result="${result/\//\/sealgood+}"
+    fi
+  fi
+  echo "$result"
+}
+
+###########################################################
+# MAIN                                                    #
+# <$1 : opération (genkey | sign | date | inject | clean) #
+# <stdin : input.raw                                      #
+# >stdout : output.raw                                    #
+###########################################################
 case "$1" in
-    genkeys)
-        genkeys
-        ;;
-    inject)
-        file="$2"
-        rename="no"
-        tmp="/tmp/$(basename "$2")"
-        [ -f /tmp/faketsr ] || timestamp "$file" >/tmp/faketsr 
-        inject_info "$file" "$tmp"
-        ;;
-    date)
-        file="$2"
-        tmp="/tmp/$(basename "$2")"
-        [ -f /tmp/faketsr ] || timestamp "$file" >/tmp/faketsr 
-        inject_info "$file" "$tmp"
-        date_doc "$tmp"
-        ;;
-    sign)
-        file="$2"
-        tmp="/tmp/$(basename "$2")"
-        [ -f /tmp/faketsr ] || timestamp "$file" >/tmp/faketsr 
-        inject_info "$file" "$tmp"
-        sign_doc "$tmp"
-        ;;
-    extract_tsr)
-        tsr="$2"
-        extract_tsr < "$tsr"
-        ;;
-    *)
-        echo "Usage : $0 {genkeys | {sign | date | inject} fichier .pdf}"
-        ;;
+  genkeys)      genkeys                        ;;
+  inject)       inject_info                    ;;
+  date)         inject_info>injected;date_doc  ;;
+  sign)         inject_info>injected;sign_doc  ;;
+  clean)        clean                          ;;
+  extract_tsr)  extract_tsr                    ;;            
+  *)            result="$(lookup)"
+                echo "Type of data: $result"
+                if [[ $result =~ pdf ]];then
+                  read -p "$myname { sign | date | inject | clean } ? " </dev/tty
+                  exec "$mypath" "$REPLY"
+                else
+                  echo "Usage : $myname { genkeys | sign | date | inject | clean }"
+                fi
+                ;;
 esac
