@@ -8,7 +8,7 @@
 # >stderr : errors                             #
 ################################################
 
-myexit(){
+myexit() {
   rc=$1
   shift
   echo "Error "$(basename "$0")" rc=$rc $*" >&2
@@ -25,6 +25,7 @@ if [[ .$PWD != .$tmpdir ]]; then
 fi
 
 # Clés
+shopt -s nullglob
 list=($HOME/.ssh/ed25519_private*.pem)
 export PRIVATE_KEY="${list[0]}" # nom local de la clé privée
 list=($HOME/.ssh/ed25519_public*.pem)
@@ -78,7 +79,8 @@ la signature est plus difficile que de signer.  L'essentiel est de garantir
 que les moyens existent, qu'ils soient disponibles gratuitement et
 publiquement, et qu'ils utilisent à chaque étape des outils reconnus,
 documentés et standards, pour la transparence de la preuve.  Chaque étape est
-donc à réaliser fastidieusement à la main à l'aide de ce guide.
+donc réalisable à la main à l'aide de ce guide. Une intégration légère est
+proposée sur le site https://github.com/tibolpol/sealgood
 
 Outils de vérification :
 - standard POSIX : awk, base64, file, wc
@@ -91,7 +93,7 @@ wc       : $(clean | wc -)
 Déclaration de signataire : $(cut -d' ' -f3- < /home/tlp/.ssh/id_rsa.pub)
 Clé publique ed25519 du signataire : $REPOS_KEY
 
-ATTENTION !  La déclaration de signataire lisible ici pourrait avoir été forgée. 
+ATTENTION !  La déclaration de signataire lisible ici pourrait avoir été forgée.
 Ce qui fait foi est le tiers de confiance associé à cette clé (site web,
 échange personnel, blockchain, clé publique scellée et publiée sur
 une adresse irrépudiable par le signataire).
@@ -141,7 +143,7 @@ openssl x509 -reply -text -in /tmp/freetsa_cacert.pem # montrer les détails du 
 # COPIER la ligne ci-dessous et COLLER dans le fichier /tmp/tsr.64
 PLACEHOLDER - FICHIER NON HORODATÉ
 base64 -d < /tmp/tsr.64 > /tmp/tsr.bin
-openssl ts -reply -text -in /tmp/tsr.bin # montrer les détails de l'horodatage 
+openssl ts -reply -text -in /tmp/tsr.bin # montrer les détails de l'horodatage
 
 ## Élément de vérification 3 : fichier non horodaté sans payload (juste avant l'horodatage)
 awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "\$nom_de_fichier.pdf" > /tmp/\$nom_de_fichier.pdf # fichier non signé sans payload
@@ -159,17 +161,17 @@ EOD
 # <input.raw           #
 # >stdout : tsr.bin    #
 ########################
-timestamp(){
+timestamp() {
   clean | openssl ts -query -data /dev/stdin -sha256 -cert |
   curl -s -H "Content-Type: application/timestamp-query" --data-binary @- --output - https://freetsa.org/tsr
 }
 
-#########################
-# Calcule une signature #
-# <input.raw            #
-# >signature.bin        #
-#########################
-signature(){
+###########################
+# Calcule une signature   #
+# <input.raw              #
+# >stdout : signature.bin #
+###########################
+signature() {
   clean > input.clean
   openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in input.clean
 }
@@ -209,7 +211,7 @@ inject_info() {
 ######################################################
 sign_doc() {
   if <injected grep -aq "^PLACEHOLDER.*SIGNÉ"; then
-    grep -q "ENCRYPTED" "$PRIVATE_KEY" || myexit 4 "$PRIVATE_KEY non chiffrée" 
+    grep -q "ENCRYPTED" "$PRIVATE_KEY" || myexit 4 "$PRIVATE_KEY non chiffrée"
     <injected sed "s|^PLACEHOLDER.*SIGNÉ|$(signature | base64 -w 0)|"
   else
     echo "Déjà signé" >&2
@@ -274,21 +276,12 @@ check_crypto_file() {
   echo "$result"
 }
 
-######################################
-# Restitue le input.raw sans payload #
-# <input.raw                         #
-# >stdout : original                 #
-######################################
-clean(){
-  awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' <input.raw
-}
-
 #########################################
 # Scan l'input pour valider les actions #
 # <input.raw                            #
 # >stdout : type de fichier             #
 #########################################
-lookup(){
+lookup() {
   local result="$(file -b -i input.raw)"
   if [[ $result =~ application/octet-stream ]];then
     if grep -aq '^%PDF-' input.raw && grep -aq '^%%EOF' input.raw ; then
@@ -316,6 +309,15 @@ lookup(){
   echo "$result"
 }
 
+######################################
+# Restitue le input.raw sans payload #
+# <input.raw                         #
+# >stdout : original                 #
+######################################
+clean() {
+  awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' <input.raw
+}
+
 ##################################################
 # Vérification de sealgood signature & timestamp #
 # <input.raw : data avec payload                 #
@@ -340,11 +342,11 @@ case "$1" in
   clean)        clean                          ;;
   verify)       verify                         ;;
   *)            if [[ $input =~ pdf ]];then
-                  read -p "$myname { sign | date | inject | clean | verify. } ? " </dev/tty
-                  exec "$mypath" "$REPLY"
+                  read -p "$myname { sign | date | inject | clean | verify } ? " </dev/tty
+                  [ -n "$REPLY" ] && exec "$mypath" "$REPLY"
                 else
                   echo "Input: $input" >&2
-                  echo "Usage : $myname { genkeys | sign | date | inject | clean | verify. }" >&2
+                  echo "Usage : $myname { genkeys | sign | date | inject | clean | verify }" >&2
                 fi
                 ;;
 esac |
