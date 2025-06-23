@@ -1,4 +1,4 @@
-# SealGood â€” Spécification technique (niveau Master)
+# SealGood â€” Spécification technique
 
 ## 1. Finalité du protocole
 
