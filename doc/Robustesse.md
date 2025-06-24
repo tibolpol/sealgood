@@ -1,128 +1,128 @@
-# Analyse de robustesse du système SealGood
+# Analyse de robustesse du systÃ¨me SealGood
 
-## Présentation
+## PrÃ©sentation
 
-**SealGood** est un système dâ€™authentification et dâ€™horodatage
-de documents fondé sur une approche minimaliste, manuelle, transparente et
-indépendante. Il repose exclusivement sur des outils standards (POSIX,
+**SealGood** est un systÃ¨me d'authentification et d'horodatage
+de documents fondÃ© sur une approche minimaliste, manuelle, transparente et
+indÃ©pendante. Il repose exclusivement sur des outils standards (POSIX,
 OpenSSL) et des primitives cryptographiques robustes (Ed25519, RFC 3161). Il
-vise à offrir une alternative légère et vérifiable à lâ€™usage de
-certificats et dâ€™infrastructures centralisées.
+vise Ã  offrir une alternative lÃ©gÃ¨re et vÃ©rifiable Ã  l'usage de
+certificats et d'infrastructures centralisÃ©es.
 
 ## Principes fondamentaux
 
-* **Signature Ed25519** : usage dâ€™une clé publique robuste, encodée en
+* **Signature Ed25519** : usage d'une clÃ© publique robuste, encodÃ©e en
 SPKI PEM.
-* **Transparence** : aucune boîte noire, tous les outils sont standard, open
+* **Transparence** : aucune boÃ®te noire, tous les outils sont standard, open
 source ou POSIX.
-* **Horodatage** : recours à une TSA externe (ex. FreeTSA) pour attester
-dâ€™un instant T.
-* **Chaîne de confiance manuelle** : vérification explicite de chaque étape,
-sans automatisation cachée.
+* **Horodatage** : recours Ã  une TSA externe (ex. FreeTSA) pour attester
+d'un instant T.
+* **ChaÃ®ne de confiance manuelle** : vÃ©rification explicite de chaque Ã©tape,
+sans automatisation cachÃ©e.
 
-## Ã‰valuation de la solidité
+## Ã‰valuation de la soliditÃ©
 
 ### Points forts
 
 1. **Cryptographie robuste**
 
-   * Ed25519 : courbe moderne, rapide, difficile à compromettre.
-   * Format de clé standard (SPKI base64 PEM), interopérable avec `openssl`,
+   * Ed25519 : courbe moderne, rapide, difficile Ã  compromettre.
+   * Format de clÃ© standard (SPKI base64 PEM), interopÃ©rable avec `openssl`,
 `age`, `ssh-keygen`, etc.
 
 2. **Transparence maximale**
 
-   * Les étapes de vérification sont manuelles et documentées.
-   * Chaque utilisateur peut contrôler entièrement le processus.
+   * Les Ã©tapes de vÃ©rification sont manuelles et documentÃ©es.
+   * Chaque utilisateur peut contrÃ´ler entiÃ¨rement le processus.
 
-3. **Séparation des responsabilités**
+3. **SÃ©paration des responsabilitÃ©s**
 
-   * Le contenu signé est extrait proprement avant horodatage.
-   * Les fichiers intermédiaires sont explicites et modifiables.
+   * Le contenu signÃ© est extrait proprement avant horodatage.
+   * Les fichiers intermÃ©diaires sont explicites et modifiables.
 
-4. **Avertissements honnêtes**
+4. **Avertissements honnÃªtes**
 
    * Le texte signale explicitement la faiblesse potentielle du lien entre
-identité et clé.
+identitÃ© et clÃ©.
 
-5. **Conformité aux standards**
+5. **ConformitÃ© aux standards**
 
-   * Utilisation du protocole RFC 3161 pour lâ€™horodatage.
+   * Utilisation du protocole RFC 3161 pour l'horodatage.
    * Inclusion du certificat de la TSA pour validation future.
 
 ### Limites et risques
 
-1. **Chaîne de confiance externe**
+1. **ChaÃ®ne de confiance externe**
 
-   * Lier une identité à une clé repose ici sur lâ€™hébergement
-personnel (site TLS, Git signé, etc.)
-   * Pas de certification externe (AC, eIDAS) sans action supplémentaire.
+   * Lier une identitÃ© Ã  une clÃ© repose ici sur l'hÃ©bergement
+personnel (site TLS, Git signÃ©, etc.)
+   * Pas de certification externe (AC, eIDAS) sans action supplÃ©mentaire.
 
-2. **Risque sur lâ€™environnement dâ€™exécution**
+2. **Risque sur l'environnement d'exÃ©cution**
 
-   * Fichiers temporaires `/tmp/` peuvent être compromis dans un système partagé.
+   * Fichiers temporaires `/tmp/` peuvent Ãªtre compromis dans un systÃ¨me partagÃ©.
 
-3. **Vérification complexe pour néophytes**
+3. **VÃ©rification complexe pour nÃ©ophytes**
 
-   * Bien que vérifiable, le processus reste technique sans interface dédiée.
+   * Bien que vÃ©rifiable, le processus reste technique sans interface dÃ©diÃ©e.
 
-4. **TSA de confiance limitée**
+4. **TSA de confiance limitÃ©e**
 
    * FreeTSA est suffisante pour un usage personnel ou POC, mais sans
 garanties contractuelles.
 
 ## Enrichissements possibles
 
-### Attestation croisée de la clé
+### Attestation croisÃ©e de la clÃ©
 
 * Publication sur plusieurs canaux : site perso HTTPS, GitHub avec commit
-signé, DNSSEC, Keybase, blockchain.
+signÃ©, DNSSEC, Keybase, blockchain.
 
-### Utilisation de certificats personnalisés
+### Utilisation de certificats personnalisÃ©s
 
-* Signature de sous-clés dâ€™usage (documents) avec une clé racine horodatée.
-* Création dâ€™un format `SealGood-Cert` minimal : JSON ou PEM avec
-signature de la sous-clé.
+* Signature de sous-clÃ©s d'usage (documents) avec une clÃ© racine horodatÃ©e.
+* CrÃ©ation d'un format `SealGood-Cert` minimal : JSON ou PEM avec
+signature de la sous-clÃ©.
 
-### Hash explicite de la clé dans chaque document
+### Hash explicite de la clÃ© dans chaque document
 
-* Ajout dâ€™un champ `pubkey-sha256:` ou `Fingerprint:` dans la
-déclaration textuelle.
+* Ajout d'un champ `pubkey-sha256:` ou `Fingerprint:` dans la
+dÃ©claration textuelle.
 
-### Script POSIX de vérification automatisée
+### Script POSIX de vÃ©rification automatisÃ©e
 
-* Un script `sealgood-verify.sh` explicite chaque étape, sans magie, pour
+* Un script `sealgood-verify.sh` explicite chaque Ã©tape, sans magie, pour
 l'utilisateur averti.
 
-### Archivage scellé de la clé seule
+### Archivage scellÃ© de la clÃ© seule
 
-* Horodatage dâ€™un fichier contenant uniquement la clé et
-lâ€™identité déclarée, utilisable pour signer ensuite nâ€™importe
+* Horodatage d'un fichier contenant uniquement la clÃ© et
+l'identitÃ© dÃ©clarÃ©e, utilisable pour signer ensuite n'importe
 quel document.
 
-## Cas dâ€™usages pertinents
+## Cas d'usages pertinents
 
-* Dépôt personnel de manuscrits, projets, intentions.
-* Archivage juridique ou technique (preuve dâ€™antériorité).
-* Notariat léger (engagements associatifs, revendications personnelles).
-* Vérification asynchrone sans infrastructure.
+* DÃ©pÃ´t personnel de manuscrits, projets, intentions.
+* Archivage juridique ou technique (preuve d'antÃ©rioritÃ©).
+* Notariat lÃ©ger (engagements associatifs, revendications personnelles).
+* VÃ©rification asynchrone sans infrastructure.
 
 ## Conclusion
 
-SealGood propose une base **solide, indépendante, reproductible** pour
-garantir lâ€™authenticité, lâ€™intégrité et lâ€™horodatage
-dâ€™un document.
+SealGood propose une base **solide, indÃ©pendante, reproductible** pour
+garantir l'authenticitÃ©, l'intÃ©gritÃ© et l'horodatage
+d'un document.
 
-Sa force réside dans sa **transparence totale**, son **absence de dépendance à
-des tiers** fermés, et sa **modularité**. Il est particulièrement adapté aux
-usages personnels, militants, techniques ou artistiques où la preuve doit être
+Sa force rÃ©side dans sa **transparence totale**, son **absence de dÃ©pendance Ã 
+des tiers** fermÃ©s, et sa **modularitÃ©**. Il est particuliÃ¨rement adaptÃ© aux
+usages personnels, militants, techniques ou artistiques oÃ¹ la preuve doit Ãªtre
 accessible et autonome.
 
-Le défi principal reste la **construction de la chaîne de confiance autour de
-la clé publique**, mais les outils et les stratégies sont là pour y répondre
+Le dÃ©fi principal reste la **construction de la chaÃ®ne de confiance autour de
+la clÃ© publique**, mais les outils et les stratÃ©gies sont lÃ  pour y rÃ©pondre
 sans compromission de la philosophie "DIY".
 
-SealGood nâ€™est pas un substitut aux certificats qualifiés, mais un
-**complément puissant pour les individus souverains** souhaitant sceller leur
+SealGood n'est pas un substitut aux certificats qualifiÃ©s, mais un
+**complÃ©ment puissant pour les individus souverains** souhaitant sceller leur
 parole ou leurs documents dans le temps.
 

@@ -8,19 +8,52 @@
 # >stderr : errors                             #
 ################################################
 
-myexit() {
+die() {
   rc=$1
   shift
-  echo "Error "$(basename "$0")" rc=$rc $*" >&2
+  alert "$(basename "$0") rc=$rc $*"
   exit $rc
+}
+
+alert() {
+    echo -e "\033[1;31mERREUR: $*\033[0m" >&2
+}
+
+step() {
+    echo -e "\n\033[1;36m=== $* ===\033[0m" >&2
+}
+
+success() {
+    echo -e "\033[1;32m$*\033[0m" >&2
+}
+
+warning() {
+    echo -e "\033[1;33m$*\033[0m" >&2
+}
+
+# Vérification des dépendances
+for cmd in awk openssl base64; do
+    if ! command -v $cmd &> /dev/null; then
+        alert "Commande manquante: $cmd"
+        exit 1
+    fi
+done
+
+exit_policy(){
+    [ -s tsr.bin -o -s signature.bin ] &&
+    </dev/tty read -p $'\n\033[1;36m=== Voulez-vous conserver le répertoire temporaire pour contrôle [yN] ? \033[0m' &&
+    [[ $REPLY == y ]] &&
+    warning "$TMPDIR est conservé" &&
+    ls -l ||
+    rm -rf "$TMPDIR"
 }
 
 myname=$(basename $0)
 mypath="$(readlink -f "$0")"
-if [[ .$PWD != .$tmpdir ]]; then
-  export tmpdir=$(mktemp -d)
-  trap "rm -rf $tmpdir" exit
-  cd $tmpdir
+if [[ .$PWD != .$TMPDIR ]]; then
+  export TMPDIR=$(mktemp -d)
+  trap exit_policy EXIT
+  cd $TMPDIR
   cat > input.raw
 fi
 
@@ -38,14 +71,14 @@ export REPOS_KEY="$(cat $HOME/.ssh/ed25519_public*.url)" # nom web de la clé pu
 # > $HOME/.ssh/ed25519_public.pem  #
 ####################################
 genkeys() {
-    [ -s $PRIVATE_KEY ] && myexit 4 "$PRIVATE_KEY existe déjà et a une taille non nulle"
+    [ -s $PRIVATE_KEY ] && die 4 "$PRIVATE_KEY existe déjà et a une taille non nulle"
 
     read -p"Cette clé servira à signer des documents, mentionnez le nom du signataire : " SIGNATAIRE
 
     PRIVATE_KEY=$HOME/.ssh/ed25519_private_${SIGNATAIRE// /_}.pem
     PUBLIC_KEY=$HOME/.ssh/ed25519_public_${SIGNATAIRE// /_}.pem
 
-    [ -s $PRIVATE_KEY ] && myexit 4 "$PRIVATE_KEY existe déjà et a une taille non nulle"
+    [ -s $PRIVATE_KEY ] && die 4 "$PRIVATE_KEY existe déjà et a une taille non nulle"
 
     # 1. Générer la clé privée chiffrée avec AES-256
     # 2. Extraire la clé publique
@@ -211,10 +244,10 @@ inject_info() {
 ######################################################
 sign_doc() {
   if <injected grep -aq "^PLACEHOLDER.*SIGNÉ"; then
-    grep -q "ENCRYPTED" "$PRIVATE_KEY" || myexit 4 "$PRIVATE_KEY non chiffrée"
+    grep -q "ENCRYPTED" "$PRIVATE_KEY" || die 4 "$PRIVATE_KEY non chiffrée"
     <injected sed "s|^PLACEHOLDER.*SIGNÉ|$(signature | base64 -w 0)|"
   else
-    echo "Déjà signé" >&2
+    warning "Déjà signé"
     cat injected
   fi
 }
@@ -228,7 +261,7 @@ date_doc() {
   if <injected grep -aq "^PLACEHOLDER.*HORODATÉ"; then
     <injected sed "s|^PLACEHOLDER.*HORODATÉ|$(timestamp | base64 -w 0)|"
   else
-    echo "Déjà horodaté" >&2
+    warning "Déjà horodaté"
     cat injected
   fi
 }
@@ -324,7 +357,111 @@ clean() {
 # >stderr : statut de la vérification            #
 ##################################################
 verify() {
-  echo "NoT YeT ImPlEmEnTeD" >&2
+
+    # Extraction des éléments du document
+    step "Extraction des éléments de vérification"
+
+    # 1. Extraction de la signature
+    SIGNATURE=$(awk '/Élément de vérification 4 : signature du hash/,/base64/' input.raw | grep -vE '^#|base64|PLACEHOLDER' | tr -d ' \n')
+    if [ -z "$SIGNATURE" ]; then
+        warning "Signature introuvable dans le document"
+    else
+        echo "$SIGNATURE" | base64 -d > signature.bin
+        success "Signature extraite et décodée"
+        # 2. Extraction de la clé publique
+        PUBLIC_KEY=$(awk '/-----BEGIN PUBLIC KEY-----/,/-----END PUBLIC KEY-----/' input.raw | head -n 3)
+        if [ -z "$PUBLIC_KEY" ]; then
+            warning "Clé publique introuvable dans le document"
+        else
+            echo "$PUBLIC_KEY" > public_key.pem
+            success "Clé publique extraite"
+        fi
+    fi
+
+    # 3. Extraction du TSR
+    TSR=$(awk '/Élément de vérification 2 : encodage 64 du tsr/,/base64/' input.raw | grep -vE '^#|base64|PLACEHOLDER' | tr -d ' \n')
+    if [ -z "$TSR" ]; then
+        warning "TSR introuvable dans le document"
+    else
+        echo "$TSR" | base64 -d > tsr.bin
+        success "TSR extrait et décodé"
+
+        # 4. Extraction du certificat TSA
+        TSA_CERT=$(awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/' input.raw)
+        if [ -z "$TSA_CERT" ]; then
+            warning "Certificat TSA introuvable - Téléchargement depuis freetsa.org"
+            curl -s https://freetsa.org/files/cacert.pem -o tsa_cert.pem || warning "Échec du téléchargement du certificat TSA"
+        else
+            echo "$TSA_CERT" > tsa_cert.pem
+            success "Certificat TSA extrait"
+        fi
+    fi
+
+    if [ -s tsa_cert.pem -o -s public_key.pem ]; then 
+
+        # 5. Extraction du contenu original
+        awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' input.raw > original_content
+        success "Contenu original extrait"
+
+        # Vérification de la signature
+        if [ -s public_key.pem -a -s signature.bin -a -s original_content ]; then
+            step "Vérification de la signature numérique"
+
+            (set -x;openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -rawin -in original_content > sig_result 2>&1)
+
+            if grep -q "Signature Verified Successfully" sig_result; then
+                success "Signature vérifiée avec succès"
+                SIGNATURE_VALID=true
+            else
+                alert "Échec de la vérification de la signature"
+                cat sig_result
+                SIGNATURE_VALID=false
+            fi
+        fi
+
+        # Vérification de l'horodatage
+        if [ -s tsr.bin -a -s tsa_cert.pem -a -s original_content ] ; then
+            step "Vérification de l'horodatage TSA"
+
+            (set -x;openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data original_content > ts_result 2>&1)
+
+            if grep -q "Verification: OK" ts_result; then
+                success "Horodatage vérifié avec succès"
+                TIMESTAMP_VALID=true
+            else
+                alert "Échec de la vérification de l'horodatage"
+                cat ts_result
+                TIMESTAMP_VALID=false
+            fi
+                
+            # Affichage des détails de l'horodatage
+            echo -e "\nDétails de l'horodatage:"
+            openssl ts -reply -in tsr.bin -text | grep -A2 "Time stamp:"
+        fi
+    fi
+
+    # Résumé final
+    step "Résumé de la vérification"
+
+    echo -e "Statut de la signature: $([ "$SIGNATURE_VALID" = true ] && echo "VALIDE" || { [ "$SIGNATURE_VALID" = false ] && echo "INVALIDE" || echo "ABSENT"; })"
+    echo -e "Statut de l'horodatage: $([ "$TIMESTAMP_VALID" = true ] && echo "VALIDE" || { [ "$TIMESTAMP_VALID" = false ] && echo "INVALIDE" || echo "ABSENT"; })"
+
+    # signé, horodaté et intact
+    # signé et intact
+    # horodaté et intact
+    # ni signé ni horodaté 
+    # altéré
+    if   [ "$SIGNATURE_VALID" = true ] && [ "$TIMESTAMP_VALID" = true ]; then
+        success "Le document est signé, horodaté et intact"
+    elif [ "$SIGNATURE_VALID" = true ] && [ "$TIMESTAMP_VALID" = "" ]; then
+        success "Le document est signé et intact"
+    elif [ "$SIGNATURE_VALID" = ""   ] && [ "$TIMESTAMP_VALID" = true ]; then
+        success "Le document est horodaté et intact"
+    elif [ "$SIGNATURE_VALID" = ""   ] && [ "$TIMESTAMP_VALID" = "" ]; then
+        warning "Le document n'est pas signé ni horodaté"
+    else
+        die 4 "Le document a été altéré"
+    fi
 }
 
 ####################################################################
@@ -350,5 +487,5 @@ case "$1" in
                 fi
                 ;;
 esac |
-tee >(cat > output && mv output input.raw && echo "Output: $(lookup)" >&2) |
+tee >(cat > output && mv output input.raw && success "Output: $(lookup)" >&2) |
 cat
