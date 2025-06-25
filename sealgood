@@ -61,7 +61,7 @@ exit_policy(){
     [ -s tsr.bin -o -s signature.bin ] &&
     </dev/tty read -p $'\n\033[1;36m=== Voulez-vous conserver le répertoire temporaire pour contrôle [yN] ? \033[0m' &&
     [[ $REPLY == y ]] &&
-    warning "$TMPDIR est conservé" &&
+    warning "$PWD est conservé" &&
     ls -l ||
     rm -rf "$TMPDIR"
 }
@@ -83,27 +83,6 @@ export PRIVATE_KEY="${list[0]}" # nom local de la clé privée
 list=($HOME/.ssh/ed25519_public*.pem)
 export PUBLIC_KEY="${list[0]}" # nom local de la clé publique
 export REPOS_KEY="$(cat < $HOME/.ssh/ed25519_public*.url)" # nom web de la clé publique
-
-####################################
-# Enchaînement                     #
-# <stdin                           #
-# <$1 : fonction choisie           #
-# <$2 : suivante dans le pipe      #
-# <$* : fonctions à exécuter       #
-####################################
-chain() {
-  func=$1
-  pipe=$2
-  shift 1
-  strip $func "$@" > args
-  rargs=$?
-  args="$(cat args)"
-  if ((rargs == 0));then
-    $func $args 
-  else
-    $pipe $args
-  fi
-}
 
 ###################################################################
 # MAIN                                                            #
@@ -362,15 +341,15 @@ verify() {
       if [ -s tsa_cert.pem -o -s public_key.pem ]; then 
 
           # 5. Extraction du contenu original
-          awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' input.verify > original_content
+          awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' input.verify > input.clean
           success "Contenu original extrait"
 
           # Vérification de la signature
-          if [ -s public_key.pem -a -s signature.bin -a -s original_content ]; then
+          if [ -s public_key.pem -a -s signature.bin -a -s input.clean ]; then
               step "Vérification de la signature numérique"
               (
               set -x
-              openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -rawin -in original_content &> sig_result
+              openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -rawin -in input.clean &> sig_result
               )
               SIG_VERIFY=$?
 
@@ -385,11 +364,11 @@ verify() {
           fi
 
           # Vérification de l'horodatage
-          if [ -s tsr.bin -a -s tsa_cert.pem -a -s original_content ] ; then
+          if [ -s tsr.bin -a -s tsa_cert.pem -a -s input.clean ] ; then
               step "Vérification de l'horodatage TSA"
               (
               set -x
-              openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data original_content &> ts_result
+              openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data input.clean &> ts_result
               )
               DATE_VERIFY=$?
 
