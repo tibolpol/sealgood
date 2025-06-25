@@ -62,7 +62,7 @@ exit_policy(){
     </dev/tty read -p $'\n\033[1;36m=== Voulez-vous conserver le répertoire temporaire pour contrôle [yN] ? \033[0m' &&
     [[ $REPLY == y ]] &&
     warning "$PWD est conservé" &&
-    ls -l ||
+    ls -l >&2 ||
     rm -rf "$TMPDIR"
 }
 
@@ -95,14 +95,18 @@ main() {
     args="$*"
     args="${args//date/inject date}"
     args="${args//sign/inject sign}"
-    genkey "$args"
+    help "$args"
   else
     filetype="$(lookup main)"
     if [[ $filetype =~ pdf ]];then
       read -p "$myname { clean inject date sign verify } ? " </dev/tty
-      [ -n "$REPLY" ] && choose $REPLY < lookup.main
+      [ -n "$REPLY" ] &&
+        args="$REPLY" &&
+        args="${args//date/inject date}" &&
+        args="${args//sign/inject sign}" &&
+        clean "$args" < lookup.main
     else
-      echo "Input: $filetype" >&2
+      echo "main input: $filetype" >&2
       echo "Usage : $myname { genkey batch clean inject date sign verify }" >&2
     fi
   fi | tee >(success "main output: $(lookup $LINENO)" >&2)
@@ -120,7 +124,7 @@ genkey() {
   rargs=$?
   args="$(cat args)"
   if ((rargs == 0));then
-  dead $args >/dev/null
+  dead $args </dev/null >/dev/null
     [ -s "$PRIVATE_KEY" ] && die 4 "$PRIVATE_KEY existe déjà et a une taille non nulle"
 
     read -p"Cette clé servira à signer des documents, mentionnez le nom du signataire : " SIGNATAIRE
@@ -146,17 +150,24 @@ END
   fi
 }
 
-batchfile(){
-  while read FILE; do
-    ((FNR++))
-    if ((cd "$INITIAL_DIR" && cat < "$FILE") > input.batch) 2>/dev/null ;then
-      echo "#pragma source base64:${FILE}_sealgood:1"
-      clean "$args" <input.batch | base64 -w0
-      echo
-    else
-      alert "stdin:$FNR: $FILE n'est pas lisible"
-    fi
-  done
+##########################################
+# <stdin : liste de fichiers             #
+# >stdout : .tgz du résultat du pipeline #
+##########################################
+maketgz(){
+  tar --remove-files -cf - -T <(
+    while read FILE; do
+      ((FNR++))
+      if ((cd "$INITIAL_DIR" && cat < "$FILE") > input.batch) 2>/dev/null ;then
+        OUTFILE="$(basename "$FILE")"
+        step "batch $FILE -> $OUTFILE"
+        clean "$args" <input.batch >"$OUTFILE"
+        echo "$OUTFILE"
+      else
+        alert "stdin:$FNR: $FILE n'est pas lisible"
+      fi
+    done
+  ) | gzip -nc
 }
 
 ##############################
@@ -172,13 +183,14 @@ batch() {
     if strip sign "$args" >/dev/null;then
       (
         export fdpassin
-        batchfile
+        maketgz
       ) {fdpassin}< <(
         read -s -p "Mot de passe de la clé privée : " PASS </dev/tty
         while true ; do echo "$PASS"; done
       )
     else
-      batchfile
+      maketgz
+      rm -f tsr.bin signature.bin
     fi
   else
     clean "$args"
@@ -635,6 +647,63 @@ check_crypto_file() {
     fi
   fi
   echo "$result"
+}
+
+help() {
+  strip help "$@" > args
+  rargs=$?
+  args=$(cat args)
+  if (( rargs == 0 )) ; then
+    dead $args </dev/null >/dev/null
+    cat <<EOF >&2
+Usage : $(basename "$0") [COMMANDES]
+
+SealGood - Signature et horodatage de documents via OpenSSL + TSA
+
+COMMANDES :
+  genkey         Génère une nouvelle paire de clés ed25519 protégée par mot de passe
+  help           Affiche cette aide
+  sign           Signe un document avec votre clé privée
+  date           Horodate un document via un tiers de confiance (TSA)
+  verify         Vérifie la signature et l'horodatage d'un document
+  inject         Injecte le payload SealGood dans un fichier PDF ou PEM
+  clean          Extrait le contenu original sans les balises SEALGOOD
+  batch          Applique une ou plusieurs commandes à une liste de fichiers
+
+  Les commandes peuvent se composer, le script les ordonne en pipelines :
+  clean | inject | date | sign | verify
+    - lit les données sur stdin
+    - écrit le résultat sur stdout
+
+  batch *| clean | inject | date | sign | verify
+    - lit les noms de fichiers sur stdin
+    - envoie chaque fichier (*|) au pipeline
+    - écrit une archive multifichiers sur stdout
+
+  inject respecte un payload SealGood précédent ;
+  date et sign opèrent implicitement inject ;
+  date et sign respectent une signature/horodatage précédent.
+    
+Exemples :
+  $(basename "$0") sign   < contrat.pdf > contrat_sealsign.pdf
+  $(basename "$0") verify < contrat_sealsign.pdf
+  $(basename "$0") batch sign <<EOD > archive.base64
+  contrat1.pdf
+  contrat2.pdf
+  contrat3.pdf
+  EOD
+
+Fichiers utilisés :
+  \$HOME/.ssh/ed25519_private_*.pem  : clés privées signataires
+  \$HOME/.ssh/ed25519_public_*.pem   : clés publiques associées
+  \$HOME/.ssh/id_rsa.pub             : déclaration d'identité du signataire
+  https://freetsa.org/files/cacert.pem : certificat racine TSA
+
+Voir aussi : https://github.com/tibolpol/sealgood
+EOF
+  else
+    cat
+  fi | genkey "$args"
 }
 
 main "$@" | cat
