@@ -180,43 +180,56 @@ list2tgz() {
   fi
 }
 
-##########################################
-# <stdin : liste de fichiers             #
-# >stdout : .tgz du résultat du pipeline #
-##########################################
+############################################
+# Sélection de fichiers à traiter en batch #
+# <stdin : liste de fichiers               #
+# >stdout : .tgz du résultat du pipeline   #
+############################################
 file2tgz(){
-  (
+  tar --remove-files -zcf - -T <(
     export fdverifyout
-    tar --remove-files -cf - -T <(
-      while read FILE; do
-        ((FNR++))
-        if ((cd "$INITIAL_DIR" && cat < "$FILE") > input.list2tgz) 2>/dev/null ;then
-          export OUTFILE="$(basename "$FILE")"
-          local filetype="$(lookup < input.list2tgz)"
-          if [[ $filetype =~ sealgood ]];then
-            hash=$(clean clean < input.list2tgz | sha256sum | cut -c1-8)
-            base="$(echo "${OUTFILE%.*}" | sed -E 's/_sealgood(:[a-zA-Z0-9]+)?$//')"
-            if [[ "$base" == "$OUTFILE" ]]; then
-              OUTFILE="${base}_sealgood:${hash}"
-            else
-              OUTFILE="${base}_sealgood:${hash}.${OUTFILE##*.}"
-            fi
-            if [[ "$FILE" =~ _sealgood:[a-zA-Z0-9]+(\..*)?$ ]] && [[ ! "$FILE" =~ _sealgood:$hash(\..*)?$ ]]; then
-              alert="Le hash de l'ancien nom $(basename "$FILE") ne correspond pas au hash du document"
-              alert "$alert"
-              alert "$FNR: $alert" 2>&$fdverifyout
-            fi
+    while read FILE; do
+      ((FNR++))
+      export FNR
+      if ((cd "$INITIAL_DIR" && cat < "$FILE") > input.list2tgz) 2>/dev/null ;then
+        # Nommage en sortie, pattern _sealgood:<sha256sum:8>
+        export OUTFILE="$(basename "$FILE")"
+        local filetype="$(lookup < input.list2tgz)"
+        if [[ $filetype =~ sealgood ]];then
+          hash=$(clean clean < input.list2tgz | sha256sum | cut -c1-8)
+          base="$(echo "${OUTFILE%.*}" | sed -E 's/_sealgood(:[a-zA-Z0-9]+)?$//')"
+          if [[ "$base" == "$OUTFILE" ]]; then
+            OUTFILE="${base}_sealgood:${hash}"
+          else
+            OUTFILE="${base}_sealgood:${hash}.${OUTFILE##*.}"
           fi
-          step "list2tgz $FILE -> $OUTFILE"
-          export FNR
-          clean "$args" <input.list2tgz >"$OUTFILE"
-          echo "$OUTFILE"
-        else
-          alert "stdin:$FNR: $FILE n'est pas lisible"
+          # Vérification de l'ancien nom
+          if [[ "$FILE" =~ _sealgood:[a-zA-Z0-9]+(\..*)?$ ]] && [[ ! "$FILE" =~ _sealgood:$hash(\..*)?$ ]]; then
+            alert="Le hash de l'ancien nom $(basename "$FILE") ne correspond pas au hash du document"
+            alert "$alert"
+            alert "$FNR: $alert" 2>&$fdverifyout
+          fi
         fi
-      done
-    ) | gzip -nc
+        # Exécution du pipe
+        step "list2tgz $FILE -> $OUTFILE"
+        clean "$args" <input.list2tgz >"$OUTFILE"
+        # décision d'ajouter le fichier en sortie
+        local newfiletype="$(lookup < "$OUTFILE")"
+        if ( #set -x
+          [     -s "$OUTFILE"               ] &&  # le fichier n'est pas vide
+            ( [[ $filetype != $newfiletype ]] ||  # le status sealgood change
+              [[ $newfiletype =~ sealgood  ]] ))  # le nouveau status est ou reste sealgood
+        then
+          echo "$OUTFILE" # pris en charge par --remove-files
+        else
+          rm -f "$OUTFILE"
+        fi
+      else
+        alert "stdin:$FNR: $FILE n'est pas lisible"
+      fi
+    done
   ) {fdverifyout}> >(
+    # Résumé des messages de vérification à la fin
     cat > fdverifyout
     [ -s fdverifyout ] &&
       step "Résumé des vérifications"
@@ -377,130 +390,131 @@ verify() {
   if ((rargs == 0));then
     local filetype="$(lookup verify)"
     rm -f tsr.bin signature.bin
+    if [[ $filetype =~ sealgood ]];then
+      # Extraction des éléments du document
+      step "Extraction des éléments de vérification"
 
-    # Extraction des éléments du document
-    step "Extraction des éléments de vérification"
+      # 1. Extraction du contenu original
+      if [[ $filetype =~ gzip ]]; then
+        local count=$(gzip -cd lookup.verify | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
+        head -c$count
+        zcat >payload
+      else
+        tee >(awk '/^(<!-- )?### BEGIN SEALGOOD /{state=1}state{print}/^### END SEALGOOD /{state=0}' >payload) | clean clean
+      fi <lookup.verify >original_data
+      success "Contenu original extrait"
 
-    # 1. Extraction du contenu original
-    if [[ $filetype =~ gzip ]]; then
-      local count=$(gzip -cd lookup.verify | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
-      head -c$count
-      zcat >payload
-    else
-      tee >(awk '/^(<!-- )?### BEGIN SEALGOOD /{state=1}state{print}/^### END SEALGOOD /{state=0}' >payload) | clean clean
-    fi <lookup.verify >original_data
-    success "Contenu original extrait"
+      # 2. Extraction de la signature
+      SIGNATURE=$( awk '/Élément de vérification 4 : signature du hash/,/base64/' payload | grep -vE '^#|base64|PLACEHOLDER' | tr -d ' \n')
+      if [ -z "$SIGNATURE" ]; then
+          warning "Signature introuvable dans le document"
+      else
+          echo "$SIGNATURE" | base64 -d > signature.bin
+          success "Signature extraite et décodée"
+          # 3. Extraction de la clé publique
+          PUBLIC_KEY=$(awk '/-----BEGIN PUBLIC KEY-----/,/-----END PUBLIC KEY-----/' payload | head -n 3)
+          if [ -z "$PUBLIC_KEY" ]; then
+              warning "Clé publique introuvable dans le document"
+          else
+              echo "$PUBLIC_KEY" > public_key.pem
+              success "Clé publique extraite"
+          fi
+      fi
 
-    # 2. Extraction de la signature
-    SIGNATURE=$( awk '/Élément de vérification 4 : signature du hash/,/base64/' payload | grep -vE '^#|base64|PLACEHOLDER' | tr -d ' \n')
-    if [ -z "$SIGNATURE" ]; then
-        warning "Signature introuvable dans le document"
-    else
-        echo "$SIGNATURE" | base64 -d > signature.bin
-        success "Signature extraite et décodée"
-        # 3. Extraction de la clé publique
-        PUBLIC_KEY=$(awk '/-----BEGIN PUBLIC KEY-----/,/-----END PUBLIC KEY-----/' payload | head -n 3)
-        if [ -z "$PUBLIC_KEY" ]; then
-            warning "Clé publique introuvable dans le document"
-        else
-            echo "$PUBLIC_KEY" > public_key.pem
-            success "Clé publique extraite"
-        fi
+      # 4. Extraction du TSR
+      TSR=$(awk '/Élément de vérification 2 : encodage 64 du tsr/,/base64/' payload | grep -vE '^#|base64|PLACEHOLDER' | tr -d ' \n')
+      if [ -z "$TSR" ]; then
+          warning "TSR introuvable dans le document"
+      else
+          echo "$TSR" | base64 -d > tsr.bin
+          success "TSR extrait et décodé"
+
+          # 5. Extraction du certificat TSA
+          TSA_CERT=$(awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/' payload)
+          if [ -z "$TSA_CERT" ]; then
+              warning "Certificat TSA introuvable - Téléchargement depuis freetsa.org"
+              curl -s https://freetsa.org/files/cacert.pem -o tsa_cert.pem || warning "Échec du téléchargement du certificat TSA"
+          else
+              echo "$TSA_CERT" > tsa_cert.pem
+              success "Certificat TSA extrait"
+          fi
+      fi
+
+      if [ -s tsa_cert.pem -o -s public_key.pem ]; then 
+
+          # Vérification de la signature
+          if [ -s public_key.pem -a -s signature.bin -a -s original_data ]; then
+              step "Vérification de la signature numérique"
+              (
+                set -x
+                openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in original_data -rawin &> sig_result ||
+                openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in <(openssl dgst -sha256 -binary original_data) &> sig_result
+              )
+              SIG_VERIFY=$?
+
+              if (( SIG_VERIFY  == 0 )); then
+                  success "Signature vérifiée avec succès"
+                  SIGNATURE_VALID=true
+              else
+                  alert "Échec de la vérification de la signature"
+                  cat sig_result >&2
+                  SIGNATURE_VALID=false
+              fi
+          fi
+
+          # Vérification de l'horodatage
+          if [ -s tsr.bin -a -s tsa_cert.pem -a -s original_data ] ; then
+              step "Vérification de l'horodatage TSA"
+              (
+                set -x
+                openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data original_data &> ts_result
+              )
+              DATE_VERIFY=$?
+
+              if (( DATE_VERIFY == 0 )); then
+                  success "Horodatage vérifié avec succès"
+                  TIMESTAMP_VALID=true
+              else
+                  alert "Échec de la vérification de l'horodatage"
+                  cat ts_result >&2
+                  TIMESTAMP_VALID=false
+              fi
+                  
+              # Affichage des détails de l'horodatage
+              echo -e "\nDétails de l'horodatage:" >&2
+              openssl ts -reply -in tsr.bin -text | grep -A2 "Time stamp:" >&2
+          fi
+      fi
+
+      # Résumé final
+      step "Résumé de la vérification"
+
+      echo -e "Statut de la signature: $([ "$SIGNATURE_VALID" = true ] && success "VALIDE" 2>&1 || { [ "$SIGNATURE_VALID" = false ] && alert "INVALIDE" || warning "ABSENT" 2>&1 ; } 2>&1)" >&2
+      echo -e "Statut de l'horodatage: $([ "$TIMESTAMP_VALID" = true ] && success "VALIDE" 2>&1 || { [ "$TIMESTAMP_VALID" = false ] && alert "INVALIDE" || warning "ABSENT" 2>&1 ; } 2>&1)" >&2
+
+      # signé, horodaté et intact
+      # signé et intact
+      # horodaté et intact
+      # ni signé ni horodaté 
+      # altéré
+      if   [ "$SIGNATURE_VALID" = true ] && [ "$TIMESTAMP_VALID" = true ]; then
+          success "Le document est signé, horodaté et intact"
+          ((fdverifyout)) && success "$FNR: $OUTFILE est signé, horodaté et intact" 2>&$fdverifyout
+      elif [ "$SIGNATURE_VALID" = true ] && [ "$TIMESTAMP_VALID" = "" ]; then
+          success "Le document est signé et intact"
+          ((fdverifyout)) && success "$FNR: $OUTFILE est signé et intact" 2>&$fdverifyout
+      elif [ "$SIGNATURE_VALID" = ""   ] && [ "$TIMESTAMP_VALID" = true ]; then
+          success "Le document est horodaté et intact"
+          ((fdverifyout)) && success "$FNR: $OUTFILE est horodaté et intact" 2>&$fdverifyout
+      elif [ "$SIGNATURE_VALID" = ""   ] && [ "$TIMESTAMP_VALID" = "" ]; then
+          warning "Le document n'est pas signé ni horodaté"
+          ((fdverifyout)) && success "$FNR: $OUTFILE n'est pas signé ni horodatée" 2>&$fdverifyout
+      else
+          alert "Le document a été altéré"
+          ((fdverifyout)) && alert "$FNR: $OUTFILE a été altéré" 2>&$fdverifyout
+      fi
+      cat lookup.verify | tee >(echo "verify output: $(lookup)" >&2)
     fi
-
-    # 4. Extraction du TSR
-    TSR=$(awk '/Élément de vérification 2 : encodage 64 du tsr/,/base64/' payload | grep -vE '^#|base64|PLACEHOLDER' | tr -d ' \n')
-    if [ -z "$TSR" ]; then
-        warning "TSR introuvable dans le document"
-    else
-        echo "$TSR" | base64 -d > tsr.bin
-        success "TSR extrait et décodé"
-
-        # 5. Extraction du certificat TSA
-        TSA_CERT=$(awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/' payload)
-        if [ -z "$TSA_CERT" ]; then
-            warning "Certificat TSA introuvable - Téléchargement depuis freetsa.org"
-            curl -s https://freetsa.org/files/cacert.pem -o tsa_cert.pem || warning "Échec du téléchargement du certificat TSA"
-        else
-            echo "$TSA_CERT" > tsa_cert.pem
-            success "Certificat TSA extrait"
-        fi
-    fi
-
-    if [ -s tsa_cert.pem -o -s public_key.pem ]; then 
-
-        # Vérification de la signature
-        if [ -s public_key.pem -a -s signature.bin -a -s original_data ]; then
-            step "Vérification de la signature numérique"
-            (
-              set -x
-              openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in original_data -rawin &> sig_result ||
-              openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in <(openssl dgst -sha256 -binary original_data) &> sig_result
-            )
-            SIG_VERIFY=$?
-
-            if (( SIG_VERIFY  == 0 )); then
-                success "Signature vérifiée avec succès"
-                SIGNATURE_VALID=true
-            else
-                alert "Échec de la vérification de la signature"
-                cat sig_result >&2
-                SIGNATURE_VALID=false
-            fi
-        fi
-
-        # Vérification de l'horodatage
-        if [ -s tsr.bin -a -s tsa_cert.pem -a -s original_data ] ; then
-            step "Vérification de l'horodatage TSA"
-            (
-            set -x
-            openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data original_data &> ts_result
-            )
-            DATE_VERIFY=$?
-
-            if (( DATE_VERIFY == 0 )); then
-                success "Horodatage vérifié avec succès"
-                TIMESTAMP_VALID=true
-            else
-                alert "Échec de la vérification de l'horodatage"
-                cat ts_result >&2
-                TIMESTAMP_VALID=false
-            fi
-                
-            # Affichage des détails de l'horodatage
-            echo -e "\nDétails de l'horodatage:" >&2
-            openssl ts -reply -in tsr.bin -text | grep -A2 "Time stamp:" >&2
-        fi
-    fi
-
-    # Résumé final
-    step "Résumé de la vérification"
-
-    echo -e "Statut de la signature: $([ "$SIGNATURE_VALID" = true ] && success "VALIDE" 2>&1 || { [ "$SIGNATURE_VALID" = false ] && alert "INVALIDE" || warning "ABSENT" 2>&1 ; } 2>&1)" >&2
-    echo -e "Statut de l'horodatage: $([ "$TIMESTAMP_VALID" = true ] && success "VALIDE" 2>&1 || { [ "$TIMESTAMP_VALID" = false ] && alert "INVALIDE" || warning "ABSENT" 2>&1 ; } 2>&1)" >&2
-
-    # signé, horodaté et intact
-    # signé et intact
-    # horodaté et intact
-    # ni signé ni horodaté 
-    # altéré
-    if   [ "$SIGNATURE_VALID" = true ] && [ "$TIMESTAMP_VALID" = true ]; then
-        success "Le document est signé, horodaté et intact"
-        ((fdverifyout)) && success "$FNR: $OUTFILE est signé, horodaté et intact" 2>&$fdverifyout
-    elif [ "$SIGNATURE_VALID" = true ] && [ "$TIMESTAMP_VALID" = "" ]; then
-        success "Le document est signé et intact"
-        ((fdverifyout)) && success "$FNR: $OUTFILE est signé et intact" 2>&$fdverifyout
-    elif [ "$SIGNATURE_VALID" = ""   ] && [ "$TIMESTAMP_VALID" = true ]; then
-        success "Le document est horodaté et intact"
-        ((fdverifyout)) && success "$FNR: $OUTFILE est horodaté et intact" 2>&$fdverifyout
-    elif [ "$SIGNATURE_VALID" = ""   ] && [ "$TIMESTAMP_VALID" = "" ]; then
-        warning "Le document n'est pas signé ni horodaté"
-        ((fdverifyout)) && success "$FNR: $OUTFILE n'est pas signé ni horodatée" 2>&$fdverifyout
-    else
-        alert "Le document a été altéré"
-        ((fdverifyout)) && alert "$FNR: $OUTFILE a été altéré" 2>&$fdverifyout
-    fi
-    cat lookup.verify | tee >(echo "verify output: $(lookup)" >&2)
   else
     cat
   fi | dead "$args"
