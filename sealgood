@@ -192,7 +192,23 @@ file2tgz(){
         ((FNR++))
         if ((cd "$INITIAL_DIR" && cat < "$FILE") > input.list2tgz) 2>/dev/null ;then
           export OUTFILE="$(basename "$FILE")"
+          local filetype="$(lookup < input.list2tgz)"
+          if [[ $filetype =~ sealgood ]];then
+            hash=$(clean clean < input.list2tgz | sha256sum | cut -c1-8)
+            base="$(echo "${OUTFILE%.*}" | sed -E 's/_sealgood(:[a-zA-Z0-9]+)?$//')"
+            if [[ "$base" == "$OUTFILE" ]]; then
+              OUTFILE="${base}_sealgood:${hash}"
+            else
+              OUTFILE="${base}_sealgood:${hash}.${OUTFILE##*.}"
+            fi
+            if [[ "$FILE" =~ _sealgood:[a-zA-Z0-9]+(\..*)?$ ]] && [[ ! "$FILE" =~ _sealgood:$hash(\..*)?$ ]]; then
+              alert="Le hash de l'ancien nom $(basename "$FILE") ne correspond pas au hash du document"
+              alert "$alert"
+              alert "$FNR: $alert" 2>&$fdverifyout
+            fi
+          fi
           step "list2tgz $FILE -> $OUTFILE"
+          export FNR
           clean "$args" <input.list2tgz >"$OUTFILE"
           echo "$OUTFILE"
         else
@@ -333,7 +349,7 @@ sign() {
       else
         if grep -aq "^PLACEHOLDER.*SIGNÉ" lookup.sign; then
           grep -q 'empty password' <( openssl pkey -in "$PRIVATE_KEY" -noout -passin pass: </dev/null 2>&1) || die 4 "$PRIVATE_KEY non chiffrée"
-          sed "s|^PLACEHOLDER.*SIGNÉ|$(<lookup.sign timestamp | base64 -w 0)|"
+          sed "s|^PLACEHOLDER.*SIGNÉ|$(<lookup.sign signraw | base64 -w 0)|"
         else
           cat
           warning "Déjà signé"
@@ -470,19 +486,19 @@ verify() {
     # altéré
     if   [ "$SIGNATURE_VALID" = true ] && [ "$TIMESTAMP_VALID" = true ]; then
         success "Le document est signé, horodaté et intact"
-        ((fdverifyout)) && success "$OUTFILE est signé, horodaté et intact" 2>&$fdverifyout
+        ((fdverifyout)) && success "$FNR: $OUTFILE est signé, horodaté et intact" 2>&$fdverifyout
     elif [ "$SIGNATURE_VALID" = true ] && [ "$TIMESTAMP_VALID" = "" ]; then
         success "Le document est signé et intact"
-        ((fdverifyout)) && success "$OUTFILE est signé et intact" 2>&$fdverifyout
+        ((fdverifyout)) && success "$FNR: $OUTFILE est signé et intact" 2>&$fdverifyout
     elif [ "$SIGNATURE_VALID" = ""   ] && [ "$TIMESTAMP_VALID" = true ]; then
         success "Le document est horodaté et intact"
-        ((fdverifyout)) && success "$OUTFILE est horodaté et intact" 2>&$fdverifyout
+        ((fdverifyout)) && success "$FNR: $OUTFILE est horodaté et intact" 2>&$fdverifyout
     elif [ "$SIGNATURE_VALID" = ""   ] && [ "$TIMESTAMP_VALID" = "" ]; then
         warning "Le document n'est pas signé ni horodaté"
-        ((fdverifyout)) && success "$OUTFILE n'est pas signé ni horodatée" 2>&$fdverifyout
+        ((fdverifyout)) && success "$FNR: $OUTFILE n'est pas signé ni horodatée" 2>&$fdverifyout
     else
         alert "Le document a été altéré"
-        ((fdverifyout)) && alert "$OUTFILE a été altéré" 2>&$fdverifyout
+        ((fdverifyout)) && alert "$FNR: $OUTFILE a été altéré" 2>&$fdverifyout
     fi
     cat lookup.verify | tee >(echo "verify output: $(lookup)" >&2)
   else
@@ -699,17 +715,6 @@ inject_xml() {
 }
 
 ##################################################################
-# Injection d'informations cachées dans une copie du HTML | XML  #
-# <$1 : filetype                                                 #
-# <stdin                                                         #
-# >stdout : copie avec payload & PLACEHOLDER                     #
-##################################################################
-inject_xml() {
-  tee original_data
-  [[ $1 =~ sealgood ]] || echo "<!-- $(get_payload < original_data) -->"
-}
-
-##################################################################
 # Injection d'informations cachées dans une copie du gzip        #
 # https://www.gnu.org/software/gzip/manual/gzip#Advanced-usage   #
 # <$1 : filetype                                                 #
@@ -768,7 +773,7 @@ lookup() {
   elif [[ $result =~ application/pdf ]];then
     if grep -aq '^### BEGIN SEALGOOD' lookup.$sfx;then
       result="${result/pdf/sealgood+pdf}"
-    elif pdftotext lookup.$sfx - | grep -aq '^### BEGIN SEALGOOD';then
+    elif pdftotext lookup.$sfx - 2>/dev/null | grep -aq '^### BEGIN SEALGOOD';then
       result="${result/pdf/sealgood-old+pdf}"
     fi
   elif [[ $result =~ text/plain ]];then
