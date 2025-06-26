@@ -170,8 +170,8 @@ list2tgz() {
           while :; do echo "$PASS"; done
         fi
       }
-      exec {fdpassask}>&"${passrelay[1]}"
-      exec {fdpassin}<&"${passrelay[0]}"
+      exec {fdpassin}<&"${passrelay[0]}" {fdpassask}>&"${passrelay[1]}"
+      # signale le coproc à verify
       export fdpassin fdpassask
     fi
     file2tgz
@@ -222,7 +222,7 @@ clean() {
   local args="$(cat args)"
   if ((rargs == 0));then
     (
-    awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}'
+    awk '/^(<!-- )?### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}'
     ) # | tee >(echo "clean output: $(lookup $LINENO)" >&2)
   else
     cat
@@ -245,6 +245,10 @@ inject() {
       # Le type d'injection dépend de filetype
       if [[ $filetype =~ pdf ]];then
         inject_after_eod "$filetype"
+      elif [[ $filetype =~ xml  ]];then
+        inject_xml      "$filetype"
+      elif [[ $filetype =~ html ]];then
+        inject_xml      "$filetype"
       elif [[ $filetype =~ PEM..Clé.publique ]];then
         inject_after_eod "$filetype"
       else
@@ -366,7 +370,7 @@ verify() {
       if [ -s tsa_cert.pem -o -s public_key.pem ]; then 
 
           # 5. Extraction du contenu original
-          awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' input.verify > input.clean
+          awk '/^(<!-- )?### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' input.verify > input.clean
           success "Contenu original extrait"
 
           # Vérification de la signature
@@ -416,8 +420,8 @@ verify() {
       # Résumé final
       step "Résumé de la vérification"
 
-      echo -e "Statut de la signature: $([ "$SIGNATURE_VALID" = true ] && echo "VALIDE" || { [ "$SIGNATURE_VALID" = false ] && echo "INVALIDE" || echo "ABSENT"; })"
-      echo -e "Statut de l'horodatage: $([ "$TIMESTAMP_VALID" = true ] && echo "VALIDE" || { [ "$TIMESTAMP_VALID" = false ] && echo "INVALIDE" || echo "ABSENT"; })"
+      echo -e "Statut de la signature: $([ "$SIGNATURE_VALID" = true ] && echo "VALIDE" || { [ "$SIGNATURE_VALID" = false ] && alert "INVALIDE" || warning "ABSENT" 2>&1 ; } 2>&1)" >&2
+      echo -e "Statut de l'horodatage: $([ "$TIMESTAMP_VALID" = true ] && echo "VALIDE" || { [ "$TIMESTAMP_VALID" = false ] && alert "INVALIDE" || warning "ABSENT" 2>&1 ; } 2>&1)" >&2
 
       # signé, horodaté et intact
       # signé et intact
@@ -452,7 +456,7 @@ verify() {
 ######################################
 dead(){
   (( $# && $(eval echo -n "$*" | wc -c) )) &&
-    alert "Les arguments restants \"$*\" n'ont pas pu être traités"
+    warning "Les arguments restants \"$*\" n'ont pas pu être traités"
   cat
 }
 
@@ -629,6 +633,17 @@ inject_after_eod() {
   [[ $1 =~ sealgood ]] || get_payload
 }
 
+##################################################################
+# Injection d'informations cachées dans une copie du HTML | XML  #
+# <$1 : filetype                                                 #
+# <stdin                                                         #
+# >stdout : copie avec payload & PLACEHOLDER                     #
+##################################################################
+inject_xml() {
+  cat
+  [[ $1 =~ sealgood ]] || echo "<!-- $(get_payload) -->"
+}
+
 ###############################################################
 # Sortie du script                                            #
 # Prompt pour conserver le répertoire temporaire après verify #
@@ -661,7 +676,7 @@ lookup() {
     fi
   fi
   if [[ $result =~ application/pdf ]];then
-    if grep -aq '^### BEGIN SEALGOOD' lookup.$1;then
+    if grep -aq '^(<!-- )?### BEGIN SEALGOOD' lookup.$1;then
       result="${result/pdf/sealgood+pdf}"
     elif pdftotext lookup.$1 - | grep -aq '^### BEGIN SEALGOOD';then
       result="${result/pdf/sealgood-old+pdf}"
@@ -672,7 +687,7 @@ lookup() {
     fi
   fi
   if [[ ! $result =~ sealgood ]];then
-    if grep -aq '^### BEGIN SEALGOOD' lookup.$1;then
+    if grep -aq '^(<!-- )?### BEGIN SEALGOOD' lookup.$1;then
       result="${result/\//\/sealgood+}"
     fi
   fi
