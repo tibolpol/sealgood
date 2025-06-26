@@ -21,7 +21,7 @@ main() {
     args="${args//sign/inject sign}"
     help "$args" # suite du pipe
   else
-    filetype="$(lookup main)"
+    local filetype="$(lookup main)"
     if [[ $filetype =~ pdf ]];then
       read -p "$myname { clean inject date sign verify } ? " </dev/tty
       [ -n "$REPLY" ] &&
@@ -32,7 +32,8 @@ main() {
     else
       help help # affiche l'aide
     fi
-  fi | tee >(success "main output: $(lookup $LINENO)" >&2)
+    rm -f lookup.main
+  fi | tee >(success "main output: $(lookup)" >&2)
 }
 
 ##################
@@ -41,8 +42,7 @@ main() {
 ##################
 help() {
   strip help "$@" > args
-  rargs=$?
-  local args=$(cat args)
+  local rargs=$? args="$(cat args)"
   if ((rargs == 0)) ; then
 
     # pas d'entrée ni de pipe suivant
@@ -115,8 +115,7 @@ EOF
 ####################################
 genkey() {
   strip genkey "$@" > args
-  rargs=$?
-  local args="$(cat args)"
+  local rargs=$? args="$(cat args)"
   if ((rargs == 0));then
 
     # pas d'entrée ni de pipe suivant
@@ -155,8 +154,7 @@ END
 ##############################
 list2tgz() {
   strip list2tgz "$@" > args
-  rargs=$?
-  local args="$(cat args)"
+  local rargs=$? args="$(cat args)"
   if ((rargs == 0));then
     #####################
     # PASS just-in-time #
@@ -167,6 +165,7 @@ list2tgz() {
         cat >/dev/null & # puis vide
         if [ "$REPLY" = ask ] ; then 
           read -s -p "Mot de passe de la clé privée : " PASS </dev/tty
+          echo >&2
           while :; do echo "$PASS"; done
         fi
       }
@@ -215,15 +214,24 @@ file2tgz(){
 # <stdin                             #
 # <$* : fonctions à exécuter         #
 # >stdout : original                 #
+# <stdin après exécution : payload   #
 ######################################
 clean() {
   strip clean "$@" > args
-  rargs=$?
-  local args="$(cat args)"
+  local rargs=$? args="$(cat args)"
   if ((rargs == 0));then
-    (
-    awk '/^(<!-- )?### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}'
-    ) # | tee >(echo "clean output: $(lookup $LINENO)" >&2)
+    local filetype="$(lookup clean)"
+    if [[ $filetype =~ sealgood ]];then
+      if [[ $filetype =~ gzip ]];then
+        local count=$(gzip -cd lookup.clean | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
+        head -c$count
+      else 
+        awk '/^(<!-- )?### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}'
+      fi
+    else
+      cat
+    fi <lookup.clean 
+    rm -f lookup.clean
   else
     cat
   fi | inject "$args"
@@ -237,25 +245,25 @@ clean() {
 ##############################################################
 inject() {
   strip inject "$@" > args
-  rargs=$?
-  local args="$(cat args)"
+  local rargs=$? args="$(cat args)"
   if ((rargs == 0));then
-    (
-      filetype="$(lookup inject)"
-      # Le type d'injection dépend de filetype
-      if [[ $filetype =~ pdf ]];then
-        inject_after_eod "$filetype"
-      elif [[ $filetype =~ xml  ]];then
-        inject_xml      "$filetype"
-      elif [[ $filetype =~ html ]];then
-        inject_xml      "$filetype"
-      elif [[ $filetype =~ PEM..Clé.publique ]];then
-        inject_after_eod "$filetype"
-      else
-        warning "Je ne sais pas injecter dans le mimetype : $filetype"
-        cat
-      fi <lookup.inject
-    ) | tee >(echo "inject output: $(lookup $LINENO)" >&2)
+    local filetype="$(lookup inject)"
+    # Le type d'injection dépend de filetype
+    if [[ $filetype =~ pdf ]];then
+      inject_pdf       "$filetype"
+    elif [[ $filetype =~ xml  ]];then
+      inject_xml      "$filetype"
+    elif [[ $filetype =~ html ]];then
+      inject_xml      "$filetype"
+    elif [[ $filetype =~ gzip ]];then
+      inject_gzip     "$filetype"
+    elif [[ $filetype =~ PEM..Clé.publique ]];then
+      inject_after_eod "$filetype"
+    else
+      warning "Je ne sais pas injecter dans le mimetype : $filetype"
+      cat
+    fi <lookup.inject | tee >(echo "inject output: $(lookup)" >&2)
+    rm -f lookup.inject
   else
     cat
   fi | date "$args"
@@ -269,18 +277,31 @@ inject() {
 #######################################################
 date() {
   strip date "$@" > args
-  rargs=$?
-  local args="$(cat args)"
+  local rargs=$? args="$(cat args)"
   if ((rargs == 0));then
-    (
-      cat >input.date
-      if grep -aq "^PLACEHOLDER.*HORODATÉ" input.date; then
-        sed "s|^PLACEHOLDER.*HORODATÉ|$(<input.date timestamp | base64 -w 0)|"
+    local filetype="$(lookup date)"
+    if [[ $filetype =~ sealgood ]];then
+      if [[ $filetype =~ gzip ]];then
+        if zgrep -aq "^PLACEHOLDER.*HORODATÉ" lookup.date; then
+          local count=$(gzip -cd lookup.date | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
+          head -c$count
+          gzip -cd | sed "s|^PLACEHOLDER.*HORODATÉ|$(<lookup.date timestamp | base64 -w 0)|" | gzip -nc
+        else
+          cat
+          warning "Déjà horodaté"
+        fi
       else
-        cat
-        warning "Déjà horodaté"
-      fi <input.date
-    ) | tee >(echo "date output: $(lookup $LINENO)" >&2)
+        if grep -aq "^PLACEHOLDER.*HORODATÉ" lookup.date; then
+          sed "s|^PLACEHOLDER.*HORODATÉ|$(<lookup.date timestamp | base64 -w 0)|"
+        else
+          cat
+          warning "Déjà horodaté"
+        fi
+      fi <lookup.date
+    else
+      die $LINENO "assert failure"
+    fi | tee >(echo "date output: $(lookup)" >&2)
+    rm -f lookup.date
   else
     cat
   fi | sign "$args"
@@ -295,19 +316,33 @@ date() {
 ######################################################
 sign() {
   strip sign "$@" > args
-  rargs=$?
-  local args="$(cat args)"
+  local rargs=$? args="$(cat args)"
   if ((rargs == 0));then
-    (
-      cat >input.sign
-      if grep -aq "^PLACEHOLDER.*SIGNÉ" input.sign; then
-        grep -q 'empty password' <( openssl pkey -in "$PRIVATE_KEY" -noout -passin pass: </dev/null 2>&1) || die 4 "$PRIVATE_KEY non chiffrée"
-        sed "s|^PLACEHOLDER.*SIGNÉ|$(<input.sign signraw  | base64 -w 0)|"
+    local filetype="$(lookup sign)"
+    if [[ $filetype =~ sealgood ]];then
+      if [[ $filetype =~ gzip ]];then
+        if zgrep -aq "^PLACEHOLDER.*SIGNÉ" lookup.sign; then
+          grep -q 'empty password' <( openssl pkey -in "$PRIVATE_KEY" -noout -passin pass: </dev/null 2>&1) || die 4 "$PRIVATE_KEY non chiffrée"
+          local count=$(gzip -cd lookup.sign | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
+          head -c$count
+          gzip -cd | sed "s|^PLACEHOLDER.*SIGNÉ|$(<lookup.sign signraw | base64 -w 0)|" | gzip -nc
+        else
+          cat
+          warning "Déjà signé"
+        fi
       else
-        warning "Déjà signé"
-        cat
-      fi <input.sign
-    ) | tee >(echo "sign output: $(lookup $LINENO)" >&2)
+        if grep -aq "^PLACEHOLDER.*SIGNÉ" lookup.sign; then
+          grep -q 'empty password' <( openssl pkey -in "$PRIVATE_KEY" -noout -passin pass: </dev/null 2>&1) || die 4 "$PRIVATE_KEY non chiffrée"
+          sed "s|^PLACEHOLDER.*SIGNÉ|$(<lookup.sign timestamp | base64 -w 0)|"
+        else
+          cat
+          warning "Déjà signé"
+        fi
+      fi <lookup.sign
+    else
+      die $LINENO "assert failure"
+    fi | tee >(echo "sign output: $(lookup)" >&2)
+    rm -f lookup.sign
   else
     cat
   fi | verify "$args"
@@ -322,130 +357,134 @@ sign() {
 ##################################################
 verify() {
   strip verify "$@" > args
-  rargs=$?
-  local args="$(cat args)"
+  local rargs=$? args="$(cat args)"
   if ((rargs == 0));then
-    (
-      cat >input.verify
+    local filetype="$(lookup verify)"
+    rm -f tsr.bin signature.bin
 
-      # Extraction des éléments du document
-      step "Extraction des éléments de vérification"
+    # Extraction des éléments du document
+    step "Extraction des éléments de vérification"
 
-      # 1. Extraction de la signature
-      SIGNATURE=$(awk '/Élément de vérification 4 : signature du hash/,/base64/' input.verify | grep -vE '^#|base64|PLACEHOLDER' | tr -d ' \n')
-      if [ -z "$SIGNATURE" ]; then
-          warning "Signature introuvable dans le document"
-      else
-          echo "$SIGNATURE" | base64 -d > signature.bin
-          success "Signature extraite et décodée"
-          # 2. Extraction de la clé publique
-          PUBLIC_KEY=$(awk '/-----BEGIN PUBLIC KEY-----/,/-----END PUBLIC KEY-----/' input.verify | head -n 3)
-          if [ -z "$PUBLIC_KEY" ]; then
-              warning "Clé publique introuvable dans le document"
-          else
-              echo "$PUBLIC_KEY" > public_key.pem
-              success "Clé publique extraite"
-          fi
-      fi
+    # 1. Extraction du contenu original
+    if [[ $filetype =~ gzip ]]; then
+      local count=$(gzip -cd lookup.verify | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
+      head -c$count
+      zcat >payload
+    else
+      tee >(awk '/^(<!-- )?### BEGIN SEALGOOD /{state=1}state{print}/^### END SEALGOOD /{state=0}' >payload) | clean clean
+    fi <lookup.verify >original_data
+    success "Contenu original extrait"
 
-      # 3. Extraction du TSR
-      TSR=$(awk '/Élément de vérification 2 : encodage 64 du tsr/,/base64/' input.verify | grep -vE '^#|base64|PLACEHOLDER' | tr -d ' \n')
-      if [ -z "$TSR" ]; then
-          warning "TSR introuvable dans le document"
-      else
-          echo "$TSR" | base64 -d > tsr.bin
-          success "TSR extrait et décodé"
+    # 2. Extraction de la signature
+    SIGNATURE=$( awk '/Élément de vérification 4 : signature du hash/,/base64/' payload | grep -vE '^#|base64|PLACEHOLDER' | tr -d ' \n')
+    if [ -z "$SIGNATURE" ]; then
+        warning "Signature introuvable dans le document"
+    else
+        echo "$SIGNATURE" | base64 -d > signature.bin
+        success "Signature extraite et décodée"
+        # 3. Extraction de la clé publique
+        PUBLIC_KEY=$(awk '/-----BEGIN PUBLIC KEY-----/,/-----END PUBLIC KEY-----/' payload | head -n 3)
+        if [ -z "$PUBLIC_KEY" ]; then
+            warning "Clé publique introuvable dans le document"
+        else
+            echo "$PUBLIC_KEY" > public_key.pem
+            success "Clé publique extraite"
+        fi
+    fi
 
-          # 4. Extraction du certificat TSA
-          TSA_CERT=$(awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/' input.verify)
-          if [ -z "$TSA_CERT" ]; then
-              warning "Certificat TSA introuvable - Téléchargement depuis freetsa.org"
-              curl -s https://freetsa.org/files/cacert.pem -o tsa_cert.pem || warning "Échec du téléchargement du certificat TSA"
-          else
-              echo "$TSA_CERT" > tsa_cert.pem
-              success "Certificat TSA extrait"
-          fi
-      fi
+    # 4. Extraction du TSR
+    TSR=$(awk '/Élément de vérification 2 : encodage 64 du tsr/,/base64/' payload | grep -vE '^#|base64|PLACEHOLDER' | tr -d ' \n')
+    if [ -z "$TSR" ]; then
+        warning "TSR introuvable dans le document"
+    else
+        echo "$TSR" | base64 -d > tsr.bin
+        success "TSR extrait et décodé"
 
-      if [ -s tsa_cert.pem -o -s public_key.pem ]; then 
+        # 5. Extraction du certificat TSA
+        TSA_CERT=$(awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/' payload)
+        if [ -z "$TSA_CERT" ]; then
+            warning "Certificat TSA introuvable - Téléchargement depuis freetsa.org"
+            curl -s https://freetsa.org/files/cacert.pem -o tsa_cert.pem || warning "Échec du téléchargement du certificat TSA"
+        else
+            echo "$TSA_CERT" > tsa_cert.pem
+            success "Certificat TSA extrait"
+        fi
+    fi
 
-          # 5. Extraction du contenu original
-          awk '/^(<!-- )?### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' input.verify > input.clean
-          success "Contenu original extrait"
+    if [ -s tsa_cert.pem -o -s public_key.pem ]; then 
 
-          # Vérification de la signature
-          if [ -s public_key.pem -a -s signature.bin -a -s input.clean ]; then
-              step "Vérification de la signature numérique"
-              (
-                set -x
-                openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in input.clean -rawin &> sig_result ||
-                openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in <(openssl dgst -sha256 -binary input.clean) &> sig_result
-              )
-              SIG_VERIFY=$?
-
-              if (( SIG_VERIFY  == 0 )); then
-                  success "Signature vérifiée avec succès"
-                  SIGNATURE_VALID=true
-              else
-                  alert "Échec de la vérification de la signature"
-                  cat sig_result >&2
-                  SIGNATURE_VALID=false
-              fi
-          fi
-
-          # Vérification de l'horodatage
-          if [ -s tsr.bin -a -s tsa_cert.pem -a -s input.clean ] ; then
-              step "Vérification de l'horodatage TSA"
-              (
+        # Vérification de la signature
+        if [ -s public_key.pem -a -s signature.bin -a -s original_data ]; then
+            step "Vérification de la signature numérique"
+            (
               set -x
-              openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data input.clean &> ts_result
-              )
-              DATE_VERIFY=$?
+              openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in original_data -rawin &> sig_result ||
+              openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in <(openssl dgst -sha256 -binary original_data) &> sig_result
+            )
+            SIG_VERIFY=$?
 
-              if (( DATE_VERIFY == 0 )); then
-                  success "Horodatage vérifié avec succès"
-                  TIMESTAMP_VALID=true
-              else
-                  alert "Échec de la vérification de l'horodatage"
-                  cat ts_result >&2
-                  TIMESTAMP_VALID=false
-              fi
-                  
-              # Affichage des détails de l'horodatage
-              echo -e "\nDétails de l'horodatage:" >&2
-              openssl ts -reply -in tsr.bin -text | grep -A2 "Time stamp:" >&2
-          fi
-      fi
+            if (( SIG_VERIFY  == 0 )); then
+                success "Signature vérifiée avec succès"
+                SIGNATURE_VALID=true
+            else
+                alert "Échec de la vérification de la signature"
+                cat sig_result >&2
+                SIGNATURE_VALID=false
+            fi
+        fi
 
-      # Résumé final
-      step "Résumé de la vérification"
+        # Vérification de l'horodatage
+        if [ -s tsr.bin -a -s tsa_cert.pem -a -s original_data ] ; then
+            step "Vérification de l'horodatage TSA"
+            (
+            set -x
+            openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data original_data &> ts_result
+            )
+            DATE_VERIFY=$?
 
-      echo -e "Statut de la signature: $([ "$SIGNATURE_VALID" = true ] && echo "VALIDE" || { [ "$SIGNATURE_VALID" = false ] && alert "INVALIDE" || warning "ABSENT" 2>&1 ; } 2>&1)" >&2
-      echo -e "Statut de l'horodatage: $([ "$TIMESTAMP_VALID" = true ] && echo "VALIDE" || { [ "$TIMESTAMP_VALID" = false ] && alert "INVALIDE" || warning "ABSENT" 2>&1 ; } 2>&1)" >&2
+            if (( DATE_VERIFY == 0 )); then
+                success "Horodatage vérifié avec succès"
+                TIMESTAMP_VALID=true
+            else
+                alert "Échec de la vérification de l'horodatage"
+                cat ts_result >&2
+                TIMESTAMP_VALID=false
+            fi
+                
+            # Affichage des détails de l'horodatage
+            echo -e "\nDétails de l'horodatage:" >&2
+            openssl ts -reply -in tsr.bin -text | grep -A2 "Time stamp:" >&2
+        fi
+    fi
 
-      # signé, horodaté et intact
-      # signé et intact
-      # horodaté et intact
-      # ni signé ni horodaté 
-      # altéré
-      if   [ "$SIGNATURE_VALID" = true ] && [ "$TIMESTAMP_VALID" = true ]; then
-          success "Le document est signé, horodaté et intact"
-          ((fdverifyout)) && success "$OUTFILE est signé, horodaté et intact" 2>&$fdverifyout
-      elif [ "$SIGNATURE_VALID" = true ] && [ "$TIMESTAMP_VALID" = "" ]; then
-          success "Le document est signé et intact"
-          ((fdverifyout)) && success "$OUTFILE est signé et intact" 2>&$fdverifyout
-      elif [ "$SIGNATURE_VALID" = ""   ] && [ "$TIMESTAMP_VALID" = true ]; then
-          success "Le document est horodaté et intact"
-          ((fdverifyout)) && success "$OUTFILE est horodaté et intact" 2>&$fdverifyout
-      elif [ "$SIGNATURE_VALID" = ""   ] && [ "$TIMESTAMP_VALID" = "" ]; then
-          warning "Le document n'est pas signé ni horodaté"
-          ((fdverifyout)) && success "$OUTFILE n'est pas signé ni horodatée" 2>&$fdverifyout
-      else
-          alert "Le document a été altéré"
-          ((fdverifyout)) && alert "$OUTFILE a été altéré" 2>&$fdverifyout
-      fi
-      cat input.verify
-    ) | tee >(echo "verify output: $(lookup $LINENO)" >&2)
+    # Résumé final
+    step "Résumé de la vérification"
+
+    echo -e "Statut de la signature: $([ "$SIGNATURE_VALID" = true ] && success "VALIDE" 2>&1 || { [ "$SIGNATURE_VALID" = false ] && alert "INVALIDE" || warning "ABSENT" 2>&1 ; } 2>&1)" >&2
+    echo -e "Statut de l'horodatage: $([ "$TIMESTAMP_VALID" = true ] && success "VALIDE" 2>&1 || { [ "$TIMESTAMP_VALID" = false ] && alert "INVALIDE" || warning "ABSENT" 2>&1 ; } 2>&1)" >&2
+
+    # signé, horodaté et intact
+    # signé et intact
+    # horodaté et intact
+    # ni signé ni horodaté 
+    # altéré
+    if   [ "$SIGNATURE_VALID" = true ] && [ "$TIMESTAMP_VALID" = true ]; then
+        success "Le document est signé, horodaté et intact"
+        ((fdverifyout)) && success "$OUTFILE est signé, horodaté et intact" 2>&$fdverifyout
+    elif [ "$SIGNATURE_VALID" = true ] && [ "$TIMESTAMP_VALID" = "" ]; then
+        success "Le document est signé et intact"
+        ((fdverifyout)) && success "$OUTFILE est signé et intact" 2>&$fdverifyout
+    elif [ "$SIGNATURE_VALID" = ""   ] && [ "$TIMESTAMP_VALID" = true ]; then
+        success "Le document est horodaté et intact"
+        ((fdverifyout)) && success "$OUTFILE est horodaté et intact" 2>&$fdverifyout
+    elif [ "$SIGNATURE_VALID" = ""   ] && [ "$TIMESTAMP_VALID" = "" ]; then
+        warning "Le document n'est pas signé ni horodaté"
+        ((fdverifyout)) && success "$OUTFILE n'est pas signé ni horodatée" 2>&$fdverifyout
+    else
+        alert "Le document a été altéré"
+        ((fdverifyout)) && alert "$OUTFILE a été altéré" 2>&$fdverifyout
+    fi
+    cat lookup.verify | tee >(echo "verify output: $(lookup)" >&2)
   else
     cat
   fi | dead "$args"
@@ -482,13 +521,16 @@ strip() {
 #############################################################################
 # PAYLOAD : Explications détaillées non intrusives sur les vues du document #
 # C'est juste du plaintext qui commence et termine par des balises          #
+# <stdin : original data
 # <$REPOS_KEY : nom web de la clé publique                                  #
 # <$PUBLIC_KEY : nom local de la clé publique                               #
 # <$HOME/.ssh/id_rsa.pub : emplacement du nom du signataire                 #
 # <https://freetsa.org/files/cacert.pem : cartificat racine de la TSA       #
 # >stdout : payload                                                         #
 #############################################################################
-get_payload() { cat <<EOD
+get_payload() {
+[ -s original_data ] || cat > original_data
+cat <<EOD
 ### BEGIN SEALGOOD SIGNATURE ###
 SealGood - The 100% DIY Document Authenticator
 https://github.com/tibolpol/sealgood/
@@ -506,8 +548,8 @@ Outils de vérification :
 - non POSIX mais standard reconnu : openssl
 
 Le document signé a les propriétés suivantes :
-file -bi : $(clean clean | lookup $LINENO)
-wc       : $(clean clean | wc -)
+file -bi : $(<original_data lookup)
+wc       : $(<original_data wc -)
 
 Déclaration de signataire : $(cut -d' ' -f3- < $HOME/.ssh/id_rsa.pub)
 Clé publique ed25519 du signataire : $REPOS_KEY
@@ -597,12 +639,12 @@ timestamp() {
 # >stdout : signature.bin #
 ###########################
 signraw() {
-  clean clean >input.clean
+  clean clean >original_data
   if ((fdpassin)); then
     echo ask >&$fdpassask
-    openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in input.clean -passin stdin <&$fdpassin
+    openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in original_data -passin stdin <&$fdpassin
   else
-    openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in input.clean
+    openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in original_data
   fi
 }
 
@@ -622,15 +664,27 @@ signdgst(){
   fi
 }
 
-##################################################################
-# Injection d'informations cachées dans une copie du fichier pdf #
-# <$1 : filetype                                                 #
-# <stdin                                                         #
-# >stdout : copie avec payload & PLACEHOLDER                     #
-##################################################################
+##############################################################
+# Injection d'informations cachées dans une copie du fichier #
+# <$1 : filetype                                             #
+# <stdin                                                     #
+# >stdout : copie avec payload & PLACEHOLDER                 #
+##############################################################
 inject_after_eod() {
-  cat
-  [[ $1 =~ sealgood ]] || get_payload
+  tee original_data
+  [[ $1 =~ sealgood ]] || get_payload < original_data
+}
+
+############################################################################################################################
+# Injection d'informations cachées dans une copie du fichier pdf                                                           #
+# https://stackoverflow.com/questions/11896858/does-the-eof-in-a-pdf-have-to-appear-within-the-last-1024-bytes-of-the-file #
+# Un peu limite mais pas rencontré de cas rhédibitoire et clean rend le pdf récupérable anyway                             #
+# <$1 : filetype                                                                                                           #
+# <stdin                                                                                                                   #
+# >stdout : copie avec payload & PLACEHOLDER                                                                               #
+############################################################################################################################
+inject_pdf() {
+  inject_after_eod "$@"
 }
 
 ##################################################################
@@ -640,8 +694,31 @@ inject_after_eod() {
 # >stdout : copie avec payload & PLACEHOLDER                     #
 ##################################################################
 inject_xml() {
-  cat
-  [[ $1 =~ sealgood ]] || echo "<!-- $(get_payload) -->"
+  tee original_data
+  [[ $1 =~ sealgood ]] || echo "<!-- $(get_payload < original_data) -->"
+}
+
+##################################################################
+# Injection d'informations cachées dans une copie du HTML | XML  #
+# <$1 : filetype                                                 #
+# <stdin                                                         #
+# >stdout : copie avec payload & PLACEHOLDER                     #
+##################################################################
+inject_xml() {
+  tee original_data
+  [[ $1 =~ sealgood ]] || echo "<!-- $(get_payload < original_data) -->"
+}
+
+##################################################################
+# Injection d'informations cachées dans une copie du gzip        #
+# https://www.gnu.org/software/gzip/manual/gzip#Advanced-usage   #
+# <$1 : filetype                                                 #
+# <stdin                                                         #
+# >stdout : copie avec payload & PLACEHOLDER                     #
+##################################################################
+inject_gzip() {
+  tee original_data
+  [[ $1 =~ sealgood ]] || get_payload < original_data | gzip -c
 }
 
 ###############################################################
@@ -666,32 +743,46 @@ exit_policy(){
 # >lookup.$1  : copie stdin               #
 ###########################################
 lookup() {
-  cat >lookup.$1
-  local result="$(file -b -i lookup.$1)"
+  sfx=${1:-$RANDOM}
+  cat >lookup.$sfx
+  local result="$(file -b -i lookup.$sfx)"
   if [[ $result =~ application/octet-stream ]];then
-    if grep -aq '^%PDF-' lookup.$1 && grep -aq '^%%EOF' lookup.$1 ; then
+    if grep -aq '^%PDF-' lookup.$sfx && grep -aq '^%%EOF' lookup.$sfx ; then
       result="${result/octet-stream/pdf+octet-stream}"
     else
-      result="${result/octet-stream/$(check_crypto_file $1 "$result")+octet-stream}"
+      result="${result/octet-stream/$(check_crypto_file $sfx "$result")+octet-stream}"
     fi
   fi
-  if [[ $result =~ application/pdf ]];then
-    if grep -aq '^(<!-- )?### BEGIN SEALGOOD' lookup.$1;then
+  if [[ $result =~ application/gzip ]];then
+    if zgrep -aq '### BEGIN SEALGOOD' lookup.$sfx;then
+      result="${result/gzip/sealgood+gzip}"
+    fi
+  elif [[ $result =~ text/xml ]];then
+    if grep -aq '^<!-- ### BEGIN SEALGOOD' lookup.$sfx;then
+      result="${result/xml/sealgood+xml}"
+    fi
+  elif [[ $result =~ text/html ]];then
+    if grep -aq '^<!-- ### BEGIN SEALGOOD' lookup.$sfx;then
+      result="${result/html/sealgood+html}"
+    fi
+  elif [[ $result =~ application/pdf ]];then
+    if grep -aq '^### BEGIN SEALGOOD' lookup.$sfx;then
       result="${result/pdf/sealgood+pdf}"
-    elif pdftotext lookup.$1 - | grep -aq '^### BEGIN SEALGOOD';then
+    elif pdftotext lookup.$sfx - | grep -aq '^### BEGIN SEALGOOD';then
       result="${result/pdf/sealgood-old+pdf}"
     fi
   elif [[ $result =~ text/plain ]];then
-    if grep -aq '^-----BEGIN' lookup.$1;then
-      result="${result/plain/$(check_crypto_file $1 "$result")+plain}"
+    if grep -aq '^-----BEGIN' lookup.$sfx;then
+      result="${result/plain/$(check_crypto_file $sfx "$result")+plain}"
     fi
   fi
   if [[ ! $result =~ sealgood ]];then
-    if grep -aq '^(<!-- )?### BEGIN SEALGOOD' lookup.$1;then
+    if grep -aq '^(<!-- )?### BEGIN SEALGOOD' lookup.$sfx;then
       result="${result/\//\/sealgood+}"
     fi
   fi
   echo "$result"
+  [ $sfx = "$1" ] || rm -f lookup.$sfx
 }
 
 ###########################################
