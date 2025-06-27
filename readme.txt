@@ -1,8 +1,14 @@
-doc/
+LICENCE
+README.md
+
+docs/
   Value doc
+
+bin/
+  Scripts
+
+locale/
+  Locales
 
 drafts/
   Drafts of all and whatever
-
-sealgood
-  Script to genkey, sign, date, inject, clean, verify

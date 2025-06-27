@@ -900,9 +900,9 @@ for cmd in awk openssl base64 curl; do
 done </dev/null
 
 export myname="$(basename "$0")"
-export mydir="$(dirname "$0")"
 export TEXTDOMAIN="$myname"
-export TEXTDOMAINDIR="$(realpath "$mydir/locale")" 
+export mydir="$(dirname "$(realpath "$0")")"
+export TEXTDOMAINDIR="${mydir/bin/locale}" 
 export TMPDIR="$(mktemp -d)"
 trap exit_policy EXIT
 cd "$TMPDIR" || die 16 "$LINENO: FATAL"

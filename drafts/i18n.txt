@@ -1,11 +1,11 @@
 
+!mkdir -p ../locale;cd ../bin&&xgettext --keyword=_ --from-code=utf-8 -LShell -o ../locale/sealgood.pot sealgood
+!cd ../locale/fr/LC_MESSAGES&& diff ../../sealgood.pot sealgood.po
+!cd ../locale/es/LC_MESSAGES&& diff ../../sealgood.pot sealgood.po
+!cd ../locale/fr/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po
+!cd ../locale/es/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po
 
-!mkdir -p ../locale;cd ..&&xgettext --keyword=_ --from-code=utf-8 -LShell -o locale/sealgood.pot sealgood
-!diff ../locale/sealgood.pot ../fr_sealgood.po
-!mkdir -p ../locale/fr/LC_MESSAGES && msgfmt -o ../locale/fr/LC_MESSAGES/sealgood.mo ../fr_sealgood.po
-!mkdir -p ../locale/es/LC_MESSAGES && msgfmt -o ../locale/es/LC_MESSAGES/sealgood.mo ../es_sealgood.po
-
-!LANGUAGE=es ../sealgood help
-!LANGUAGE=fr ../sealgood help
+!LANGUAGE=es ../bin/sealgood help
+!LANGUAGE=fr ../bin/sealgood help
   Consignes pour i18n
 
