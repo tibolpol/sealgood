@@ -1,12 +1,15 @@
 #!/bin/bash
-################################################
-# <$1 : genkey | sign | date                   #
-# <stdin : data to sign | timestamp            #
-# <$HOME/.ssh/ed25519_*.pem : Ed25519 keys     #
-# <$HOME/.ssh/id_rsa.pub : identity clear text #
-# >stdout : signed | timestamp data            #
-# >stderr : errors                             #
-################################################
+################################################################
+# Copyright (c) 2025 Thibault Le Paul (@tibolpol)              #
+# Licence MIT - https://opensource.org/license/mit/            #
+#                                                              #
+# <$* : help genkey { list2tgz clean inject date sign verify } #
+# <stdin : data to sign | timestamp                            #
+# <$HOME/.ssh/ed25519_*.pem : Ed25519 keys                     #
+# <$HOME/.ssh/id_rsa.pub : identity clear text                 #
+# >stdout : signed | timestamp data                            #
+# >stderr : errors                                             #
+################################################################
 
 ################################################################
 # MAIN                                                         #
