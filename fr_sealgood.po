@@ -1,0 +1,545 @@
+# French translations for sealgood package.
+# Copyright (c) 2025 Thibault Le Paul (@tibolpol)
+# This file is distributed under the same license as the sealgood package.
+# Automatically generated, 2025.
+# AUTHOR <tlp@laposte.net>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: sealgood 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-06-27 15:58+0100\n"
+"PO-Revision-Date: 2025-06-27 15:58+0100\n"
+"Last-Translator: @tibolpol\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: sealgood:56
+msgid "Document signing and timestamping via"
+msgstr "Signature et horodatage de documents via"
+
+#: script.sh
+msgid "Usage"
+msgstr "Utilisation"
+
+#: script.sh
+msgid "COMMANDS"
+msgstr "COMMANDES"
+
+#: script.sh
+msgid "Generate a new password-protected ed25519 key pair"
+msgstr "Génère une nouvelle paire de clés ed25519 protégée par mot de passe"
+
+#: script.sh
+msgid "Show this help"
+msgstr "Affiche cette aide"
+
+#: script.sh
+msgid "Apply pipeline to each filename read from"
+msgstr "Applique le pipeline à chaque fichier dont le nom est lu sur"
+
+#: script.sh
+msgid "Extract original content without SEALGOOD tags"
+msgstr "Extrait le contenu original sans les balises SEALGOOD"
+
+#: script.sh
+msgid "Inject SealGood payload into PDF, HTML or PEM file"
+msgstr "Injecte le payload SealGood dans un fichier PDF, HTML ou PEM"
+
+#: script.sh
+msgid "Timestamp a document via trusted third party (TSA)"
+msgstr "Horodate un document via un tiers de confiance (TSA)"
+
+#: script.sh
+msgid "Sign a document with your private key"
+msgstr "Signe un document avec votre clé privée"
+
+#: script.sh
+msgid "Verify document signature and timestamp"
+msgstr "Vérifie la signature et l'horodatage d'un document"
+
+#: script.sh
+msgid "Commands compose into an implicitly ordered pipeline"
+msgstr "Les commandes se composent en pipeline implicitement ordonné"
+
+#: script.sh
+msgid "reads data from"
+msgstr "lit les données sur"
+
+#: ../sealgood:74 ../sealgood:82
+msgid "comments progress on"
+msgstr "commente la progression sur"
+
+#: script.sh
+msgid "writes data to"
+msgstr "écrit les données sur"
+
+#: sealgood:80
+msgid "reads filenames from"
+msgstr "lit les noms de fichiers sur"
+
+#: sealgood:81
+msgid "sends each file through pipeline"
+msgstr "envoie chaque fichier au pipeline"
+
+#: sealgood:83
+msgid "outputs a tar+gzip archive to"
+msgstr "écrit une archive tar+gzip sur"
+
+#: sealgood:84
+msgid "introduces a hash into each signed or timestamped filename"
+msgstr "introduit un hash dans chaque nom de fichier signé ou horodaté"
+
+#: sealgood:85
+msgid "respects existing SealGood payload"
+msgstr "respecte le payload SealGood déjà présent"
+
+#: script.sh
+msgid "implicitly perform"
+msgstr "opèrent implicitement"
+
+#: script.sh
+msgid "respect existing signature/timestamp"
+msgstr "respectent une signature/horodatage déjà présente"
+
+#: script.sh
+msgid "asks private key passphrase only once"
+msgstr "ne demande qu'une fois la passphrase de la clé privée"
+
+#: sealgood:90
+msgid "Examples"
+msgstr "Exemples"
+
+#: script.sh
+msgid "Files used"
+msgstr "Fichiers utilisés"
+
+#: script.sh
+msgid "signer private keys"
+msgstr "clés privées signataires"
+
+#: script.sh
+msgid "associated public keys"
+msgstr "clés publiques associées"
+
+#: script.sh
+msgid "signer identity declaration"
+msgstr "déclaration d'identité du signataire"
+
+#: script.sh
+msgid "TSA root certificate"
+msgstr "certificat racine TSA"
+
+#: sealgood:106
+msgid "See also"
+msgstr "Voir aussi"
+
+#: sealgood:128 ../sealgood:135
+msgid "%s already exists and has non-zero size"
+msgstr "%s existe déjà et a une taille non nulle"
+
+#: sealgood:130
+msgid "This key will be used to sign documents, please enter signer name"
+msgstr "Cette clé servira à signer des documents, mentionnez le nom du signataire"
+
+#: ../sealgood:143
+msgid ""
+"You can (should) publish %s on a trusted public repository and mention its "
+"URL in %s"
+msgstr "Vous pouvez (devez) diffuser %s sur un référentiel public de confiance, et mentionner son URL dans %s"
+
+#: sealgood:144
+msgid ""
+"This way your document signatures will be non-repudiable and therefore "
+"accepted"
+msgstr "Ainsi vos signatures de document seront non répudiables, donc acceptées"
+
+#: ../sealgood:169
+msgid "Private key password"
+msgstr "Mot de passe de la clé privée"
+
+#: sealgood:210
+msgid "Hash in old filename %s doesn't match document hash"
+msgstr "Le hash de l'ancien nom %s ne correspond pas au hash du document"
+
+#: script.sh
+msgid "is not readable"
+msgstr "n'est pas lisible"
+
+#: script.sh
+msgid "Verification summary"
+msgstr "Résumé des vérifications"
+
+#: script.sh
+msgid "End of verifications"
+msgstr "Fin des vérifications"
+
+#: sealgood:291 ../sealgood:839 ../sealgood:841
+msgid "Public key"
+msgstr "Clé publique"
+
+#: script.sh
+msgid "I don't know how to inject into"
+msgstr "Je ne sais pas injecter dans le"
+
+#: sealgood:322 ../sealgood:329
+msgid "Already timestamped"
+msgstr "Déjà horodaté"
+
+#: sealgood:356 ../sealgood:366
+msgid "%s is not encrypted"
+msgstr "%s non chiffrée"
+
+#: script.sh
+msgid "Already signed"
+msgstr "Déjà signé"
+
+#: script.sh
+msgid "Extracting verification elements"
+msgstr "Extraction des éléments de vérification"
+
+#: script.sh
+msgid "Original content extracted"
+msgstr "Contenu original extrait"
+
+#: script.sh
+msgid "Signature not found in document"
+msgstr "Signature introuvable dans le document"
+
+#: script.sh
+msgid "Signature extracted and decoded"
+msgstr "Signature extraite et décodée"
+
+#: script.sh
+msgid "Public key not found in document"
+msgstr "Clé publique introuvable dans le document"
+
+#: script.sh
+msgid "Public key extracted"
+msgstr "Clé publique extraite"
+
+#: script.sh
+msgid "TSR not found in document"
+msgstr "TSR introuvable dans le document"
+
+#: script.sh
+msgid "TSR extracted and decoded"
+msgstr "TSR extrait et décodé"
+
+#: script.sh
+msgid "TSA certificate not found - Downloading from"
+msgstr "Certificat TSA introuvable - Téléchargement depuis"
+
+#: script.sh
+msgid "Failed to download TSA certificate"
+msgstr "Échec du téléchargement du certificat TSA"
+
+#: script.sh
+msgid "TSA certificate extracted"
+msgstr "Certificat TSA extrait"
+
+#: script.sh
+msgid "Verifying digital signature"
+msgstr "Vérification de la signature numérique"
+
+#: sealgood:458
+msgid "Signature successfully verified"
+msgstr "Signature vérifiée avec succès"
+
+#: script.sh
+msgid "Signature verification failed"
+msgstr "Échec de la vérification de la signature"
+
+#: script.sh
+msgid "Verifying TSA timestamp"
+msgstr "Vérification de l'horodatage TSA"
+
+#: script.sh
+msgid "Timestamp successfully verified"
+msgstr "Horodatage vérifié avec succès"
+
+#: script.sh
+msgid "Timestamp verification failed"
+msgstr "Échec de la vérification de l'horodatage"
+
+#: script.sh
+msgid "Timestamp details"
+msgstr "Détails de l'horodatage"
+
+#: script.sh
+msgid "Signature status"
+msgstr "Statut de la signature"
+
+#: script.sh
+msgid "VALID"
+msgstr "VALIDE"
+
+#: script.sh
+msgid "INVALID"
+msgstr "INVALIDE"
+
+#: script.sh
+msgid "MISSING"
+msgstr "ABSENT"
+
+#: script.sh
+msgid "Timestamp status"
+msgstr "Statut de l'horodatage"
+
+#: script.sh
+msgid "Document"
+msgstr "Le document"
+
+#: script.sh
+msgid "is signed, timestamped and intact"
+msgstr "est signé, horodaté et intact"
+
+#: script.sh
+msgid "is signed and intact"
+msgstr "est signé et intact"
+
+#: script.sh
+msgid "is timestamped and intact"
+msgstr "est horodaté et intact"
+
+#: script.sh
+msgid "is neither signed nor timestamped"
+msgstr "n'est pas signé ni horodaté"
+
+#: script.sh
+msgid "has been altered"
+msgstr "a été altéré"
+
+#: script.sh
+msgid "Remaining arguments \"%s\" could not be processed"
+msgstr "Les arguments restants \"%s\" n'ont pas pu être traités"
+
+#: script.sh
+msgid "The 100% DIY Document Authenticator"
+msgstr "L'authentificateur de documents 100% DIY"
+
+#: sealgood:572
+msgid ""
+"WARNING: As with a physical document, verifying authenticity and\n"
+"signature is harder than signing. The key is to guarantee that the means\n"
+"exist, that they are freely and publicly available, and that they use\n"
+"recognized, documented and standard tools at each step for transparency of\n"
+"proof. Each step can therefore be done manually with this guide. A "
+"lightweight\n"
+"integration is proposed on the site"
+msgstr ""
+"AVERTISSEMENT : Comme pour un document matériel, vérifier"
+"l'authenticité et la signature est plus difficile que de signer. L'essentiel"
+"est de garantir que les moyens existent, qu'ils soient disponibles"
+"gratuitement et publiquement, et qu'ils utilisent à chaque étape des outils"
+"reconnus, documentés et standards, pour la transparence de la preuve. Chaque"
+"étape est donc réalisable à la main à l'aide de ce guide. Une intégration"
+"légère est proposée sur le site"
+
+#: script.sh
+msgid "Verification tools"
+msgstr "Outils de vérification"
+
+#: script.sh
+msgid "POSIX standard"
+msgstr "standard POSIX"
+
+#: script.sh
+msgid "non-POSIX but recognized standard"
+msgstr "non POSIX mais standard reconnu"
+
+#: script.sh
+msgid "The signed document has the following properties"
+msgstr "Le document signé a les propriétés suivantes"
+
+#: script.sh
+msgid "Signer declaration"
+msgstr "Déclaration de signataire"
+
+#: sealgood:588
+msgid "Signer ed25519 public key"
+msgstr "Clé publique ed25519 du signataire"
+
+#: sealgood:590
+msgid ""
+"WARNING! The readable signer declaration here could have been forged.\n"
+"What makes it valid is the trusted third party associated with this key\n"
+"(website, personal exchange, blockchain, public key sealed and published on "
+"an\n"
+"irrefutable address by the signer)"
+msgstr ""
+"ATTENTION ! La déclaration de signataire lisible ici pourrait avoir"
+"été forgée. Ce qui fait foi est le tiers de confiance associé à cette clé"
+"(site web, échange personnel, blockchain, clé publique scellée et publiée sur"
+"une adresse irrépudiable par le signataire)"
+
+#: sealgood:595
+msgid ""
+"The signature and timestamp remain valid as long as the content outside\n"
+"the BEGIN SEALGOOD and END SEALGOOD tags is not altered"
+msgstr "La signature et l'horodatage restent valides tant que le contenu hors"
+"des balises BEGIN SEALGOOD et END SEALGOOD n'est pas altéré"
+
+#: sealgood:598
+msgid ""
+"If verification element 4 is not a PLACEHOLDER but a base64 signature\n"
+"code, the signer's identity can be proven"
+msgstr "Si l'élément de vérification 4 n'est pas un PLACEHOLDER mais un code"
+"de signature en base64, l'identité du signataire peut être prouvée"
+
+#: sealgood:601
+msgid "Key presentation URL, presented by the signer as trusted, so that they"
+"cannot repudiate this signature"
+msgstr "URL de présentation de la clé, présentée par le signataire comme de"
+"confiance, afin que celui-ci ne fasse pas opposition à cette signature (non répudiation)"
+
+#: sealgood:605 sealgood:612 sealgood:615 sealgood:629 sealgood:640
+#: sealgood:646
+msgid "Verification element"
+msgstr "Élément de vérification"
+
+#: sealgood:605
+msgid "Signer's ed25519 public key"
+msgstr "Clé publique ed25519 du signataire"
+
+#: script.sh
+msgid "COPY the three lines below and PASTE into file /tmp/%s"
+msgstr "COPIER trois lignes ci-dessous et COLLER dans le fichier /tmp/%s"
+
+#: script.sh
+msgid "or download %s to /tmp/%s"
+msgstr "ou télécharger %s vers /tmp/%s"
+
+#: sealgood:612 sealgood:613 sealgood:647
+msgid "Unsigned file without payload"
+msgstr "Fichier non signé sans payload"
+
+#: sealgood:613 sealgood:647
+msgid "just before signing"
+msgstr "juste avant la signature"
+
+#: script.sh
+msgid "Signature of the original file hash"
+msgstr "Signature du hash original du fichier"
+
+#: sealgood:616 sealgood:641
+msgid "COPY the line below and PASTE into file"
+msgstr "COPIER la ligne ci-dessous et COLLER dans le fichier"
+
+#: sealgood:620 sealgood:649
+msgid "Final verification"
+msgstr "Vérification finale"
+
+#: sealgood:620
+msgid "Current file hash and validation of match using public key"
+msgstr "Hash du fichier actuel et validation de la correspondance à l'aide de la clé publique"
+
+#: script.sh
+msgid "Links the file hash to the private key owner's trust chain"
+msgstr "Lie le hash du fichier à la chaîne de confiance du possesseur de la"
+"clé privée"
+
+#: script.sh
+msgid "verify signature"
+msgstr "vérifier la signature"
+
+#: sealgood:627
+msgid ""
+"If verification element 2 is not a PLACEHOLDER but a base64 code, the "
+"signing date can be proven"
+msgstr "Si l'élément de vérification 2 n'est pas un PLACEHOLDER mais un code"
+"en base64, la date de signature peut être prouvée"
+
+#: script.sh
+msgid "TSA authority root certificate"
+msgstr "Certificat racine de l'autorité TSA"
+
+#: sealgood:630
+msgid "COPY the three lines below and PASTE into file"
+msgstr ""
+
+#: sealgood:631
+msgid "or download %s to %s"
+msgstr ""
+
+#: sealgood:638
+msgid "show certificate details"
+msgstr ""
+
+#: script.sh
+msgid "Base64 encoding of TSA-validated tsr"
+msgstr "Encodage 64 du tsr validé par la TSA"
+
+#: script.sh
+msgid "show timestamp details"
+msgstr "montrer les détails de l'horodatage"
+
+#: sealgood:646
+msgid "Untimestamped file without payload"
+msgstr "Fichier non horodaté sans payload"
+
+#: sealgood:646
+msgid "just before timestamping"
+msgstr "juste avant l'horodatage"
+
+#: sealgood:649
+msgid ""
+"Current file hash and validation of match using tsr and certificate chain"
+msgstr "Hash du fichier actuel et validation de la correspondance à l'aide du"
+"tsr et de la chaîne de certificats"
+
+#: script.sh
+msgid "Links the file hash to the tsr date in the TSA trust chain"
+msgstr "Lie le hash du fichier à la date du tsr dans la chaîne de confiance de"
+"la TSA"
+
+#: script.sh
+msgid "verify timestamp"
+msgstr "vérifier l'horodatage"
+
+#: script.sh
+msgid "Keep temporary directory for inspection"
+msgstr "Voulez-vous conserver le répertoire temporaire pour contrôle"
+
+#: script.sh
+msgid "is kept"
+msgstr "est conservé"
+
+#: script.sh
+msgid "Key+certificate container"
+msgstr "Conteneur de clé+certificat"
+
+#: script.sh
+msgid "Certificate"
+msgstr "Certificat"
+
+#: script.sh
+msgid "Private key"
+msgstr "Clé privée"
+
+#: script.sh
+msgid "Certificate signing request"
+msgstr "Demande de signature de certificat"
+
+#: script.sh
+msgid "UNENCRYPTED private key"
+msgstr "Clé privée NON chiffrée"
+
+#: script.sh
+msgid "ENCRYPTED private key"
+msgstr "Clé privée chiffrée"
+
+#: script.sh
+msgid "DEM file (GDAL format)"
+msgstr "Fichier DEM (format GDAL)"
+
+#: script.sh
+msgid "ERROR"
+msgstr "ERREUR"
+
+#: sealgood:898
+msgid "Missing command"
+msgstr "Commande manquante"
