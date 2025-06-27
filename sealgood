@@ -16,14 +16,14 @@
 ################################################################
 main() {
   if (( $# ));then
-    local args="$@"
+    local args="$*"
     args="${args//date/inject date}"
     args="${args//sign/inject sign}"
     help "$args" # suite du pipe
   else
     local filetype="$(lookup main)"
     if [[ $filetype =~ pdf ]];then
-      read -p "$myname { clean inject date sign verify } ? " </dev/tty
+      read -r -p "$myname { clean inject date sign verify } ? " </dev/tty
       [ -n "$REPLY" ] &&
         local args="$REPLY" &&
         args="${args//date/inject date}" &&
@@ -47,7 +47,7 @@ help() {
 
     # pas d'entrée ni de pipe suivant
     exec </dev/null
-    dead $args >/dev/null
+    dead "$args" >/dev/null
 
     cat <<EOF >&2
 $(echo -e "\033[1;36mSealGood - Signature et horodatage de documents via OpenSSL + TSA\033[0m")
@@ -120,14 +120,14 @@ genkey() {
 
     # pas d'entrée ni de pipe suivant
     exec </dev/null
-    dead $args >/dev/null
+    dead "$args" >/dev/null
 
     [ -s "$PRIVATE_KEY" ] && die 4 "$PRIVATE_KEY existe déjà et a une taille non nulle"
 
     read -p"Cette clé servira à signer des documents, mentionnez le nom du signataire : " SIGNATAIRE
 
-    PRIVATE_KEY=$HOME/.ssh/ed25519_private_${SIGNATAIRE// /_}.pem
-    PUBLIC_KEY=$HOME/.ssh/ed25519_public_${SIGNATAIRE// /_}.pem
+    PRIVATE_KEY="$HOME"/.ssh/ed25519_private_${SIGNATAIRE// /_}.pem
+    PUBLIC_KEY="$HOME"/.ssh/ed25519_public_${SIGNATAIRE// /_}.pem
 
     [ -s $PRIVATE_KEY ] && die 4 "$PRIVATE_KEY existe déjà et a une taille non nulle"
 
@@ -143,7 +143,8 @@ $HOME/.ssh/ed25519_public_${SIGNATAIRE// /_}.url
 Ainsi vos signatures de document seront non répudiables, donc acceptées.
 END
   else
-    list2tgz $args # fonction suivante
+    umask go=      # fichiers temporaires privés
+    list2tgz "$args" # suite du pipe s'occupe des data
   fi
 }
 
@@ -161,10 +162,10 @@ list2tgz() {
     #####################
     if strip sign "$args" >/dev/null;then
       coproc passrelay {
-        read # attend le ask sur &$fdpassask
+        read -r # attend le ask sur &"$fdpassask"
         cat >/dev/null & # puis vide
         if [ "$REPLY" = ask ] ; then 
-          read -s -p "Mot de passe de la clé privée : " PASS </dev/tty
+          read -r -s -p "Mot de passe de la clé privée : " PASS </dev/tty
           echo >&2
           while :; do echo "$PASS"; done
         fi
@@ -188,10 +189,10 @@ list2tgz() {
 file2tgz(){
   tar --remove-files -zcf - -T <(
     export fdverifyout
-    while read FILE; do
+    while read -r FILE; do
       ((FNR++))
       export FNR
-      if ((cd "$INITIAL_DIR" && cat < "$FILE") > input.list2tgz) 2>/dev/null ;then
+      if (cd "$INITIAL_DIR" && cat < "$FILE") > input.list2tgz 2>/dev/null ;then
         # Nommage en sortie, pattern _sealgood:<sha256sum:8>
         export OUTFILE="$(basename "$FILE")"
         local filetype="$(lookup < input.list2tgz)"
@@ -207,7 +208,7 @@ file2tgz(){
           if [[ "$FILE" =~ _sealgood:[a-zA-Z0-9]+(\..*)?$ ]] && [[ ! "$FILE" =~ _sealgood:$hash(\..*)?$ ]]; then
             alert="Le hash de l'ancien nom $(basename "$FILE") ne correspond pas au hash du document"
             alert "$alert"
-            alert "$FNR: $alert" 2>&$fdverifyout
+            alert "$FNR: $alert" 2>&"$fdverifyout"
           fi
         fi
         # Exécution du pipe
@@ -216,9 +217,9 @@ file2tgz(){
         # décision d'ajouter le fichier en sortie
         local newfiletype="$(lookup < "$OUTFILE")"
         if ( #set -x
-          [     -s "$OUTFILE"               ] &&  # le fichier n'est pas vide
-            ( [[ $filetype != $newfiletype ]] ||  # le status sealgood change
-              [[ $newfiletype =~ sealgood  ]] ))  # le nouveau status est ou reste sealgood
+          [        -s "$OUTFILE"            ] &&  # le fichier n'est pas vide
+            { [[ $filetype != $newfiletype ]] ||  # le status sealgood change
+              [[ $newfiletype =~ sealgood  ]];})  # le nouveau status est ou reste sealgood
         then
           echo "$OUTFILE" # pris en charge par --remove-files
         else
@@ -253,7 +254,7 @@ clean() {
     if [[ $filetype =~ sealgood ]];then
       if [[ $filetype =~ gzip ]];then
         local count=$(gzip -cd lookup.clean | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
-        head -c$count
+        head -c "$count"
       else 
         awk '/^(<!-- )?### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}'
       fi
@@ -313,7 +314,7 @@ date() {
       if [[ $filetype =~ gzip ]];then
         if zgrep -aq "^PLACEHOLDER.*HORODATÉ" lookup.date; then
           local count=$(gzip -cd lookup.date | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
-          head -c$count
+          head -c "$count"
           gzip -cd | sed "s|^PLACEHOLDER.*HORODATÉ|$(<lookup.date timestamp | base64 -w 0)|" | gzip -nc
         else
           cat
@@ -353,7 +354,7 @@ sign() {
         if zgrep -aq "^PLACEHOLDER.*SIGNÉ" lookup.sign; then
           grep -q 'empty password' <( openssl pkey -in "$PRIVATE_KEY" -noout -passin pass: </dev/null 2>&1) || die 4 "$PRIVATE_KEY non chiffrée"
           local count=$(gzip -cd lookup.sign | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
-          head -c$count
+          head -c "$count"
           gzip -cd | sed "s|^PLACEHOLDER.*SIGNÉ|$(<lookup.sign signraw | base64 -w 0)|" | gzip -nc
         else
           cat
@@ -397,7 +398,7 @@ verify() {
       # 1. Extraction du contenu original
       if [[ $filetype =~ gzip ]]; then
         local count=$(gzip -cd lookup.verify | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
-        head -c$count
+        head -c "$count"
         zcat >payload
       else
         tee >(awk '/^(<!-- )?### BEGIN SEALGOOD /{state=1}state{print}/^### END SEALGOOD /{state=0}' >payload) | clean clean
@@ -407,83 +408,83 @@ verify() {
       # 2. Extraction de la signature
       SIGNATURE=$( awk '/Élément de vérification 4 : signature du hash/,/base64/' payload | grep -vE '^#|base64|PLACEHOLDER' | tr -d ' \n')
       if [ -z "$SIGNATURE" ]; then
-          warning "Signature introuvable dans le document"
+        warning "Signature introuvable dans le document"
       else
-          echo "$SIGNATURE" | base64 -d > signature.bin
-          success "Signature extraite et décodée"
-          # 3. Extraction de la clé publique
-          PUBLIC_KEY=$(awk '/-----BEGIN PUBLIC KEY-----/,/-----END PUBLIC KEY-----/' payload | head -n 3)
-          if [ -z "$PUBLIC_KEY" ]; then
-              warning "Clé publique introuvable dans le document"
-          else
-              echo "$PUBLIC_KEY" > public_key.pem
-              success "Clé publique extraite"
-          fi
+        echo "$SIGNATURE" | base64 -d > signature.bin
+        success "Signature extraite et décodée"
+        # 3. Extraction de la clé publique
+        PUBLIC_KEY=$(awk '/-----BEGIN PUBLIC KEY-----/,/-----END PUBLIC KEY-----/' payload | head -n 3)
+        if [ -z "$PUBLIC_KEY" ]; then
+          warning "Clé publique introuvable dans le document"
+        else
+          echo "$PUBLIC_KEY" > public_key.pem
+          success "Clé publique extraite"
+        fi
       fi
 
       # 4. Extraction du TSR
       TSR=$(awk '/Élément de vérification 2 : encodage 64 du tsr/,/base64/' payload | grep -vE '^#|base64|PLACEHOLDER' | tr -d ' \n')
       if [ -z "$TSR" ]; then
-          warning "TSR introuvable dans le document"
+        warning "TSR introuvable dans le document"
       else
-          echo "$TSR" | base64 -d > tsr.bin
-          success "TSR extrait et décodé"
+        echo "$TSR" | base64 -d > tsr.bin
+        success "TSR extrait et décodé"
 
-          # 5. Extraction du certificat TSA
-          TSA_CERT=$(awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/' payload)
-          if [ -z "$TSA_CERT" ]; then
-              warning "Certificat TSA introuvable - Téléchargement depuis freetsa.org"
-              curl -s https://freetsa.org/files/cacert.pem -o tsa_cert.pem || warning "Échec du téléchargement du certificat TSA"
-          else
-              echo "$TSA_CERT" > tsa_cert.pem
-              success "Certificat TSA extrait"
-          fi
+        # 5. Extraction du certificat TSA
+        TSA_CERT=$(awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/' payload)
+        if [ -z "$TSA_CERT" ]; then
+          warning "Certificat TSA introuvable - Téléchargement depuis freetsa.org"
+          curl -s https://freetsa.org/files/cacert.pem -o tsa_cert.pem || warning "Échec du téléchargement du certificat TSA"
+        else
+          echo "$TSA_CERT" > tsa_cert.pem
+          success "Certificat TSA extrait"
+        fi
       fi
 
-      if [ -s tsa_cert.pem -o -s public_key.pem ]; then 
+      if [ -s tsa_cert.pem ] || [ -s public_key.pem ]; then 
 
-          # Vérification de la signature
-          if [ -s public_key.pem -a -s signature.bin -a -s original_data ]; then
-              step "Vérification de la signature numérique"
-              (
-                set -x
-                openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in original_data -rawin &> sig_result ||
-                openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in <(openssl dgst -sha256 -binary original_data) &> sig_result
-              )
-              SIG_VERIFY=$?
+        # Vérification de la signature
+        if [ -s public_key.pem ] && [ -s signature.bin ] && [ -s original_data ]; then
+          step "Vérification de la signature numérique"
+          (
+            set -x
+            openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in original_data -rawin &> sig_result ||
+            openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in <(openssl dgst -sha256 -binary original_data) &> sig_result
+          )
+          SIG_VERIFY=$?
 
-              if (( SIG_VERIFY  == 0 )); then
-                  success "Signature vérifiée avec succès"
-                  SIGNATURE_VALID=true
-              else
-                  alert "Échec de la vérification de la signature"
-                  cat sig_result >&2
-                  SIGNATURE_VALID=false
-              fi
+          if (( SIG_VERIFY  == 0 )); then
+            success "Signature vérifiée avec succès"
+            SIGNATURE_VALID=true
+          else
+            alert "Échec de la vérification de la signature"
+            cat sig_result >&2
+            SIGNATURE_VALID=false
           fi
+        fi
 
-          # Vérification de l'horodatage
-          if [ -s tsr.bin -a -s tsa_cert.pem -a -s original_data ] ; then
-              step "Vérification de l'horodatage TSA"
-              (
-                set -x
-                openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data original_data &> ts_result
-              )
-              DATE_VERIFY=$?
+        # Vérification de l'horodatage
+        if [ -s tsr.bin ] && [ -s tsa_cert.pem ] && [ -s original_data ] ; then
+          step "Vérification de l'horodatage TSA"
+          (
+            set -x
+            openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data original_data &> ts_result
+          )
+          DATE_VERIFY=$?
 
-              if (( DATE_VERIFY == 0 )); then
-                  success "Horodatage vérifié avec succès"
-                  TIMESTAMP_VALID=true
-              else
-                  alert "Échec de la vérification de l'horodatage"
-                  cat ts_result >&2
-                  TIMESTAMP_VALID=false
-              fi
-                  
-              # Affichage des détails de l'horodatage
-              echo -e "\nDétails de l'horodatage:" >&2
-              openssl ts -reply -in tsr.bin -text | grep -A2 "Time stamp:" >&2
+          if (( DATE_VERIFY == 0 )); then
+            success "Horodatage vérifié avec succès"
+            TIMESTAMP_VALID=true
+          else
+            alert "Échec de la vérification de l'horodatage"
+            cat ts_result >&2
+            TIMESTAMP_VALID=false
           fi
+              
+          # Affichage des détails de l'horodatage
+          echo -e "\nDétails de l'horodatage:" >&2
+          openssl ts -reply -in tsr.bin -text | grep -A2 "Time stamp:" >&2
+        fi
       fi
 
       # Résumé final
@@ -498,22 +499,22 @@ verify() {
       # ni signé ni horodaté 
       # altéré
       if   [ "$SIGNATURE_VALID" = true ] && [ "$TIMESTAMP_VALID" = true ]; then
-          success "Le document est signé, horodaté et intact"
-          ((fdverifyout)) && success "$FNR: $OUTFILE est signé, horodaté et intact" 2>&$fdverifyout
+        success "Le document est signé, horodaté et intact"
+        ((fdverifyout)) && success "$FNR: $OUTFILE est signé, horodaté et intact" 2>&"$fdverifyout"
       elif [ "$SIGNATURE_VALID" = true ] && [ "$TIMESTAMP_VALID" = "" ]; then
-          success "Le document est signé et intact"
-          ((fdverifyout)) && success "$FNR: $OUTFILE est signé et intact" 2>&$fdverifyout
+        success "Le document est signé et intact"
+        ((fdverifyout)) && success "$FNR: $OUTFILE est signé et intact" 2>&"$fdverifyout"
       elif [ "$SIGNATURE_VALID" = ""   ] && [ "$TIMESTAMP_VALID" = true ]; then
-          success "Le document est horodaté et intact"
-          ((fdverifyout)) && success "$FNR: $OUTFILE est horodaté et intact" 2>&$fdverifyout
+        success "Le document est horodaté et intact"
+        ((fdverifyout)) && success "$FNR: $OUTFILE est horodaté et intact" 2>&"$fdverifyout"
       elif [ "$SIGNATURE_VALID" = ""   ] && [ "$TIMESTAMP_VALID" = "" ]; then
-          warning "Le document n'est pas signé ni horodaté"
-          ((fdverifyout)) && success "$FNR: $OUTFILE n'est pas signé ni horodatée" 2>&$fdverifyout
+        warning "Le document n'est pas signé ni horodaté"
+        ((fdverifyout)) && success "$FNR: $OUTFILE n'est pas signé ni horodatée" 2>&"$fdverifyout"
       else
-          alert "Le document a été altéré"
-          ((fdverifyout)) && alert "$FNR: $OUTFILE a été altéré" 2>&$fdverifyout
+        alert "Le document a été altéré"
+        ((fdverifyout)) && alert "$FNR: $OUTFILE a été altéré" 2>&"$fdverifyout"
       fi
-      cat lookup.verify | tee >(echo "verify output: $(lookup)" >&2)
+      < lookup.verify tee >(echo "verify output: $(lookup)" >&2)
     fi
   else
     cat
@@ -537,15 +538,15 @@ dead(){
 # >$?   : présence mot                  #
 #########################################
 strip() {
-    local word="$1"
-    local input="${*:2}"  # Get all arguments after the first one
-    if [[ "$input" =~ (^|[[:space:]])"$word"($|[[:space:]]) ]]; then
-        echo -n "${input//$word/}"
-        return 0
-    else
-        echo -n "$input"
-        return 1
-    fi
+  local word="$1"
+  local input="${*:2}"  # Get all arguments after the first one
+  if [[ "$input" =~ (^|[[:space:]])"$word"($|[[:space:]]) ]]; then
+    echo -n "${input//$word/}"
+    return 0
+  else
+    echo -n "$input"
+    return 1
+  fi
 }
 
 #############################################################################
@@ -581,7 +582,7 @@ Le document signé a les propriétés suivantes :
 file -bi : $(<original_data lookup)
 wc       : $(<original_data wc -)
 
-Déclaration de signataire : $(cut -d' ' -f3- < $HOME/.ssh/id_rsa.pub)
+Déclaration de signataire : $(cut -d' ' -f3- < "$HOME"/.ssh/id_rsa.pub)
 Clé publique ed25519 du signataire : $REPOS_KEY
 
 ATTENTION !  La déclaration de signataire lisible ici pourrait avoir été forgée.
@@ -671,8 +672,8 @@ timestamp() {
 signraw() {
   clean clean >original_data
   if ((fdpassin)); then
-    echo ask >&$fdpassask
-    openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in original_data -passin stdin <&$fdpassin
+    echo ask >&"$fdpassask"
+    openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in original_data -passin stdin <&"$fdpassin"
   else
     openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in original_data
   fi
@@ -687,8 +688,8 @@ signdgst(){
   # Cette signature n'est pas compatible avec le schéma de clé
   clean clean | openssl dgst -sha256 -binary >hash.bin
   if ((fdpassin)); then
-    echo ask >&$fdpassask
-    openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -in hash.bin -passin stdin <&$fdpassin
+    echo ask >&"$fdpassask"
+    openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -in hash.bin -passin stdin <&"$fdpassin"
   else
     openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -in hash.bin
   fi
@@ -746,12 +747,12 @@ inject_gzip() {
 # Désactivé par list2tgz en supprimant les fichiers           #
 ###############################################################
 exit_policy(){
-    [ -s tsr.bin -o -s signature.bin ] &&
-    </dev/tty read -p $'\n\033[1;36m=== Voulez-vous conserver le répertoire temporaire pour contrôle [yN] ? \033[0m' &&
-    [[ $REPLY == y ]] &&
-    warning "$PWD est conservé" &&
-    ls -l >&2 ||
-    rm -rf "$TMPDIR"
+  [ -s tsr.bin ] || [ -s signature.bin ] &&
+  </dev/tty read -r -p $'\n\033[1;36m=== Voulez-vous conserver le répertoire temporaire pour contrôle [yN] ? \033[0m' &&
+  [[ $REPLY == y ]] &&
+  warning "$PWD est conservé" &&
+  ls -l >&2 ||
+  rm -rf "$TMPDIR"
 }
 
 ###########################################
@@ -763,45 +764,45 @@ exit_policy(){
 ###########################################
 lookup() {
   sfx=${1:-$RANDOM}
-  cat >lookup.$sfx
-  local result="$(file -b -i lookup.$sfx)"
+  cat >lookup."$sfx"
+  local result="$(file -b -i lookup."$sfx")"
   if [[ $result =~ application/octet-stream ]];then
-    if grep -aq '^%PDF-' lookup.$sfx && grep -aq '^%%EOF' lookup.$sfx ; then
+    if grep -aq '^%PDF-' lookup."$sfx" && grep -aq '^%%EOF' lookup."$sfx" ; then
       result="${result/octet-stream/pdf+octet-stream}"
     else
-      result="${result/octet-stream/$(check_crypto_file $sfx "$result")+octet-stream}"
+      result="${result/octet-stream/$(check_crypto_file "$sfx" "$result")+octet-stream}"
     fi
   fi
   if [[ $result =~ application/gzip ]];then
-    if zgrep -aq '### BEGIN SEALGOOD' lookup.$sfx;then
+    if zgrep -aq '### BEGIN SEALGOOD' lookup."$sfx";then
       result="${result/gzip/sealgood+gzip}"
     fi
   elif [[ $result =~ text/xml ]];then
-    if grep -aq '^<!-- ### BEGIN SEALGOOD' lookup.$sfx;then
+    if grep -aq '^<!-- ### BEGIN SEALGOOD' lookup."$sfx";then
       result="${result/xml/sealgood+xml}"
     fi
   elif [[ $result =~ text/html ]];then
-    if grep -aq '^<!-- ### BEGIN SEALGOOD' lookup.$sfx;then
+    if grep -aq '^<!-- ### BEGIN SEALGOOD' lookup."$sfx";then
       result="${result/html/sealgood+html}"
     fi
   elif [[ $result =~ application/pdf ]];then
-    if grep -aq '^### BEGIN SEALGOOD' lookup.$sfx;then
+    if grep -aq '^### BEGIN SEALGOOD' lookup."$sfx";then
       result="${result/pdf/sealgood+pdf}"
-    elif pdftotext lookup.$sfx - 2>/dev/null | grep -aq '^### BEGIN SEALGOOD';then
+    elif pdftotext lookup."$sfx" - 2>/dev/null | grep -aq '^### BEGIN SEALGOOD';then
       result="${result/pdf/sealgood-old+pdf}"
     fi
   elif [[ $result =~ text/plain ]];then
-    if grep -aq '^-----BEGIN' lookup.$sfx;then
-      result="${result/plain/$(check_crypto_file $sfx "$result")+plain}"
+    if grep -aq '^-----BEGIN' lookup."$sfx";then
+      result="${result/plain/$(check_crypto_file "$sfx" "$result")+plain}"
     fi
   fi
   if [[ ! $result =~ sealgood ]];then
-    if grep -aq '^(<!-- )?### BEGIN SEALGOOD' lookup.$sfx;then
+    if grep -aq '^(<!-- )?### BEGIN SEALGOOD' lookup."$sfx";then
       result="${result/\//\/sealgood+}"
     fi
   fi
   echo "$result"
-  [ $sfx = "$1" ] || rm -f lookup.$sfx
+  [ "$sfx" = "$1" ] || rm -f lookup."$sfx"
 }
 
 ###########################################
@@ -814,35 +815,35 @@ lookup() {
 check_crypto_file() {
   local result=""
   if [[ $2 =~ octet-stream ]] ; then
-    if (openssl pkcs12 -password pass: -in lookup.$1 -info -noout;(($?==1 || $?==0))) &>/dev/null ; then
+    if (openssl pkcs12 -password pass: -in lookup."$1" -info -noout;(($?==1 || $?==0))) &>/dev/null ; then
       result="[PKCS#12] Conteneur de clé+certificat"
-    elif (openssl x509 -password pass: -in lookup.$1 -noout;(($?==1 || $?==0))) &>/dev/null; then
-      #local algo=$(openssl x509 -password pass: -in lookup.$1 -noout -text | grep "Public Key Algorithm")
+    elif (openssl x509 -password pass: -in lookup."$1" -noout;(($?==1 || $?==0))) &>/dev/null; then
+      #local algo=$(openssl x509 -password pass: -in lookup."$1" -noout -text | grep "Public Key Algorithm")
       result="[X.509] Certificat"
-    elif (openssl pkey -password pass: -in lookup.$1 -noout;(($?==1 || $?==0))) &>/dev/null; then
+    elif (openssl pkey -password pass: -in lookup."$1" -noout;(($?==1 || $?==0))) &>/dev/null; then
       #local algo=$(openssl pkey -in "$file" -noout -text | grep "algorithm")
       result="[PKEY] Clé privée"
-    elif (openssl req -password pass: -in lookup.$1 -noout;(($?==1 || $?==0))) &>/dev/null; then
+    elif (openssl req -password pass: -in lookup."$1" -noout;(($?==1 || $?==0))) &>/dev/null; then
       result="[CSR] Demande de signature de certificat"
     fi
   elif [[ $2 =~ text/plain ]] ; then
-    if grep -q "BEGIN CERTIFICATE REQUEST" lookup.$1; then
+    if grep -q "BEGIN CERTIFICATE REQUEST" lookup."$1"; then
       result="[CSR] Demande de signature de certificat"
-    elif grep -q "BEGIN CERTIFICATE" lookup.$1; then
+    elif grep -q "BEGIN CERTIFICATE" lookup."$1"; then
       result="[PEM] Certificat"
-    elif grep -q "BEGIN OPENSSH PRIVATE KEY" lookup.$1; then
+    elif grep -q "BEGIN OPENSSH PRIVATE KEY" lookup."$1"; then
       result="[OPENSSH] Clé privée"
-    elif grep -q "BEGIN PRIVATE KEY" lookup.$1; then
+    elif grep -q "BEGIN PRIVATE KEY" lookup."$1"; then
       result="[PEM] Clé privée NON chiffrée"
-    elif grep -q "BEGIN ENCRYPTED PRIVATE KEY" lookup.$1; then
+    elif grep -q "BEGIN ENCRYPTED PRIVATE KEY" lookup."$1"; then
       result="[PEM] Clé privée chiffrée"
-    elif grep -q "BEGIN PUBLIC KEY" lookup.$1; then
+    elif grep -q "BEGIN PUBLIC KEY" lookup."$1"; then
       result="[PEM] Clé publique"
-    elif grep -q "BEGIN RSA PUBLIC KEY" lookup.$1; then
+    elif grep -q "BEGIN RSA PUBLIC KEY" lookup."$1"; then
       result="[RSA] Clé publique"
-    elif grep -q "BEGIN RSA PRIVATE KEY" lookup.$1; then
+    elif grep -q "BEGIN RSA PRIVATE KEY" lookup."$1"; then
       result="[RSA] Clé privée"
-    elif gdalinfo lookup.$1 &>/dev/null; then
+    elif gdalinfo lookup."$1" &>/dev/null; then
       result="Fichier DEM (format GDAL)"
     fi
   fi
@@ -853,56 +854,58 @@ check_crypto_file() {
 # Envoi de messages #
 #####################
 die() {
-  rc=$1
+  rc="$1"
   shift
   alert "$(basename "$0") rc=$rc $*"
-  exit $rc
+  exit "$rc"
 }
 alert() {
-    echo -e "\033[1;31mERREUR: $*\033[0m" >&2
+  echo -e "\033[1;31mERREUR: $*\033[0m" >&2
 }
 step() {
-    echo -e "\n\033[1;36m=== $* ===\033[0m" >&2
+  echo -e "\n\033[1;36m=== $* ===\033[0m" >&2
 }
 success() {
-    echo -e "\033[1;32m$*\033[0m" >&2
+  echo -e "\033[1;32m$*\033[0m" >&2
 }
 warning() {
-    echo -e "\033[1;33m$*\033[0m" >&2
+  echo -e "\033[1;33m$*\033[0m" >&2
 }
 
-##########################################################################################
-# Architecture : les fonctions sont modulaires et faites pour s'articuler                #
-# avec des pipe. Un seul répertoire temporaire commun. Pas d'éléments partagés           #
-# entre fonctions, tout passe par le pipe, sauf exception. Chaque fonction               #
-# contrôle la suite de son propre pipe. Chaque fonction commence par un fork             #
-# décidant si elle doit s'exécuter ou être passante, $args est consommée au fil du pipe. #
-# Le pipe complet est :                                                                  #
-#                                                                                        #
-# main | help | getkey | list2tgz | clean | inject | date | signe | verify | dead        #
-#          \      \        \                                                             #
-#            dead   dead     file2tgz | clean | inject | date | signe | verify | dead    #
-##########################################################################################
+###########################################################################################
+# Principes de design :                                                                   #
+# Un seul répertoire temporaire commun.                                                   #
+# N'écrit aucun fichier hors du répertoire temporaire (sauf genkey)                       #
+# Les fonctions principales sont conçues pour se composer en Unix pipe.                   #
+# Pas d'éléments partagés entre fonctions, tout passe par le pipe, sauf exception.        #
+# Chaque fonction contrôle la suite de son propre pipe.                                   #
+# Chaque fonction commence par un fork décidant si elle doit s'exécuter ou être passante. #
+# $args est consommée au fil du pipe.                                                     #
+# L'ordre du pipe complet est :                                                           #
+#                                                                                         #
+# main | help | getkey | list2tgz | clean | inject | date | signe | verify | dead         #
+#          \      \        \                                                              #
+#            dead   dead     file2tgz | clean | inject | date | signe | verify | dead     #
+###########################################################################################
 
 ################################
 # Vérification des dépendances #
 ################################
-for cmd in awk openssl base64; do
-    if ! command -v $cmd &> /dev/null; then
-        alert "Commande manquante: $cmd"
-        exit 1
-    fi
+for cmd in awk openssl base64 curl; do
+  command -v $cmd &> /dev/null ||
+  die 16 "$LINENO: Commande manquante: $cmd"
 done </dev/null
+
 myname="$(basename "$0")"
-export TMPDIR=$(mktemp -d)
+export TMPDIR="$(mktemp -d)"
 trap exit_policy EXIT
-cd $TMPDIR
+cd "$TMPDIR" || die 16 "$LINENO: FATAL"
 INITIAL_DIR="$OLDPWD"
 shopt -s nullglob
-list=($HOME/.ssh/ed25519_private*.pem)
+list=("$HOME"/.ssh/ed25519_private*.pem)
 export PRIVATE_KEY="${list[0]}" # nom local de la clé privée
-list=($HOME/.ssh/ed25519_public*.pem)
+list=("$HOME"/.ssh/ed25519_public*.pem)
 export PUBLIC_KEY="${list[0]}" # nom local de la clé publique
-export REPOS_KEY="$(cat < $HOME/.ssh/ed25519_public*.url)" # nom web de la clé publique
+export REPOS_KEY="$(cat < "$HOME"/.ssh/ed25519_public*.url)" # nom web de la clé publique
 
 main "$@" | cat
