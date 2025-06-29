@@ -1,0 +1,52 @@
+[1;36mSealGood - Firma y sellado temporal de documentos mediante OpenSSL + TSA[0m
+
+Uso: sealgood help genkey { list2tgz clean inject date sign verify }
+
+COMANDOS:
+  genkey         Genera un nuevo par de claves ed25519 protegido por contraseña
+  help           Mostrar esta ayuda
+  list2tgz       Aplicar el pipeline a cada nombre de archivo leído desde stdin
+  clean          Extraer contenido original sin etiquetas SEALGOOD
+  inject         Inyectar payload SealGood en archivos PDF, HTML o PEM
+  date           Sellar temporalmente un documento mediante tercero de confianza (TSA)
+  sign           Firmar un documento con tu clave privada
+  verify         Verificar firma y sello temporal del documento
+
+  Los comandos forman un pipeline ordenado implícitamente:
+
+  clean | inject | date | sign | verify
+    - lee datos desde stdin
+    - comenta progreso en stderr
+    - escribe datos en stdout
+
+       +-- clean | inject | date | sign | verify
+     /
+  list2tgz
+    - lee nombres de archivo desde stdin
+    - envía cada archivo a través del pipeline
+    - comenta progreso en stderr
+    - genera un archivo tar+gzip en stdout
+    - introduce un hash en cada nombre de archivo firmado o sellado temporalmente
+
+  inject respeta el payload SealGood existente;
+  date sign realiza implícitamente inject;
+  date sign respeta firma/sello temporal existente;
+  list2tgz sign solicita frase de contraseña de clave privada solo una vez.
+    
+Ejemplos:
+  sealgood sign date < contract.pdf > contract_sealgood.pdf
+  sealgood verify    < contract_sealgood.pdf
+  sealgood list2tgz sign <<EOD > archive.tgz
+  contract1.pdf
+  contract2.pdf
+  contract3.pdf
+  EOD
+
+Archivos utilizados:
+  $HOME/.ssh/ed25519_private_*.pem  : claves privadas del firmante
+  $HOME/.ssh/ed25519_public_*.pem   : claves públicas asociadas
+  $HOME/.ssh/id_rsa.pub             : declaración de identidad del firmante
+  https://freetsa.org/files/cacert.pem : certificado raíz TSA
+
+Ver también : https://github.com/tibolpol/sealgood
+[1;32mmain output: inode/x-empty; charset=binary[0m

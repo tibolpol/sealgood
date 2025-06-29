@@ -1,0 +1,43 @@
+#!/bin/bash
+
+mydir="$(cd "$(dirname "$0")";pwd)"
+sampdir="$(cd "$mydir/../samples";pwd)"
+PATH="$(cd "$mydir/../../bin";pwd):$PATH"
+TMPDIR=$(mktemp -d)
+exec {fdtty}</dev/null
+export fdtty
+
+# <stdin : input
+# >$TMPDIR/$1 : output
+# <$sampdir/$1 : reference
+# >stdout : diff result
+mydif(){
+  tee $TMPDIR/$1 | diff $sampdir/$1 - || {
+    rc=$?
+    echo "!cp $TMPDIR/$1 $sampdir/$1"
+    return $rc
+  }
+}
+
+mydif test_help_us < <( LANGUAGE=us sealgood help 2>&1) &&
+mydif test_help_es < <( LANGUAGE=es sealgood help 2>&1) &&
+mydif test_help_fr < <( LANGUAGE=fr sealgood help 2>&1) &&
+echo "test_help ok" || echo "test_help KO"
+
+mydif test_inject_fr < <( LANGUAGE=fr sealgood inject < $sampdir/pempub 2>/dev/null) &&
+mydif test_inject_es < <( LANGUAGE=es sealgood inject < $sampdir/pempub 2>/dev/null) &&
+mydif test_inject_us < <( LANGUAGE=us sealgood inject < $sampdir/pempub 2>/dev/null) &&
+echo "test_inject ok" || echo "test_inject KO"
+
+mydif test_clean < <( LANGUAGE=fr sealgood clean < $sampdir/test_inject_fr 2>/dev/null) &&
+mydif test_clean < <( LANGUAGE=es sealgood clean < $sampdir/test_inject_es 2>/dev/null) &&
+mydif test_clean < <( LANGUAGE=us sealgood clean < $sampdir/test_inject_us 2>/dev/null) &&
+mydif test_clean_list < <(( ls $sampdir/test_inject_{fr,es,us} |
+                      LANGUAGE=fr sealgood list2tgz clean | tar -zvxOf-) 2>&1) &&
+echo "test_clean ok" || echo "test_clean KO"
+
+mydif test_date_tgz  < <(( ls $sampdir/test_inject_{fr,es,us} |
+                      LANGUAGE=es sealgood list2tgz date verify |
+                      LANGUAGE=us sealgood date verify |
+                      tar -zvxOf-) 2>&1 | sed 's/Time stamp:.*/Time stamp:/' ) &&
+echo "test_date_tgz ok" || echo "test_date_tgz KO"

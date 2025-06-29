@@ -26,7 +26,7 @@ main() {
   else
     local filetype="$(lookup main)"
     if [[ $filetype =~ pdf ]];then
-      read -r -p "$myname { clean inject date sign verify } ? " </dev/tty
+      read -r -p "$myname { clean inject date sign verify } ? " <&"$fdtty"
       [ -n "$REPLY" ] &&
         local args="$REPLY" &&
         args="${args//date/inject date}" &&
@@ -167,7 +167,7 @@ list2tgz() {
         read -r # attend le ask sur &"$fdpassask"
         cat >/dev/null & # puis vide
         if [ "$REPLY" = ask ] ; then 
-          read -r -s -p "$(_ "Private key password"): " PASS </dev/tty
+          read -r -s -p "$(_ "Private key password"): " PASS <&"$fdtty"
           echo >&2
           while :; do echo "$PASS"; done
         fi
@@ -195,17 +195,22 @@ file2tgz(){
       ((FNR++))
       export FNR
       if (cd "$INITIAL_DIR" && cat < "$FILE") > input.list2tgz 2>/dev/null ;then
-        # Nommage en sortie, pattern _sealgood:<sha256sum:8>
         export OUTFILE="$(basename "$FILE")"
+        # Exécution du pipe
+        clean "$args" <input.list2tgz >"$OUTFILE"
+        # Nommage en sortie, pattern _sealgood:<sha256sum:8>
         local filetype="$(lookup < input.list2tgz)"
-        if [[ $filetype =~ sealgood ]];then
+        local newfiletype="$(lookup < "$OUTFILE")"
+        if [[ $newfiletype =~ sealgood ]];then
           hash=$(clean clean < input.list2tgz | sha256sum | cut -c1-8)
           base="$(echo "${OUTFILE%.*}" | sed -E 's/_sealgood(:[a-zA-Z0-9]+)?$//')"
           if [[ "$base" == "$OUTFILE" ]]; then
-            OUTFILE="${base}_sealgood:${hash}"
+            NEWFILE="${base}_sealgood:${hash}"
           else
-            OUTFILE="${base}_sealgood:${hash}.${OUTFILE##*.}"
+            NEWFILE="${base}_sealgood:${hash}.${OUTFILE##*.}"
           fi
+          mv "$OUTFILE" "$NEWFILE"
+          OUTFILE="$NEWFILE"
           # Vérification de l'ancien nom
           if [[ "$FILE" =~ _sealgood:[a-zA-Z0-9]+(\..*)?$ ]] && [[ ! "$FILE" =~ _sealgood:$hash(\..*)?$ ]]; then
             alert="$(_ "Hash in old filename %s doesn't match document hash" "$(basename "$FILE")")"
@@ -213,22 +218,21 @@ file2tgz(){
             alert "$FNR: $alert" 2>&"$fdverifyout"
           fi
         fi
-        # Exécution du pipe
-        step "list2tgz $FILE -> $OUTFILE"
-        clean "$args" <input.list2tgz >"$OUTFILE"
         # décision d'ajouter le fichier en sortie
-        local newfiletype="$(lookup < "$OUTFILE")"
-        if ( #set -x
+        if (
           [        -s "$OUTFILE"            ] &&  # le fichier n'est pas vide
             { [[ $filetype != $newfiletype ]] ||  # le status sealgood change
               [[ $newfiletype =~ sealgood  ]];})  # le nouveau status est ou reste sealgood
         then
+          step "list2tgz $FILE -> $OUTFILE"
           echo "$OUTFILE" # pris en charge par --remove-files
         else
           rm -f "$OUTFILE"
         fi
+        unset consecutive_errors
       else
-        alert "stdin:$FNR: $FILE $(_ "is not readable")"
+        alert "stdin:$FNR: $(_ "File is not readable: \"%s\"" ${FILE:0:50} )"
+        (( ++consecutive_errors >= 5 )) && die 8 "$LINENO: $(_ "Too many consecutive errors: %d" $consecutive_errors)"
       fi
     done
   ) {fdverifyout}> >(
@@ -314,24 +318,24 @@ date() {
     local filetype="$(lookup date)"
     if [[ $filetype =~ sealgood ]];then
       if [[ $filetype =~ gzip ]];then
-        if zgrep -aq "^PLACEHOLDER_UNTIMESTAMP_FILE" lookup.date; then
+        if zgrep -aq "^PLACEHOLDER_UNTIMESTAMPED_FILE" lookup.date; then
           local count=$(gzip -cd lookup.date | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
           head -c "$count"
-          gzip -cd | sed "s|^PLACEHOLDER_UNTIMESTAMP_FILE|$(<lookup.date timestamp | base64 -w 0)|" | gzip -nc
+          gzip -cd | sed "s|^PLACEHOLDER_UNTIMESTAMPED_FILE|$(<lookup.date timestamp | base64 -w 0)|" | gzip -nc
         else
           cat
           warning "$(_ "Already timestamped")"
         fi
       else
-        if grep -aq "^PLACEHOLDER_UNTIMESTAMP_FILE" lookup.date; then
-          sed "s|^PLACEHOLDER_UNTIMESTAMP_FILE|$(<lookup.date timestamp | base64 -w 0)|"
+        if grep -aq "^PLACEHOLDER_UNTIMESTAMPED_FILE" lookup.date; then
+          sed "s|^PLACEHOLDER_UNTIMESTAMPED_FILE|$(<lookup.date timestamp | base64 -w 0)|"
         else
           cat
           warning "$(_ "Already timestamped")"
         fi
       fi <lookup.date
     else
-      die $LINENO "assert failure"
+      die 8 "$LINENO: assert failure"
     fi | tee >(echo "date output: $(lookup)" >&2)
     rm -f lookup.date
   else
@@ -372,7 +376,7 @@ sign() {
         fi
       fi <lookup.sign
     else
-      die $LINENO "assert failure"
+      die 8 "$LINENO: assert failure"
     fi | tee >(echo "sign output: $(lookup)" >&2)
     rm -f lookup.sign
   else
@@ -408,7 +412,7 @@ verify() {
       success "$(_ "Original content extracted")"
 
       # 2. Extraction de la signature
-      SIGNATURE=$( awk '/Élément de vérification 4 : signature du hash/,/base64/' payload | grep -vE '^#|base64|PLACEHOLDER' | tr -d ' \n')
+      SIGNATURE=$( awk '/\/sig\.64$/,/base64/' payload | grep -vE '^#|base64|PLACEHOLDER' | tr -d ' \n')
       if [ -z "$SIGNATURE" ]; then
         warning "$(_ "Signature not found in document")"
       else
@@ -425,7 +429,7 @@ verify() {
       fi
 
       # 4. Extraction du TSR
-      TSR=$(awk '/Élément de vérification 2 : encodage 64 du tsr/,/base64/' payload | grep -vE '^#|base64|PLACEHOLDER' | tr -d ' \n')
+      TSR=$(awk '/\/tsr\.64$/,/base64/' payload | grep -vE '^#|base64|PLACEHOLDER' | tr -d ' \n')
       if [ -z "$TSR" ]; then
         warning "$(_ "TSR not found in document")"
       else
@@ -567,7 +571,7 @@ get_payload() {
 [ -s original_data ] || cat > original_data
 cat <<EOD
 ### BEGIN SEALGOOD SIGNATURE ###
-SealGood - $(_ "The 100% DIY Document Authenticator")
+SealGood - $(_ "The 100%% DIY Document Authenticator")
 https://github.com/tibolpol/sealgood/
 
 $(_ "WARNING: As with a physical document, verifying authenticity and
@@ -749,7 +753,7 @@ inject_gzip() {
 ###############################################################
 exit_policy(){
   [ -s tsr.bin ] || [ -s signature.bin ] &&
-  </dev/tty read -r -p $'\n\033[1;36m'"=== $(_ "Keep temporary directory for inspection") [yN] ? "$'\033[0m' &&
+  <&"$fdtty" read -r -p $'\n\033[1;36m'"=== $(_ "Keep temporary directory for inspection") [yN] ? "$'\033[0m' &&
   [[ $REPLY == y ]] &&
   warning "$PWD $(_ "is kept")" &&
   ls -l >&2 ||
@@ -873,7 +877,11 @@ warning() {
   echo -e "\033[1;33m$*\033[0m" >&2
 }
 
-_(){ gettext "$@"; }
+_(){
+  key="$1"
+  shift
+  printf "$(gettext "$key")" "$@"
+}
 
 ###########################################################################################
 # Principes de design :                                                                   #
@@ -913,5 +921,7 @@ export PRIVATE_KEY="${list[0]}" # nom local de la clé privée
 list=("$HOME"/.ssh/ed25519_public*.pem)
 export PUBLIC_KEY="${list[0]}" # nom local de la clé publique
 export REPOS_KEY="$(cat < "$HOME"/.ssh/ed25519_public*.url)" # nom web de la clé publique
+(( fdtty )) || exec {fdtty}</dev/tty
+export fdtty
 
 main "$@" | cat

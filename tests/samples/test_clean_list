@@ -1,0 +1,33 @@
+
+[1;36m=== list2tgz /home/tlp/sealgood/tests/samples/test_inject_es -> test_inject_es ===[0m
+
+[1;36m=== list2tgz /home/tlp/sealgood/tests/samples/test_inject_fr -> test_inject_fr ===[0m
+
+[1;36m=== list2tgz /home/tlp/sealgood/tests/samples/test_inject_us -> test_inject_us ===[0m
+
+[1;36m=== Fin des vérifications ===[0m
+[1;32mmain output: application/gzip; charset=binary[0m
+test_inject_es
+-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
+-----END PUBLIC KEY-----
+
+Déclaration de signataire : Thibault LE PAUL | tlp@laposte.net
+Clé publique ed25519 du signataire : https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealdate.pem
+
+test_inject_fr
+-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
+-----END PUBLIC KEY-----
+
+Déclaration de signataire : Thibault LE PAUL | tlp@laposte.net
+Clé publique ed25519 du signataire : https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealdate.pem
+
+test_inject_us
+-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
+-----END PUBLIC KEY-----
+
+Déclaration de signataire : Thibault LE PAUL | tlp@laposte.net
+Clé publique ed25519 du signataire : https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealdate.pem
+

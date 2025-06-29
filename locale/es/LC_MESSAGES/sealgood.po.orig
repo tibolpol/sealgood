@@ -395,9 +395,9 @@ msgstr ""
 "Si el elemento de verificación 4 no es un PLACEHOLDER sino un código\n"
 "de firma base64, la identidad del firmante puede probarse"
 
-#: sealgood:604
-msgid "Key presentation URL, presented by the\n"
-"signer as trusted, so that they cannot repudiate this signature"
+#: sealgood:601
+msgid "Key presentation URL, presented by the signer as trusted, so that they"
+"cannot repudiate this signature"
 msgstr ""
 "URL de presentación de clave, presentada por el firmante como confiable,\n"
 "para que no pueda repudiar esta firma"
@@ -445,7 +445,8 @@ msgstr "Hash actual del archivo y validación de coincidencia usando clave públ
 
 #: sealgood:624
 msgid "Links the file hash to the private key owner's trust chain"
-msgstr "Vincula el hash del archivo a la cadena de confianza del dueño de la clave privada"
+msgstr "Vincula el hash del archivo a la cadena de confianza del dueño de la"
+"clave privada"
 
 #: sealgood:626
 msgid "verify signature"
@@ -459,39 +460,39 @@ msgstr ""
 "Si el elemento de verificación 2 no es un PLACEHOLDER sino un código base64,\n"
 "la fecha de firma puede probarse"
 
-#: sealgood:632
+#: script.sh
 msgid "TSA authority root certificate"
 msgstr "Certificado raíz de autoridad TSA"
 
-#: sealgood:633
+#: sealgood:630
 msgid "COPY the three lines below and PASTE into file"
 msgstr "COPIAR las tres líneas siguientes y PEGAR en el archivo"
 
-#: sealgood:634
+#: sealgood:631
 msgid "or download %s to %s"
 msgstr "o descargar %s a %s"
 
-#: sealgood:641
+#: sealgood:638
 msgid "show certificate details"
 msgstr "mostrar detalles del certificado"
 
-#: sealgood:643
+#: script.sh
 msgid "Base64 encoding of TSA-validated tsr"
 msgstr "Codificación base64 del tsr validado por TSA"
 
-#: sealgood:647
+#: script.sh
 msgid "show timestamp details"
 msgstr "mostrar detalles del sello temporal"
 
-#: sealgood:649
+#: sealgood:646
 msgid "Untimestamped file without payload"
 msgstr "Archivo sin sello temporal y sin payload"
 
-#: sealgood:649
+#: sealgood:646
 msgid "just before timestamping"
 msgstr "justo antes del sellado temporal"
 
-#: sealgood:652
+#: sealgood:649
 msgid ""
 "Current file hash and validation of match using tsr and certificate chain"
 msgstr ""

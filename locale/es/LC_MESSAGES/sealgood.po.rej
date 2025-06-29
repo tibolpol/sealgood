@@ -1,0 +1,64 @@
+--- sealgood.po	2025-06-28 22:01:21.543572189 +0100
++++ sealgood.pot	2025-06-28 21:48:37.160995112 +0100
+@@ -407,49 +386,49 @@
+ msgid "Verification element"
+ msgstr "Elemento de verificación"
+ 
+-#: sealgood:605
++#: sealgood:608
+ msgid "Signer's ed25519 public key"
+ msgstr "Clave pública ed25519 del firmante"
+ 
+-#: script.sh
++#: sealgood:609
+ msgid "COPY the three lines below and PASTE into file /tmp/%s"
+ msgstr "COPIAR las tres líneas siguientes y PEGAR en el archivo /tmp/%s"
+ 
+-#: script.sh
++#: sealgood:610
+ msgid "or download %s to /tmp/%s"
+ msgstr "o descargar %s a /tmp/%s"
+ 
+-#: sealgood:612 sealgood:613 sealgood:647
++#: sealgood:615 sealgood:616 sealgood:650
+ msgid "Unsigned file without payload"
+ msgstr "Archivo no firmado sin payload"
+ 
+-#: sealgood:613 sealgood:647
++#: sealgood:615
+ msgid "just before signing"
+ msgstr "justo antes de firmar"
+ 
+-#: script.sh
++#: sealgood:618
+ msgid "Signature of the original file hash"
+ msgstr "Firma del hash original del archivo"
+ 
+-#: sealgood:616 sealgood:641
++#: sealgood:619 sealgood:644
+ msgid "COPY the line below and PASTE into file"
+ msgstr "COPIAR la línea siguiente y PEGAR en el archivo"
+ 
+-#: sealgood:620 sealgood:649
++#: sealgood:623 sealgood:652
+ msgid "Final verification"
+ msgstr "Verificación final"
+ 
+-#: sealgood:620
++#: sealgood:623
+ msgid "Current file hash and validation of match using public key"
+ msgstr "Hash actual del archivo y validación de coincidencia usando clave pública"
+ 
+-#: script.sh
++#: sealgood:624
+ msgid "Links the file hash to the private key owner's trust chain"
+ msgstr "Vincula el hash del archivo a la cadena de confianza del dueño de la"
+ "clave privada"
+ 
+-#: script.sh
++#: sealgood:626
+ msgid "verify signature"
+ msgstr "verificar firma"
+ 
+-#: sealgood:627
++#: sealgood:630

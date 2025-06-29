@@ -1,0 +1,71 @@
+--- sealgood.po	2025-06-28 19:32:17.941417060 +0100
++++ sealgood.pot	2025-06-28 20:33:37.329822976 +0100
+@@ -498,55 +474,55 @@
+ msgstr ""
+ "Hash actual del archivo y validación de coincidencia usando tsr y cadena de certificados"
+ 
+-#: script.sh
++#: sealgood:653
+ msgid "Links the file hash to the tsr date in the TSA trust chain"
+ msgstr ""
+ "Vincula el hash del archivo a la fecha tsr en la cadena de confianza TSA"
+ 
+-#: script.sh
++#: sealgood:654
+ msgid "verify timestamp"
+ msgstr "verificar sello temporal"
+ 
+-#: script.sh
++#: sealgood:754
+ msgid "Keep temporary directory for inspection"
+ msgstr "¿Mantener directorio temporal para inspección"
+ 
+-#: script.sh
++#: sealgood:756
+ msgid "is kept"
+ msgstr "se mantiene"
+ 
+-#: script.sh
++#: sealgood:822
+ msgid "Key+certificate container"
+ msgstr "Contenedor clave+certificado"
+ 
+-#: script.sh
++#: sealgood:825 sealgood:850
+ msgid "Certificate"
+ msgstr "Certificado"
+ 
+-#: script.sh
++#: sealgood:828 sealgood:836 sealgood:846
+ msgid "Private key"
+ msgstr "Clave privada"
+ 
+-#: script.sh
++#: sealgood:830 sealgood:834
+ msgid "Certificate signing request"
+ msgstr "Solicitud de firma de certificado"
+ 
+-#: script.sh
++#: sealgood:838
+ msgid "UNENCRYPTED private key"
+ msgstr "Clave privada SIN cifrar"
+ 
+-#: script.sh
++#: sealgood:840
+ msgid "ENCRYPTED private key"
+ msgstr "Clave privada CIFRADA"
+ 
+-#: script.sh
++#: sealgood:848
+ msgid "DEM file (GDAL format)"
+ msgstr "Archivo DEM (formato GDAL)"
+ 
+-#: script.sh
++#: sealgood:866
+ msgid "ERROR"
+ msgstr "ERROR"
+ 
+-#: sealgood:898
++#: sealgood:905
+ msgid "Missing command"
+ msgstr "Comando faltante"

@@ -1,0 +1,19 @@
+# synchro script
+!cd ../bin&&xgettext --keyword=_ --from-code=utf-8 -LShell -o $OLDPWD/sealgood.pot sealgood
+
+# mesure les nouveautés
+!diff sealgood.pot fr/LC_MESSAGES/sealgood.po
+!diff --unified=1 es/LC_MESSAGES/sealgood.po sealgood.pot | grep -v '^+[^#+]' | sed 's/^-\([^#][^-]\)/ \1/'
+!diff sealgood.pot es/LC_MESSAGES/sealgood.po
+!diff {es,fr}/LC_MESSAGES/sealgood.po
+!diff --unified=1 {es,fr}/LC_MESSAGES/sealgood.po | grep -v '^+[^#+]' | sed 's/^-\([^#][^-]\)/ \1/'
+
+# compile
+!cd fr/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po
+!cd es/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po
+
+# teste
+!LANGUAGE=es ../bin/sealgood help
+!LANGUAGE=fr ../bin/sealgood help
+  Consignes pour i18n
+
