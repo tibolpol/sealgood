@@ -194,7 +194,7 @@ file2tgz(){
     while read -r FILE; do
       ((FNR++))
       export FNR
-      if (cd "$INITIAL_DIR" && cat < "$FILE") > input.file2tgz 2>/dev/null ;then
+      if (cd "$INITIAL_DIR" && cat < "$STOPFILE$FILE") > input.file2tgz 2>/dev/null ;then
         export OUTFILE="$(basename "$FILE")"
         # Exécution du pipe
         clean "$args" <input.file2tgz >"$OUTFILE"
@@ -845,7 +845,7 @@ check_file_or_url_list() {
 # >$? : 1 si url ou si fichier existe #
 #######################################
 is_file_or_url() {
-  [[ $1 =~ ^https?:// ]] || [ -s "$1" ]
+  [[ $1 =~ ^https?:// ]] || [ -s "$STOPFILE$1" ]
 }
 
 ###########################################
@@ -960,6 +960,7 @@ export TMPDIR="$(mktemp -d)"
 trap exit_policy EXIT
 cd "$TMPDIR" || die 16 "$LINENO: FATAL"
 INITIAL_DIR="$OLDPWD"
+STOPFILE="${STOPFILE:-}"
 shopt -s nullglob
 
 (( fdtty )) || exec {fdtty}</dev/tty
