@@ -24,7 +24,7 @@ Estado del sello temporal: [1;32mVÃLIDO[0m
 [1;32mEl documento tiene sello temporal e intacto[0m
 verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
-[1;36m=== list2tgz /home/tlp/sealgood/tests/integration/../samples/test_inject_es -> test_inject_es_sealgood:e037f239 ===[0m
+[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_es -> test_inject_es_sealgood:e037f239 ===[0m
 inject output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 Using configuration from /usr/lib/ssl/openssl.cnf
 date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
@@ -51,7 +51,7 @@ Estado del sello temporal: [1;32mVÃLIDO[0m
 [1;32mEl documento tiene sello temporal e intacto[0m
 verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
-[1;36m=== list2tgz /home/tlp/sealgood/tests/integration/../samples/test_inject_fr -> test_inject_fr_sealgood:e037f239 ===[0m
+[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_fr -> test_inject_fr_sealgood:e037f239 ===[0m
 inject output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 Using configuration from /usr/lib/ssl/openssl.cnf
 date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
@@ -78,7 +78,7 @@ Estado del sello temporal: [1;32mVÃLIDO[0m
 [1;32mEl documento tiene sello temporal e intacto[0m
 verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
-[1;36m=== list2tgz /home/tlp/sealgood/tests/integration/../samples/test_inject_us -> test_inject_us_sealgood:e037f239 ===[0m
+[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_us -> test_inject_us_sealgood:e037f239 ===[0m
 
 [1;36m=== Fin de verificaciones ===[0m
 [1;32mmain output: application/sealgood+gzip; charset=binary[0m
@@ -108,7 +108,7 @@ Herramientas de verificación:
 - no POSIX pero estándar reconocido: openssl
 
 Servlet gratuita:
-ssh sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
+ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
 
 El documento firmado tiene las siguientes propiedades:
 file -bi : text/[PEM] Clave pública+plain; charset=utf-8
@@ -208,7 +208,7 @@ Outils de vérification:
 - non POSIX mais standard reconnu: openssl
 
 Servlet ouverte:
-ssh sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
+ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
 
 Le document signé a les propriétés suivantes:
 file -bi : text/[PEM] Clé publique+plain; charset=utf-8

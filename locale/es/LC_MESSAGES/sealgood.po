@@ -37,10 +37,6 @@ msgstr "Genera un nuevo par de claves ed25519 protegido por contraseña"
 msgid "Show this help"
 msgstr "Mostrar esta ayuda"
 
-#: sealgood:63
-msgid "Apply pipeline to each filename read from"
-msgstr "Aplicar el pipeline a cada nombre de archivo leído desde"
-
 #: sealgood:64
 msgid "Extract original content without SEALGOOD tags"
 msgstr "Extraer contenido original sin etiquetas SEALGOOD"
@@ -76,6 +72,22 @@ msgstr "comenta progreso en"
 #: sealgood:75
 msgid "writes data to"
 msgstr "escribe datos en"
+
+#: sealgood:75
+msgid "Whenever input is a file list, the list is enumerated"
+msgstr "Cuando la entrada es una lista de archivos, esta se enumera"
+
+#: sealgood:76
+msgid "and each item is streamed to the processing pipeline"
+msgstr "y cada elemento se procesa en el pipeline de transformación"
+
+#: sealgood:77
+msgid "The output is packaged in tar+gzip format with cryptographic"
+msgstr "El resultado se empaqueta en formato tar+gzip con hashes criptográficos"
+
+#: sealgood:78
+msgid "hashes embedded in signed/timestamped filenames"
+msgstr "incrustados en nombres de archivo firmados/marcados temporalmente"
 
 #: sealgood:80
 msgid "reads filenames from"

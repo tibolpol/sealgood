@@ -23,7 +23,7 @@ Herramientas de verificación:
 - no POSIX pero estándar reconocido: openssl
 
 Servlet gratuita:
-ssh sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
+ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
 
 El documento firmado tiene las siguientes propiedades:
 file -bi : text/[PEM] Clave pública+plain; charset=utf-8

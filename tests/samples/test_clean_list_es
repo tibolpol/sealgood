@@ -1,9 +1,9 @@
 
-[1;36m=== list2tgz /home/tlp/sealgood/tests/integration/../samples/test_inject_es -> test_inject_es ===[0m
+[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_es -> test_inject_es ===[0m
 
-[1;36m=== list2tgz /home/tlp/sealgood/tests/integration/../samples/test_inject_fr -> test_inject_fr ===[0m
+[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_fr -> test_inject_fr ===[0m
 
-[1;36m=== list2tgz /home/tlp/sealgood/tests/integration/../samples/test_inject_us -> test_inject_us ===[0m
+[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_us -> test_inject_us ===[0m
 
 [1;36m=== Fin de verificaciones ===[0m
 [1;32mmain output: application/gzip; charset=binary[0m

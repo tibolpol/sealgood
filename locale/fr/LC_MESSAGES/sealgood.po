@@ -37,10 +37,6 @@ msgstr "Génère une nouvelle paire de clés ed25519 protégée par mot de passe
 msgid "Show this help"
 msgstr "Affiche cette aide"
 
-#: sealgood:63
-msgid "Apply pipeline to each filename read from"
-msgstr "Applique le pipeline à chaque fichier dont le nom est lu sur"
-
 #: sealgood:64
 msgid "Extract original content without SEALGOOD tags"
 msgstr "Extrait le contenu original sans les balises SEALGOOD"
@@ -65,17 +61,33 @@ msgstr "Vérifie la signature et l'horodatage d'un document"
 msgid "Commands compose into an implicitly ordered pipeline"
 msgstr "Les commandes se composent en pipeline implicitement ordonné"
 
-#: sealgood:73
+#: sealgood:71
 msgid "reads data from"
 msgstr "lit les données sur"
 
-#: sealgood:74 sealgood:82
+#: sealgood:72
 msgid "comments progress on"
 msgstr "commente la progression sur"
 
-#: sealgood:75
+#: sealgood:73
 msgid "writes data to"
 msgstr "écrit les données sur"
+
+#: sealgood:75
+msgid "Whenever input is a file list, the list is enumerated"
+msgstr "Quand l'entrée est une liste de fichiers, celle-ci est énumérée"
+
+#: sealgood:76
+msgid "and each item is streamed to the processing pipeline"
+msgstr "et chaque élément est traité dans le pipeline de transformation"
+
+#: sealgood:77
+msgid "The output is packaged in tar+gzip format with cryptographic"
+msgstr "Le résultat est archivé au format tar+gzip avec des empreintes"
+
+#: sealgood:78
+msgid "hashes embedded in signed/timestamped filenames"
+msgstr "cryptographiques intégrées aux noms de fichiers signés/horodatés"
 
 #: sealgood:80
 msgid "reads filenames from"
@@ -462,7 +474,7 @@ msgstr "vérifier la signature"
 msgid ""
 "If verification element 2 is not a PLACEHOLDER but a base64 code, the signing\n"
 "date can be proven"
-msgstr "Si l'élément de vérification 2 n'est pas un PLACEHOLDER mais un code en base64,\n" 
+msgstr "Si l'élément de vérification 2 n'est pas un PLACEHOLDER mais un code en base64,\n"
 "la date de signature peut être prouvée"
 
 #: sealgood:632

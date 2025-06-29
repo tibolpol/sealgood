@@ -1,16 +1,15 @@
 [1;36mSealGood - Document signing and timestamping via OpenSSL + TSA[0m
 
-Usage: sealgood help genkey { list2tgz clean inject date sign verify }
+Usage: sealgood help genkey { clean inject date sign verify }
 
 COMMANDS:
-  genkey         Generate a new password-protected ed25519 key pair
-  help           Show this help
-  list2tgz       Apply pipeline to each filename read from stdin
-  clean          Extract original content without SEALGOOD tags
-  inject         Inject SealGood payload into PDF, HTML or PEM file
-  date           Timestamp a document via trusted third party (TSA)
-  sign           Sign a document with your private key
-  verify         Verify document signature and timestamp
+  genkey    Generate a new password-protected ed25519 key pair
+  help      Show this help
+  clean     Extract original content without SEALGOOD tags
+  inject    Inject SealGood payload into PDF, HTML or PEM file
+  date      Timestamp a document via trusted third party (TSA)
+  sign      Sign a document with your private key
+  verify    Verify document signature and timestamp
 
   Commands compose into an implicitly ordered pipeline:
 
@@ -19,28 +18,23 @@ COMMANDS:
     - comments progress on stderr
     - writes data to stdout
 
-       +-- clean | inject | date | sign | verify
-     /
-  list2tgz
-    - reads filenames from stdin
-    - sends each file through pipeline
-    - comments progress on stderr
-    - outputs a tar+gzip archive to stdout
-    - introduces a hash into each signed or timestamped filename
+  Whenever input is a file list, the list is enumerated
+  and each item is streamed to the processing pipeline.
+  The output is packaged in tar+gzip format with cryptographic
+  hashes embedded in signed/timestamped filenames
+  enumerate
+   \
+     +-- clean | inject | date | sign | verify
 
-  inject respects existing SealGood payload;
-  date sign implicitly perform inject;
-  date sign respect existing signature/timestamp;
-  list2tgz sign asks private key passphrase only once.
-    
+  inject          respects existing SealGood payload;
+  date sign       implicitly perform inject;
+  date sign       respect existing signature/timestamp;
+  enumerate sign  asks private key passphrase only once.
+
 Examples:
   sealgood sign date < contract.pdf > contract_sealgood.pdf
   sealgood verify    < contract_sealgood.pdf
-  sealgood list2tgz sign <<EOD > archive.tgz
-  contract1.pdf
-  contract2.pdf
-  contract3.pdf
-  EOD
+  ls contract*.pdf | sealgood sign date > contracts.tgz
 
 Files used:
   $HOME/.ssh/ed25519_private_*.pem  : signer private keys
@@ -49,7 +43,7 @@ Files used:
   https://freetsa.org/files/cacert.pem : TSA root certificate
 
 Free servlet :
-  ssh sealgood@perso.tlp.name {clean inject date verify}
+  ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify}
 
 See also : https://github.com/tibolpol/sealgood
 

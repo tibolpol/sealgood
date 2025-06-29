@@ -1,22 +1,22 @@
 #!/bin/bash
-################################################################
-# Copyright (c) 2025 Thibault Le Paul (@tibolpol)              #
-# Licence MIT - https://opensource.org/license/mit/            #
-#                                                              #
-# <$* : help genkey { list2tgz clean inject date sign verify } #
-# <stdin : data to sign | timestamp                            #
-# <$HOME/.ssh/ed25519_*.pem : Ed25519 keys                     #
-# <$HOME/.ssh/id_rsa.pub : identity clear text                 #
-# >stdout : signed | timestamp data                            #
-# >stderr : errors                                             #
-################################################################
+##########################################################
+# Copyright (c) 2025 Thibault Le Paul (@tibolpol)        #
+# Licence MIT - https://opensource.org/license/mit/      #
+#                                                        #
+# <$*    : help genkey { clean inject date sign verify } #
+# <stdin : data to sign | timestamp                      #
+# <$HOME/.ssh/ed25519_*.pem : Ed25519 keys               #
+# <$HOME/.ssh/id_rsa.pub : identity clear text           #
+# >stdout : signed | timestamp data                      #
+# >stderr : errors                                       #
+##########################################################
 
-################################################################
-# MAIN                                                         #
-# <$* : help genkey { list2tgz clean inject date sign verify } #
-# <stdin  : input.raw                                          #
-# >stdout : output.raw                                         #
-################################################################
+#######################################################
+# MAIN                                                #
+# <$* : help genkey { clean inject date sign verify } #
+# <stdin  : input.raw                                 #
+# >stdout : output.raw                                #
+#######################################################
 main() {
   if (( $# ));then
     local args="$*"
@@ -36,7 +36,7 @@ main() {
       help help # affiche l'aide
     fi
     rm -f lookup.main
-  fi | tee >(success "main output: $(lookup)" >&2)
+  fi | tee >(success "main output: $(lookup)" >&2) | cat
 }
 
 ##################
@@ -47,7 +47,6 @@ help() {
   strip help "$@" > args
   local rargs=$? args="$(cat args)"
   if ((rargs == 0)) ; then
-
     # pas d'entrée ni de pipe suivant
     exec </dev/null
     dead "$args" >/dev/null
@@ -55,17 +54,16 @@ help() {
     cat <<EOF >&2
 $(echo -e "\033[1;36m")SealGood - $(_ "Document signing and timestamping via") OpenSSL + TSA$(echo -e "\033[0m")
 
-$(_ "Usage"): $myname help genkey { list2tgz clean inject date sign verify }
+$(_ "Usage"): $myname help genkey { clean inject date sign verify }
 
 $(_ "COMMANDS"):
-  genkey         $(_ "Generate a new password-protected ed25519 key pair")
-  help           $(_ "Show this help")
-  list2tgz       $(_ "Apply pipeline to each filename read from") stdin
-  clean          $(_ "Extract original content without SEALGOOD tags")
-  inject         $(_ "Inject SealGood payload into PDF, HTML or PEM file")
-  date           $(_ "Timestamp a document via trusted third party (TSA)")
-  sign           $(_ "Sign a document with your private key")
-  verify         $(_ "Verify document signature and timestamp")
+  genkey    $(_ "Generate a new password-protected ed25519 key pair")
+  help      $(_ "Show this help")
+  clean     $(_ "Extract original content without SEALGOOD tags")
+  inject    $(_ "Inject SealGood payload into PDF, HTML or PEM file")
+  date      $(_ "Timestamp a document via trusted third party (TSA)")
+  sign      $(_ "Sign a document with your private key")
+  verify    $(_ "Verify document signature and timestamp")
 
   $(_ "Commands compose into an implicitly ordered pipeline"):
 
@@ -74,28 +72,23 @@ $(_ "COMMANDS"):
     - $(_ "comments progress on") stderr
     - $(_ "writes data to") stdout
 
-       +-- clean | inject | date | sign | verify
-     /
-  list2tgz
-    - $(_ "reads filenames from") stdin
-    - $(_ "sends each file through pipeline")
-    - $(_ "comments progress on") stderr
-    - $(_ "outputs a tar+gzip archive to") stdout
-    - $(_ "introduces a hash into each signed or timestamped filename")
+  $(_ "Whenever input is a file list, the list is enumerated")
+  $(_ "and each item is streamed to the processing pipeline").
+  $(_ "The output is packaged in tar+gzip format with cryptographic")
+  $(_ "hashes embedded in signed/timestamped filenames")
+  enumerate
+   \\
+     +-- clean | inject | date | sign | verify
 
-  inject $(_ "respects existing SealGood payload");
-  date sign $(_ "implicitly perform") inject;
-  date sign $(_ "respect existing signature/timestamp");
-  list2tgz sign $(_ "asks private key passphrase only once").
-    
+  inject          $(_ "respects existing SealGood payload");
+  date sign       $(_ "implicitly perform") inject;
+  date sign       $(_ "respect existing signature/timestamp");
+  enumerate sign  $(_ "asks private key passphrase only once").
+
 $(_ "Examples"):
   $(basename "$0") sign date < contract.pdf > contract_sealgood.pdf
   $(basename "$0") verify    < contract_sealgood.pdf
-  $(basename "$0") list2tgz sign <<EOD > archive.tgz
-  contract1.pdf
-  contract2.pdf
-  contract3.pdf
-  EOD
+  ls contract*.pdf | $(basename "$0") sign date > contracts.tgz
 
 $(_ "Files used"):
   \$HOME/.ssh/ed25519_private_*.pem  : $(_ "signer private keys")
@@ -153,7 +146,7 @@ $(_ "This way your document signatures will be non-repudiable and therefore acce
 END
   else
     umask go=      # fichiers temporaires privés
-    list2tgz "$args" # suite du pipe s'occupe des data
+    enumerate "$args" # suite du pipe s'occupe des data
   fi
 }
 
@@ -162,10 +155,10 @@ END
 # <$* : fonctions à exécuter #
 # >stdout : output.raw       #
 ##############################
-list2tgz() {
-  strip list2tgz "$@" > args
-  local rargs=$? args="$(cat args)"
-  if ((rargs == 0));then
+enumerate() {
+  local args="$*"
+  local filetype="$(lookup enumerate)"
+  if [[ $filetype =~ file_or_url_list ]];then
     #####################
     # PASS just-in-time #
     #####################
@@ -173,7 +166,7 @@ list2tgz() {
       coproc passrelay {
         read -r # attend le ask sur &"$fdpassask"
         cat >/dev/null & # puis vide
-        if [ "$REPLY" = ask ] ; then 
+        if [ "$REPLY" = ask ] ; then
           read -r -s -p "$(_ "Private key password"): " PASS <&"$fdtty"
           echo >&2
           while :; do echo "$PASS"; done
@@ -187,7 +180,7 @@ list2tgz() {
     rm -f tsr.bin signature.bin # pas de prompt exit_policy
   else
     clean "$args"
-  fi
+  fi < lookup.enumerate
 }
 
 ############################################
@@ -201,15 +194,15 @@ file2tgz(){
     while read -r FILE; do
       ((FNR++))
       export FNR
-      if (cd "$INITIAL_DIR" && cat < "$FILE") > input.list2tgz 2>/dev/null ;then
+      if (cd "$INITIAL_DIR" && cat < "$FILE") > input.file2tgz 2>/dev/null ;then
         export OUTFILE="$(basename "$FILE")"
         # Exécution du pipe
-        clean "$args" <input.list2tgz >"$OUTFILE"
+        clean "$args" <input.file2tgz >"$OUTFILE"
         # Nommage en sortie, pattern _sealgood:<sha256sum:8>
-        local filetype="$(lookup < input.list2tgz)"
+        local filetype="$(lookup < input.file2tgz)"
         local newfiletype="$(lookup < "$OUTFILE")"
         if [[ $newfiletype =~ sealgood ]];then
-          hash=$(clean clean < input.list2tgz | sha256sum | cut -c1-8)
+          hash=$(clean clean < input.file2tgz | sha256sum | cut -c1-8)
           base="$(echo "${OUTFILE%.*}" | sed -E 's/_sealgood(:[a-zA-Z0-9]+)?$//')"
           if [[ "$base" == "$OUTFILE" ]]; then
             NEWFILE="${base}_sealgood:${hash}"
@@ -231,7 +224,7 @@ file2tgz(){
             { [[ $filetype != $newfiletype ]] ||  # le status sealgood change
               [[ $newfiletype =~ sealgood  ]];})  # le nouveau status est ou reste sealgood
         then
-          step "list2tgz $FILE -> $OUTFILE"
+          step "enumerate $FILE -> $OUTFILE"
           echo "$OUTFILE" # pris en charge par --remove-files
         else
           rm -f "$OUTFILE"
@@ -249,7 +242,7 @@ file2tgz(){
       step "$(_ "Verification summary")"
       cat fdverifyout >&2
       step "$(_ "End of verifications")"
-  )
+  ) | cat
 }
 
 ######################################
@@ -268,12 +261,12 @@ clean() {
       if [[ $filetype =~ gzip ]];then
         local count=$(gzip -cd lookup.clean | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
         head -c "$count"
-      else 
+      else
         awk '/^(<!-- )?### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}'
       fi
     else
       cat
-    fi <lookup.clean 
+    fi <lookup.clean
     rm -f lookup.clean
   else
     cat
@@ -365,7 +358,7 @@ sign() {
     if [[ $filetype =~ sealgood ]];then
       if [[ $filetype =~ gzip ]];then
         if zgrep -aq "^PLACEHOLDER_UNSIGNED_FILE" lookup.sign; then
-          grep -q 'empty password' <( openssl pkey -in "$PRIVATE_KEY" -noout -passin pass: </dev/null 2>&1) || die 4 "$(_ "%s is not encrypted" "$PRIVATE_KEY")"
+          grep -q 'empty password' <( openssl pkey -in "$PRIVATE_KEY" -noout -passin pass: </dev/null 2>&1) | cat || die 4 "$(_ "%s is not encrypted" "$PRIVATE_KEY")"
           local count=$(gzip -cd lookup.sign | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
           head -c "$count"
           gzip -cd | sed "s|^PLACEHOLDER_UNSIGNED_FILE|$(<lookup.sign signraw | base64 -w 0)|" | gzip -nc
@@ -375,7 +368,7 @@ sign() {
         fi
       else
         if grep -aq "^PLACEHOLDER_UNSIGNED_FILE" lookup.sign; then
-          grep -q 'empty password' <( openssl pkey -in "$PRIVATE_KEY" -noout -passin pass: </dev/null 2>&1) || die 4 "$(_ "%s is not encrypted" "$PRIVATE_KEY")"
+          grep -q 'empty password' <( openssl pkey -in "$PRIVATE_KEY" -noout -passin pass: </dev/null 2>&1) | cat || die 4 "$(_ "%s is not encrypted" "$PRIVATE_KEY")"
           sed "s|^PLACEHOLDER_UNSIGNED_FILE|$(<lookup.sign signraw | base64 -w 0)|"
         else
           cat
@@ -454,7 +447,7 @@ verify() {
         fi
       fi
 
-      if [ -s tsa_cert.pem ] || [ -s public_key.pem ]; then 
+      if [ -s tsa_cert.pem ] || [ -s public_key.pem ]; then
 
         # Vérification de la signature
         if [ -s public_key.pem ] && [ -s signature.bin ] && [ -s original_data ]; then
@@ -462,7 +455,7 @@ verify() {
           (
             set -x
             openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in original_data -rawin &> sig_result ||
-            openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in <(openssl dgst -sha256 -binary original_data) &> sig_result
+            openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in <(openssl dgst -sha256 -binary original_data) &> sig_result | cat
           )
           SIG_VERIFY=$?
 
@@ -493,7 +486,7 @@ verify() {
             cat ts_result >&2
             TIMESTAMP_VALID=false
           fi
-              
+
           # Affichage des détails de l'horodatage
           echo -e "\n$(_ "Timestamp details"):" >&2
           openssl ts -reply -in tsr.bin -text | grep -A2 "Time stamp:" >&2
@@ -509,7 +502,7 @@ verify() {
       # signé, horodaté et intact
       # signé et intact
       # horodaté et intact
-      # ni signé ni horodaté 
+      # ni signé ni horodaté
       # altéré
       if   [ "$SIGNATURE_VALID" = true ] && [ "$TIMESTAMP_VALID" = true ]; then
         success "$(_ "Document") $(_ "is signed, timestamped and intact")"
@@ -530,7 +523,7 @@ verify() {
       cat lookup.verify
     else
       cat lookup.verify
-    fi | tee >(echo "verify output: $(lookup)" >&2)
+    fi | tee >(echo "verify output: $(lookup)" >&2) | cat
   else
     cat
   fi | dead "$args"
@@ -567,7 +560,7 @@ strip() {
 #############################################################################
 # PAYLOAD : Explications détaillées non intrusives sur les vues du document #
 # C'est juste du plaintext qui commence et termine par des balises          #
-# <stdin : original data
+# <stdin : original data                                                    #
 # <$REPOS_KEY : nom web de la clé publique                                  #
 # <$PUBLIC_KEY : nom local de la clé publique                               #
 # <$HOME/.ssh/id_rsa.pub : emplacement du nom du signataire                 #
@@ -764,7 +757,7 @@ inject_gzip() {
 ###############################################################
 # Sortie du script                                            #
 # Prompt pour conserver le répertoire temporaire après verify #
-# Désactivé par list2tgz en supprimant les fichiers           #
+# Désactivé par enumerate en supprimant les fichiers          #
 ###############################################################
 exit_policy(){
   [ -s tsr.bin ] || [ -s signature.bin ] &&
@@ -783,7 +776,7 @@ exit_policy(){
 # >lookup.$1  : copie stdin               #
 ###########################################
 lookup() {
-  sfx=${1:-$RANDOM}
+  sfx="${1:-$RANDOM}"
   cat >lookup."$sfx"
   local result="$(file -b -i lookup."$sfx")"
   if [[ $result =~ application/octet-stream ]];then
@@ -814,6 +807,8 @@ lookup() {
   elif [[ $result =~ text/plain ]];then
     if grep -aq '^-----BEGIN' lookup."$sfx";then
       result="${result/plain/$(check_crypto_file "$sfx" "$result")+plain}"
+    elif LC_ALL=C grep -aEq '^([^[:space:]]|https?://[^/]).{1,256}[^[:space:]]$' lookup."$sfx";then
+      result="${result/plain/$(check_file_or_url_list "$sfx" "$result")+plain}"
     fi
   fi
   if [[ ! $result =~ sealgood ]];then
@@ -821,8 +816,36 @@ lookup() {
       result="${result/\//\/sealgood+}"
     fi
   fi
-  echo "$result"
+  echo "${result/\/+/\/}"
   [ "$sfx" = "$1" ] || rm -f lookup."$sfx"
+}
+
+###########################################
+# Lookup file_or_url_list                 #
+# <$1 : pour nommage de copie de l'entrée #
+# <$2 : known filetype                    #
+# <lookup.$1                              #
+# >stdout : type de fichier               #
+###########################################
+check_file_or_url_list() {
+  if [[ $2 =~ text/plain ]] ; then
+    echo $(cd "$INITIAL_DIR"
+      while read -r; do # traitement des noms de fichier ou URL
+        if ! is_file_or_url "$REPLY";then # toutes les lignes désignent url ou fichier lisible
+          break;
+        fi
+        echo file_or_url_list
+      done
+    )
+  fi < lookup."$1"
+}
+
+#######################################
+# <$1 : file_or_url                   #
+# >$? : 1 si url ou si fichier existe #
+#######################################
+is_file_or_url() {
+  [[ $1 =~ ^https?:// ]] || [ -s "$1" ]
 }
 
 ###########################################
@@ -916,9 +939,9 @@ _(){
 # $args est consommée au fil du pipe.                                                     #
 # L'ordre du pipe complet est :                                                           #
 #                                                                                         #
-# main | help | getkey | list2tgz | clean | inject | date | signe | verify | dead         #
-#          \      \        \                                                              #
-#            dead   dead     file2tgz | clean | inject | date | signe | verify | dead     #
+# main | help | getkey | clean | inject | date | signe | verify | dead                    #
+#          \      \                                                                       #
+#            dead   dead                                                                  #
 ###########################################################################################
 
 ################################
@@ -932,7 +955,7 @@ done </dev/null
 export myname="$(basename "$0")"
 export TEXTDOMAIN="$myname"
 export mydir="$(dirname "$(realpath "$0")")"
-export TEXTDOMAINDIR="${mydir/bin/locale}" 
+export TEXTDOMAINDIR="${mydir/bin/locale}"
 export TMPDIR="$(mktemp -d)"
 trap exit_policy EXIT
 cd "$TMPDIR" || die 16 "$LINENO: FATAL"
