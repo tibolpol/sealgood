@@ -103,7 +103,13 @@ $(_ "Files used"):
   \$HOME/.ssh/id_rsa.pub             : $(_ "signer identity declaration")
   https://freetsa.org/files/cacert.pem : $(_ "TSA root certificate")
 
+$(_ "Free servlet") :
+  ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify}
+
 $(_ "See also") : https://github.com/tibolpol/sealgood
+
+Copyright (c) 2025 Thibault Le Paul (@tibolpol)
+Licence MIT - https://opensource.org/license/mit/
 EOF
   else
     genkey "$args" # fonction suivante
@@ -121,6 +127,7 @@ genkey() {
   strip genkey "$@" > args
   local rargs=$? args="$(cat args)"
   if ((rargs == 0));then
+    get_profile
 
     # pas d'entrée ni de pipe suivant
     exec </dev/null
@@ -569,9 +576,12 @@ strip() {
 #############################################################################
 get_payload() {
 [ -s original_data ] || cat > original_data
+get_profile
 cat <<EOD
 ### BEGIN SEALGOOD SIGNATURE ###
 SealGood - $(_ "The 100%% DIY Document Authenticator")
+Copyright (c) 2025 Thibault Le Paul (@tibolpol)
+Licence MIT - https://opensource.org/license/mit/
 https://github.com/tibolpol/sealgood/
 
 $(_ "WARNING!  As with a physical document, verifying authenticity and signature is
@@ -584,6 +594,9 @@ proposed on the site"):  https://github.com/tibolpol/sealgood
 $(_ "Verification tools"):
 - $(_ "POSIX standard"): awk, base64, file, wc
 - $(_ "non-POSIX but recognized standard"): openssl
+
+$(_ "Free servlet"):
+ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify} < "\$filename.pdf" > /tmp/result
 
 $(_ "The signed document has the following properties"):
 file -bi : $(<original_data lookup)
@@ -879,6 +892,13 @@ warning() {
   echo -e "\033[1;33m$*\033[0m" >&2
 }
 
+get_profile() {
+  list=("$HOME"/.ssh/ed25519_private*.pem)
+  export PRIVATE_KEY="${list[0]}" # nom local de la clé privée
+  list=("$HOME"/.ssh/ed25519_public*.pem)
+  export PUBLIC_KEY="${list[0]}" # nom local de la clé publique
+  export REPOS_KEY="$(cat < "$HOME"/.ssh/ed25519_public*.url)" # nom web de la clé publique
+}
 _(){
   key="$1"
   shift
@@ -918,11 +938,7 @@ trap exit_policy EXIT
 cd "$TMPDIR" || die 16 "$LINENO: FATAL"
 INITIAL_DIR="$OLDPWD"
 shopt -s nullglob
-list=("$HOME"/.ssh/ed25519_private*.pem)
-export PRIVATE_KEY="${list[0]}" # nom local de la clé privée
-list=("$HOME"/.ssh/ed25519_public*.pem)
-export PUBLIC_KEY="${list[0]}" # nom local de la clé publique
-export REPOS_KEY="$(cat < "$HOME"/.ssh/ed25519_public*.url)" # nom web de la clé publique
+
 (( fdtty )) || exec {fdtty}</dev/tty
 export fdtty
 

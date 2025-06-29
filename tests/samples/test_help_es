@@ -48,5 +48,11 @@ Archivos utilizados:
   $HOME/.ssh/id_rsa.pub             : declaración de identidad del firmante
   https://freetsa.org/files/cacert.pem : certificado raíz TSA
 
+Servlet gratuita :
+  ssh sealgood@perso.tlp.name {clean inject date verify}
+
 Ver también : https://github.com/tibolpol/sealgood
+
+Copyright (c) 2025 Thibault Le Paul (@tibolpol)
+Licence MIT - https://opensource.org/license/mit/
 [1;32mmain output: inode/x-empty; charset=binary[0m

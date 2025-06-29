@@ -133,6 +133,10 @@ msgstr "déclaration d'identité du signataire"
 msgid "TSA root certificate"
 msgstr "certificat racine TSA"
 
+#: sealgood:106 sealgood:596
+msgid "Free servlet"
+msgstr "Servlet ouverte"
+
 #: sealgood:106
 msgid "See also"
 msgstr "Voir aussi"

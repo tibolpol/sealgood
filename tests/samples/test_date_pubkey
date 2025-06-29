@@ -92,6 +92,8 @@ Clé publique ed25519 du signataire : https://perso.tlp.name/~tlp/ed25519_public
 
 ### BEGIN SEALGOOD SIGNATURE ###
 SealGood - El Autenticador de Documentos 100% DIY
+Copyright (c) 2025 Thibault Le Paul (@tibolpol)
+Licence MIT - https://opensource.org/license/mit/
 https://github.com/tibolpol/sealgood/
 
 ADVERTENCIA:  Como con un documento físico, verificar autenticidad y firma es
@@ -104,6 +106,9 @@ ligera en el sitio:  https://github.com/tibolpol/sealgood
 Herramientas de verificación:
 - estándar POSIX: awk, base64, file, wc
 - no POSIX pero estándar reconocido: openssl
+
+Servlet gratuita:
+ssh sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
 
 El documento firmado tiene las siguientes propiedades:
 file -bi : text/[PEM] Clave pública+plain; charset=utf-8
@@ -186,6 +191,8 @@ Clé publique ed25519 du signataire : https://perso.tlp.name/~tlp/ed25519_public
 
 ### BEGIN SEALGOOD SIGNATURE ###
 SealGood - L'authentificateur de documents 100% DIY
+Copyright (c) 2025 Thibault Le Paul (@tibolpol)
+Licence MIT - https://opensource.org/license/mit/
 https://github.com/tibolpol/sealgood/
 
 AVERTISSEMENT :  Comme pour un document matériel, vérifier l'authenticité et
@@ -199,6 +206,9 @@ proposée sur le site:  https://github.com/tibolpol/sealgood
 Outils de vérification:
 - standard POSIX: awk, base64, file, wc
 - non POSIX mais standard reconnu: openssl
+
+Servlet ouverte:
+ssh sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
 
 Le document signé a les propriétés suivantes:
 file -bi : text/[PEM] Clé publique+plain; charset=utf-8

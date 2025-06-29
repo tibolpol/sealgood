@@ -7,6 +7,8 @@ Clé publique ed25519 du signataire : https://perso.tlp.name/~tlp/ed25519_public
 
 ### BEGIN SEALGOOD SIGNATURE ###
 SealGood - The 100% DIY Document Authenticator
+Copyright (c) 2025 Thibault Le Paul (@tibolpol)
+Licence MIT - https://opensource.org/license/mit/
 https://github.com/tibolpol/sealgood/
 
 WARNING!  As with a physical document, verifying authenticity and signature is
@@ -19,6 +21,9 @@ proposed on the site:  https://github.com/tibolpol/sealgood
 Verification tools:
 - POSIX standard: awk, base64, file, wc
 - non-POSIX but recognized standard: openssl
+
+Free servlet:
+ssh sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
 
 The signed document has the following properties:
 file -bi : text/[PEM] Public key+plain; charset=utf-8
