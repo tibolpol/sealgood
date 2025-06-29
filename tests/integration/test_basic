@@ -1,43 +1,90 @@
 #!/bin/bash
 
-mydir="$(cd "$(dirname "$0")";pwd)"
-sampdir="$(cd "$mydir/../samples";pwd)"
-PATH="$(cd "$mydir/../../bin";pwd):$PATH"
-TMPDIR=$(mktemp -d)
-exec {fdtty}</dev/null
-export fdtty
-
-# <stdin : input
-# >$TMPDIR/$1 : output
-# <$sampdir/$1 : reference
-# >stdout : diff result
+#######################################
+# <$1                   : LINENO      #
+# <stdin                : input       #
+# <../samples/$2        : reference   #
+# <../../bin/sealgood   : binary      #
+# <../../locale/{fr,es} : locale      #
+# >$TMPDIR/$2           : output      #
+# >stdout               : test result #
+#######################################
 mydif(){
-  tee $TMPDIR/$1 | diff $sampdir/$1 - || {
+  lineno=$1
+  shift
+  tee "$TMPDIR/$1" |
+  diff "$mydir/../samples/$1" - || {
     rc=$?
-    echo "!cp $TMPDIR/$1 $sampdir/$1"
+    printf $'KO %4d %s\n' $lineno "$*"
+    echo "!cp $TMPDIR/$1 $mydir/../samples/$1"
     return $rc
   }
+  printf $'ok %4d %s\n' $lineno "$*"
 }
+export -f mydif
 
-mydif test_help_us < <( LANGUAGE=us sealgood help 2>&1) &&
-mydif test_help_es < <( LANGUAGE=es sealgood help 2>&1) &&
-mydif test_help_fr < <( LANGUAGE=fr sealgood help 2>&1) &&
-echo "test_help ok" || echo "test_help KO"
+export mydir="$(cd "$(dirname "$0")";pwd)"
+PATH="$(cd "$mydir/../../bin";pwd):$PATH"
+export TMPDIR=$(mktemp -d)
+exec {fdtty}</dev/null
+export fdtty # neutralise read <&$fdtty
+parallel "cd $mydir/../../locale/{}/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po" ::: fr es
 
-mydif test_inject_fr < <( LANGUAGE=fr sealgood inject < $sampdir/pempub 2>/dev/null) &&
-mydif test_inject_es < <( LANGUAGE=es sealgood inject < $sampdir/pempub 2>/dev/null) &&
-mydif test_inject_us < <( LANGUAGE=us sealgood inject < $sampdir/pempub 2>/dev/null) &&
-echo "test_inject ok" || echo "test_inject KO"
+#########################################################
+# help                                                  #
+# locale/{{run/fr,data/},{run/es,data/},{run/us,data/}} #
+#########################################################
+parallel "mydif $LINENO test_help_{} < <(
+LANGUAGE={} sealgood help 2>&1)" ::: us es fr
 
-mydif test_clean < <( LANGUAGE=fr sealgood clean < $sampdir/test_inject_fr 2>/dev/null) &&
-mydif test_clean < <( LANGUAGE=es sealgood clean < $sampdir/test_inject_es 2>/dev/null) &&
-mydif test_clean < <( LANGUAGE=us sealgood clean < $sampdir/test_inject_us 2>/dev/null) &&
-mydif test_clean_list < <(( ls $sampdir/test_inject_{fr,es,us} |
-                      LANGUAGE=fr sealgood list2tgz clean | tar -zvxOf-) 2>&1) &&
-echo "test_clean ok" || echo "test_clean KO"
+######################################################
+# lookup/PEM pubkey                                  #
+# inject/PEM pubkey                                  #
+# get_payload                                        #
+# locale/{{run,data}/fr,{run,data}/es,{run,data}/us} #
+######################################################
+parallel "mydif $LINENO test_inject_{} < <(
+LANGUAGE={} sealgood inject < $mydir/../samples/pempub 2>/dev/null)" ::: us es fr
 
-mydif test_date_tgz  < <(( ls $sampdir/test_inject_{fr,es,us} |
-                      LANGUAGE=es sealgood list2tgz date verify |
-                      LANGUAGE=us sealgood date verify |
-                      tar -zvxOf-) 2>&1 | sed 's/Time stamp:.*/Time stamp:/' ) &&
-echo "test_date_tgz ok" || echo "test_date_tgz KO"
+#################################################################################################
+# lookup/PEM pubkey                                                                             #
+# clean/PEM pubkey                                                                              #
+# locale/run/{fr\ locale/data/{fr,es,us},es\ locale/data/{fr,es,us},us\ locale/data/{fr,es,us}} #
+#################################################################################################
+parallel "mydif $LINENO test_clean < <(
+LANGUAGE={1} sealgood clean < $mydir/../samples/test_inject_{2} 2>/dev/null)" ::: fr es us ::: fr es us
+
+#################################################################################################
+# list2tgz                                                                                      #
+# lookup/sealgood+PEM pubkey                                                                    #
+# clean/PEM pubkey                                                                              #
+# locale/run/{fr\ locale/data/{fr,es,us},es\ locale/data/{fr,es,us},us\ locale/data/{fr,es,us}} #
+#################################################################################################
+parallel --linebuffer "mydif $LINENO test_clean_list_{} < <(( ls $mydir/../samples/test_inject_{fr,es,us} |
+LANGUAGE={} sealgood list2tgz clean | tar -zvxOf-) 2>&1)" ::: fr es us
+
+###################################
+# list2tgz                        #
+# lookup/sealgood+PEM pubkey      #
+# date/sealgood+PEM pubkey        #
+# clean/sealgood+PEM pubkey       #
+# verify/sealgood+PEM pubkey      #
+# locale/{run/es,data/{fr,es,us}} #
+###################################
+mydif $LINENO test_date_pubkey  < <(( ls $mydir/../samples/test_inject_{fr,es,us} |
+LANGUAGE=es sealgood list2tgz date verify |
+                      tee $TMPDIR/pubkeys.tgz | # garde pour le test suivant
+                      tar -zvxOf-) 2>&1 | sed -e 's/\(^MIIV\).*/\1/' -e 's/\(^Time stamp:\).*/\1/' )
+
+########################
+# lookup/gzip          #
+# inject/gzip          #
+# lookup/sealgood+gzip #
+# date/sealgood+gzip   #
+# clean/sealgood+gzip  #
+# verify/sealgood+gzip #
+# locale/{run,data}/us #
+########################
+mydif $LINENO test_date_gzip  < <(( cat $TMPDIR/pubkeys.tgz |
+LANGUAGE=us sealgood date verify |
+                      tar -zvxOf-) 2>&1 | sed -e 's/\(^MIIV\).*/\1/' -e 's/\(^Time stamp:\).*/\1/' )

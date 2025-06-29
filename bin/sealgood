@@ -574,12 +574,12 @@ cat <<EOD
 SealGood - $(_ "The 100%% DIY Document Authenticator")
 https://github.com/tibolpol/sealgood/
 
-$(_ "WARNING: As with a physical document, verifying authenticity and
-signature is harder than signing. The key is to guarantee that the means
-exist, that they are freely and publicly available, and that they use
-recognized, documented and standard tools at each step for transparency of
-proof. Each step can therefore be done manually with this guide. A lightweight
-integration is proposed on the site"): https://github.com/tibolpol/sealgood
+$(_ "WARNING!  As with a physical document, verifying authenticity and signature is
+harder than signing.  The key is to guarantee that the means exist, that they
+are freely and publicly available, and that they use recognized, documented
+and standard tools at each step for transparency of proof.  Each step can
+therefore be done manually with this guide.  A lightweight integration is
+proposed on the site"):  https://github.com/tibolpol/sealgood
 
 $(_ "Verification tools"):
 - $(_ "POSIX standard"): awk, base64, file, wc
@@ -592,46 +592,47 @@ wc       : $(<original_data wc -)
 $(_ "Signer declaration"): $(cut -d' ' -f3- < $HOME/.ssh/id_rsa.pub)
 $(_ "Signer ed25519 public key"): $REPOS_KEY
 
-$(_ "WARNING! The readable signer declaration here could have been forged.
-What makes it valid is the trusted third party associated with this key
-(website, personal exchange, blockchain, public key sealed and published on an
+$(_ "WARNING!  The readable signer declaration here could have been forged.  What
+makes it valid is the trusted third party associated with this key (website,
+personal exchange, blockchain, public key sealed and published on an
 irrefutable address by the signer)").
 
-$(_ "The signature and timestamp remain valid as long as the content outside
-the BEGIN SEALGOOD and END SEALGOOD tags is not altered").
+$(_ "The signature and timestamp remain valid as long as the content outside the
+BEGIN SEALGOOD and END SEALGOOD tags is not altered").
 
-$(_ "If verification element 4 is not a PLACEHOLDER but a base64 signature
-code, the signer's identity can be proven").
+$(_ "If verification element 4 is not a PLACEHOLDER but a base64 signature code,
+the signer's identity can be proven").
 
-## $(_ "Verification element") 1: $(_ "Key presentation URL, presented by the
-signer as trusted, so that they cannot repudiate this signature").
+## $(_ "Verification element") 1:  $(_ "Key presentation URL, presented by the
+# signer as trusted, so that they cannot repudiate this signature").
 # $REPOS_KEY
 
-## $(_ "Verification element") 2: $(_ "Signer's ed25519 public key")
+## $(_ "Verification element") 2:  $(_ "Signer's ed25519 public key")
 # $(_ "COPY the three lines below and PASTE into file /tmp/%s") "$(basename "$PUBLIC_KEY")"
 # $(_ "or download %s to /tmp/%s") "$REPOS_KEY" "$(basename "$PUBLIC_KEY")"
 -----BEGIN PUBLIC KEY-----
 $(awk '/^-----BEGIN PUBLIC KEY/{getline;print;exit}' "$PUBLIC_KEY")
 -----END PUBLIC KEY-----
 
-## $(_ "Verification element") 3: $(_ "Unsigned file without payload") ($(_ "just before signing"))
+## $(_ "Verification element") 3:  $(_ "Unsigned file without payload") ($(_ "just before signing"))
 awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "\$filename.pdf" > /tmp/\$filename.pdf # $(_ "Unsigned file without payload")
 
-## $(_ "Verification element") 4: $(_ "Signature of the original file hash")
+## $(_ "Verification element") 4:  $(_ "Signature of the original file hash")
 # $(_ "COPY the line below and PASTE into file") /tmp/sig.64
 PLACEHOLDER_UNSIGNED_FILE
 base64 -d < /tmp/sig.64 > /tmp/sig.bin
 
-## $(_ "Final verification"): $(_ "Current file hash and validation of match using public key")
+## $(_ "Final verification"):  $(_ "Current file hash and validation of match using public key")
 # $(_ "Links the file hash to the private key owner's trust chain")
 openssl dgst -sha256 -binary /tmp/file.pdf >/tmp/hash.bin
 openssl pkeyutl -verify -pubin -inkey /tmp/\$(basename "\$PUBLIC_KEY") -sigfile /tmp/sig.bin -in /tmp/hash.bin # $(_ "verify signature")
 
 ### BEGIN SEALGOOD TIMESTAMP ###
 
-$(_ "If verification element 2 is not a PLACEHOLDER but a base64 code, the signing date can be proven").
+$(_ "If verification element 2 is not a PLACEHOLDER but a base64 code, the signing
+date can be proven").
 
-## $(_ "Verification element") 1: $(_ "TSA authority root certificate")
+## $(_ "Verification element") 1:  $(_ "TSA authority root certificate")
 # $(_ "COPY the three lines below and PASTE into file") /tmp/freetsa_cacert.pem
 # $(_ "or download %s to %s" https://freetsa.org/files/cacert.pem /tmp/freetsa_cacert.pem)
 $(
@@ -642,16 +643,17 @@ $(
 )
 openssl x509 -reply -text -in /tmp/freetsa_cacert.pem # $(_ "show certificate details")
 
-## $(_ "Verification element") 2: $(_ "Base64 encoding of TSA-validated tsr")
+## $(_ "Verification element") 2:  $(_ "Base64 encoding of TSA-validated tsr")
 # $(_ "COPY the line below and PASTE into file") /tmp/tsr.64
 PLACEHOLDER_UNTIMESTAMPED_FILE
 base64 -d < /tmp/tsr.64 > /tmp/tsr.bin
 openssl ts -reply -text -in /tmp/tsr.bin # $(_ "show timestamp details")
 
-## $(_ "Verification element") 3: $(_ "Untimestamped file without payload") ($(_ "just before timestamping"))
+## $(_ "Verification element") 3:  $(_ "Untimestamped file without payload") ($(_ "just before timestamping"))
 awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "\$filename.pdf" > /tmp/\$filename.pdf # $(_ "Unsigned file without payload")
 
-## $(_ "Final verification"): $(_ "Current file hash and validation of match using tsr and certificate chain")
+## $(_ "Final verification"):  $(_ "Current file hash and validation of match using tsr
+# and certificate chain")
 # $(_ "Links the file hash to the tsr date in the TSA trust chain")
 openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/\$filename.pdf # $(_ "verify timestamp")
 

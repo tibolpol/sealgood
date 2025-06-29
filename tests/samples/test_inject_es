@@ -9,12 +9,12 @@ Clé publique ed25519 du signataire : https://perso.tlp.name/~tlp/ed25519_public
 SealGood - El Autenticador de Documentos 100% DIY
 https://github.com/tibolpol/sealgood/
 
-ADVERTENCIA: Como con un documento físico, verificar autenticidad y
-firma es más difícil que firmar. La clave es garantizar que los medios
-existan, que estén disponibles pública y gratuitamente, y que usen
-herramientas estándar, documentadas y reconocidas en cada paso para
-transparencia de prueba. Cada paso puede hacerse manualmente con esta guía.
-Se propone una integración ligera en el sitio: https://github.com/tibolpol/sealgood
+ADVERTENCIA:  Como con un documento físico, verificar autenticidad y firma es
+más difícil que firmar.  La clave es garantizar que los medios existan, que
+estén disponibles pública y gratuitamente, y que usen herramientas estándar,
+documentadas y reconocidas en cada paso para transparencia de prueba.  Cada
+paso puede hacerse manualmente con esta guía.  Se propone una integración
+ligera en el sitio:  https://github.com/tibolpol/sealgood
 
 Herramientas de verificación:
 - estándar POSIX: awk, base64, file, wc
@@ -27,37 +27,38 @@ wc       :   7  23 290 -
 Declaración del firmante: Thibault LE PAUL | tlp@laposte.net
 Clave pública ed25519 del firmante: https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem
 
-¡ADVERTENCIA! La declaración legible del firmante pudo haber sido falsificada.
-Lo que la hace válida es el tercero confiable asociado a esta clave
-(sitio web, intercambio personal, blockchain, clave pública sellada y publicada
-en una dirección irrefutable por el firmante).
+¡ADVERTENCIA!  La declaración legible del firmante pudo haber sido
+falsificada.  Lo que la hace válida es el tercero confiable asociado a esta
+clave (sitio web, intercambio personal, blockchain, clave pública sellada y
+publicada en una dirección irrefutable por el firmante).
 
-La firma y sello temporal permanecen válidos mientras el contenido fuera
-de las etiquetas BEGIN SEALGOOD y END SEALGOOD no sea alterado.
+La firma y sello temporal permanecen válidos mientras el contenido fuera de
+las etiquetas BEGIN SEALGOOD y END SEALGOOD no sea alterado.
 
 Si el elemento de verificación 4 no es un PLACEHOLDER sino un código
 de firma base64, la identidad del firmante puede probarse.
 
-## Elemento de verificación 1: URL de presentación de clave, presentada por el firmante como confiable,
-para que no pueda repudiar esta firma.
+## Elemento de verificación 1:  URL de presentación de clave, presentada por
+# el firmante como confiable, para que no pueda repudiar esta firma.
 # https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem
 
-## Elemento de verificación 2: Clave pública ed25519 del firmante
+## Elemento de verificación 2:  Clave pública ed25519 del firmante
 # COPIAR las tres líneas siguientes y PEGAR en el archivo /tmp/ "ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem"
 # o descargar  a /tmp/ "https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem" "ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem"
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----
 
-## Elemento de verificación 3: Archivo no firmado sin payload (justo antes de firmar)
+## Elemento de verificación 3:  Archivo no firmado sin payload (justo antes de firmar)
 awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Archivo no firmado sin payload
 
-## Elemento de verificación 4: Firma del hash original del archivo
+## Elemento de verificación 4:  Firma del hash original del archivo
 # COPIAR la línea siguiente y PEGAR en el archivo /tmp/sig.64
 PLACEHOLDER_UNSIGNED_FILE
 base64 -d < /tmp/sig.64 > /tmp/sig.bin
 
-## Verificación final: Hash actual del archivo y validación de coincidencia usando clave pública
+## Verificación final:  Hash actual del archivo y validación de coincidencia
+# usando clave pública
 # Vincula el hash del archivo a la cadena de confianza del dueño de la clave privada
 openssl dgst -sha256 -binary /tmp/file.pdf >/tmp/hash.bin
 openssl pkeyutl -verify -pubin -inkey /tmp/$(basename "$PUBLIC_KEY") -sigfile /tmp/sig.bin -in /tmp/hash.bin # verificar firma
@@ -67,7 +68,7 @@ openssl pkeyutl -verify -pubin -inkey /tmp/$(basename "$PUBLIC_KEY") -sigfile /t
 Si el elemento de verificación 2 no es un PLACEHOLDER sino un código base64,
 la fecha de firma puede probarse.
 
-## Elemento de verificación 1: Certificado raíz de autoridad TSA
+## Elemento de verificación 1:  Certificado raíz de autoridad TSA
 # COPIAR las tres líneas siguientes y PEGAR en el archivo /tmp/freetsa_cacert.pem
 # o descargar https://freetsa.org/files/cacert.pem a /tmp/freetsa_cacert.pem
 -----BEGIN CERTIFICATE-----
@@ -75,16 +76,17 @@ MIIH/zCCBeegAwIBAgIJAMHphhYNqOmAMA0GCSqGSIb3DQEBDQUAMIGVMREwDwYDVQQKEwhGcmVlIFRT
 -----END CERTIFICATE-----
 openssl x509 -reply -text -in /tmp/freetsa_cacert.pem # mostrar detalles del certificado
 
-## Elemento de verificación 2: Codificación base64 del tsr validado por TSA
+## Elemento de verificación 2:  Codificación base64 del tsr validado por TSA
 # COPIAR la línea siguiente y PEGAR en el archivo /tmp/tsr.64
 PLACEHOLDER_UNTIMESTAMPED_FILE
 base64 -d < /tmp/tsr.64 > /tmp/tsr.bin
 openssl ts -reply -text -in /tmp/tsr.bin # mostrar detalles del sello temporal
 
-## Elemento de verificación 3: Archivo sin sello temporal y sin payload (justo antes del sellado temporal)
+## Elemento de verificación 3:  Archivo sin sello temporal y sin payload (justo antes del sellado temporal)
 awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Archivo no firmado sin payload
 
-## Verificación final: Hash actual del archivo y validación de coincidencia usando tsr y cadena de certificados
+## Verificación final:  Current file hash and validation of match using tsr
+# and certificate chain
 # Vincula el hash del archivo a la fecha tsr en la cadena de confianza TSA
 openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$filename.pdf # verificar sello temporal
 

@@ -9,12 +9,12 @@ Clé publique ed25519 du signataire : https://perso.tlp.name/~tlp/ed25519_public
 SealGood - The 100% DIY Document Authenticator
 https://github.com/tibolpol/sealgood/
 
-WARNING: As with a physical document, verifying authenticity and
-signature is harder than signing. The key is to guarantee that the means
-exist, that they are freely and publicly available, and that they use
-recognized, documented and standard tools at each step for transparency of
-proof. Each step can therefore be done manually with this guide. A lightweight
-integration is proposed on the site: https://github.com/tibolpol/sealgood
+WARNING!  As with a physical document, verifying authenticity and signature is
+harder than signing.  The key is to guarantee that the means exist, that they
+are freely and publicly available, and that they use recognized, documented
+and standard tools at each step for transparency of proof.  Each step can
+therefore be done manually with this guide.  A lightweight integration is
+proposed on the site:  https://github.com/tibolpol/sealgood
 
 Verification tools:
 - POSIX standard: awk, base64, file, wc
@@ -27,46 +27,47 @@ wc       :   7  23 290 -
 Signer declaration: Thibault LE PAUL | tlp@laposte.net
 Signer ed25519 public key: https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem
 
-WARNING! The readable signer declaration here could have been forged.
-What makes it valid is the trusted third party associated with this key
-(website, personal exchange, blockchain, public key sealed and published on an
+WARNING!  The readable signer declaration here could have been forged.  What
+makes it valid is the trusted third party associated with this key (website,
+personal exchange, blockchain, public key sealed and published on an
 irrefutable address by the signer).
 
-The signature and timestamp remain valid as long as the content outside
-the BEGIN SEALGOOD and END SEALGOOD tags is not altered.
+The signature and timestamp remain valid as long as the content outside the
+BEGIN SEALGOOD and END SEALGOOD tags is not altered.
 
-If verification element 4 is not a PLACEHOLDER but a base64 signature
-code, the signer's identity can be proven.
+If verification element 4 is not a PLACEHOLDER but a base64 signature code,
+the signer's identity can be proven.
 
-## Verification element 1: Key presentation URL, presented by the
-signer as trusted, so that they cannot repudiate this signature.
+## Verification element 1:  Key presentation URL, presented by the
+# signer as trusted, so that they cannot repudiate this signature.
 # https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem
 
-## Verification element 2: Signer's ed25519 public key
+## Verification element 2:  Signer's ed25519 public key
 # COPY the three lines below and PASTE into file /tmp/ "ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem"
 # or download  to /tmp/ "https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem" "ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem"
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----
 
-## Verification element 3: Unsigned file without payload (just before signing)
+## Verification element 3:  Unsigned file without payload (just before signing)
 awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Unsigned file without payload
 
-## Verification element 4: Signature of the original file hash
+## Verification element 4:  Signature of the original file hash
 # COPY the line below and PASTE into file /tmp/sig.64
 PLACEHOLDER_UNSIGNED_FILE
 base64 -d < /tmp/sig.64 > /tmp/sig.bin
 
-## Final verification: Current file hash and validation of match using public key
+## Final verification:  Current file hash and validation of match using public key
 # Links the file hash to the private key owner's trust chain
 openssl dgst -sha256 -binary /tmp/file.pdf >/tmp/hash.bin
 openssl pkeyutl -verify -pubin -inkey /tmp/$(basename "$PUBLIC_KEY") -sigfile /tmp/sig.bin -in /tmp/hash.bin # verify signature
 
 ### BEGIN SEALGOOD TIMESTAMP ###
 
-If verification element 2 is not a PLACEHOLDER but a base64 code, the signing date can be proven.
+If verification element 2 is not a PLACEHOLDER but a base64 code, the signing
+date can be proven.
 
-## Verification element 1: TSA authority root certificate
+## Verification element 1:  TSA authority root certificate
 # COPY the three lines below and PASTE into file /tmp/freetsa_cacert.pem
 # or download https://freetsa.org/files/cacert.pem to /tmp/freetsa_cacert.pem
 -----BEGIN CERTIFICATE-----
@@ -74,16 +75,17 @@ MIIH/zCCBeegAwIBAgIJAMHphhYNqOmAMA0GCSqGSIb3DQEBDQUAMIGVMREwDwYDVQQKEwhGcmVlIFRT
 -----END CERTIFICATE-----
 openssl x509 -reply -text -in /tmp/freetsa_cacert.pem # show certificate details
 
-## Verification element 2: Base64 encoding of TSA-validated tsr
+## Verification element 2:  Base64 encoding of TSA-validated tsr
 # COPY the line below and PASTE into file /tmp/tsr.64
 PLACEHOLDER_UNTIMESTAMPED_FILE
 base64 -d < /tmp/tsr.64 > /tmp/tsr.bin
 openssl ts -reply -text -in /tmp/tsr.bin # show timestamp details
 
-## Verification element 3: Untimestamped file without payload (just before timestamping)
+## Verification element 3:  Untimestamped file without payload (just before timestamping)
 awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Unsigned file without payload
 
-## Final verification: Current file hash and validation of match using tsr and certificate chain
+## Final verification:  Current file hash and validation of match using tsr
+# and certificate chain
 # Links the file hash to the tsr date in the TSA trust chain
 openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$filename.pdf # verify timestamp
 

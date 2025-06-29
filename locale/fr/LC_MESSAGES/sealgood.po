@@ -327,21 +327,22 @@ msgstr "L'authentificateur de documents 100%% DIY"
 
 #: sealgood:575
 msgid ""
-"WARNING: As with a physical document, verifying authenticity and\n"
-"signature is harder than signing. The key is to guarantee that the means\n"
-"exist, that they are freely and publicly available, and that they use\n"
-"recognized, documented and standard tools at each step for transparency of\n"
-"proof. Each step can therefore be done manually with this guide. A "
-"lightweight\n"
-"integration is proposed on the site"
+"WARNING!  As with a physical document, verifying authenticity and signature "
+"is\n"
+"harder than signing.  The key is to guarantee that the means exist, that "
+"they\n"
+"are freely and publicly available, and that they use recognized, documented\n"
+"and standard tools at each step for transparency of proof.  Each step can\n"
+"therefore be done manually with this guide.  A lightweight integration is\n"
+"proposed on the site"
 msgstr ""
-"AVERTISSEMENT : Comme pour un document matériel, vérifier\n"
-"l'authenticité et la signature est plus difficile que de signer. L'essentiel\n"
-"est de garantir que les moyens existent, qu'ils soient disponibles\n"
-"gratuitement et publiquement, et qu'ils utilisent à chaque étape des outils\n"
-"reconnus, documentés et standards, pour la transparence de la preuve. Chaque\n"
-"étape est donc réalisable à la main à l'aide de ce guide. Une intégration\n"
-"légère est proposée sur le site"
+"AVERTISSEMENT :  Comme pour un document matériel, vérifier l'authenticité et\n"
+"la signature est plus difficile que de signer.  L'essentiel est de garantir\n"
+"que les moyens existent, qu'ils soient disponibles gratuitement et\n"
+"publiquement, et qu'ils utilisent à chaque étape des outils reconnus,\n"
+"documentés et standards, pour la transparence de la preuve.  Chaque étape est\n"
+"donc réalisable à la main à l'aide de ce guide.  Une intégration légère est\n"
+"proposée sur le site"
 
 #: sealgood:582
 msgid "Verification tools"
@@ -369,35 +370,42 @@ msgstr "Clé publique ed25519 du signataire"
 
 #: sealgood:593
 msgid ""
-"WARNING! The readable signer declaration here could have been forged.\n"
-"What makes it valid is the trusted third party associated with this key\n"
-"(website, personal exchange, blockchain, public key sealed and published on an\n"
+"WARNING!  The readable signer declaration here could have been forged.  "
+"What\n"
+"makes it valid is the trusted third party associated with this key "
+"(website,\n"
+"personal exchange, blockchain, public key sealed and published on an\n"
 "irrefutable address by the signer)"
-msgstr "ATTENTION ! La déclaration de signataire lisible ici pourrait avoir\n"
-"été forgée. Ce qui fait foi est le tiers de confiance associé à cette clé\n"
-"(site web, échange personnel, blockchain, clé publique scellée et publiée sur\n"
-"une adresse irrépudiable par le signataire)"
+msgstr ""
+"ATTENTION !  La déclaration de signataire lisible ici pourrait avoir été\n"
+"forgée.  Ce qui fait foi est le tiers de confiance associé à cette clé (site\n"
+"web, échange personnel, blockchain, clé publique scellée et publiée sur une\n"
+"adresse irrépudiable par le signataire)"
 
 #: sealgood:598
-msgid "The signature and timestamp remain valid as long as the content outside\n"
-"the BEGIN SEALGOOD and END SEALGOOD tags is not altered"
-msgstr "La signature et l'horodatage restent valides tant que le contenu hors\n"
-"des balises BEGIN SEALGOOD et END SEALGOOD n'est pas altéré"
+msgid ""
+"The signature and timestamp remain valid as long as the content outside the\n"
+"BEGIN SEALGOOD and END SEALGOOD tags is not altered"
+msgstr "La signature et l'horodatage restent valides tant que le contenu hors des\n"
+"balises BEGIN SEALGOOD et END SEALGOOD n'est pas altéré"
 
-#: sealgood:601
-msgid "If verification element 4 is not a PLACEHOLDER but a base64 signature\n"
-"code, the signer's identity can be proven"
-msgstr "Si l'élément de vérification 4 n'est pas un PLACEHOLDER mais un code\n"
-"de signature en base64, l'identité du signataire peut être prouvée"
+#: sealgood:603
+msgid ""
+"If verification element 4 is not a PLACEHOLDER but a base64 signature code,\n"
+"the signer's identity can be proven"
+msgstr "Si l'élément de vérification 4 n'est pas un PLACEHOLDER mais un code de\n"
+"signature en base64, l'identité du signataire peut être prouvée"
 
-#: sealgood:604
+#: sealgood:606
 msgid "Key presentation URL, presented by the\n"
-"signer as trusted, so that they cannot repudiate this signature"
-msgstr "URL de présentation de la clé, présentée par le signataire comme de\n"
-"confiance, afin que celui-ci ne fasse pas opposition à cette signature (non répudiation)"
+"# signer as trusted, so that they cannot repudiate this signature"
+msgstr ""
+"URL de présentation de la clé, présentée par le\n"
+"# signataire comme de confiance, afin que celui-ci ne fasse pas opposition à\n"
+"# cette signature (non répudiation)"
 
-#: sealgood:608 sealgood:615 sealgood:618 sealgood:632 sealgood:643
-#: sealgood:649
+#: sealgood:610 sealgood:617 sealgood:620 sealgood:635 sealgood:646
+#: sealgood:652
 msgid "Verification element"
 msgstr "Élément de vérification"
 
@@ -448,10 +456,10 @@ msgstr "vérifier la signature"
 
 #: sealgood:630
 msgid ""
-"If verification element 2 is not a PLACEHOLDER but a base64 code, the "
-"signing date can be proven"
-msgstr "Si l'élément de vérification 2 n'est pas un PLACEHOLDER mais un code"
-"en base64, la date de signature peut être prouvée"
+"If verification element 2 is not a PLACEHOLDER but a base64 code, the signing\n"
+"date can be proven"
+msgstr "Si l'élément de vérification 2 n'est pas un PLACEHOLDER mais un code en base64,\n" 
+"la date de signature peut être prouvée"
 
 #: sealgood:632
 msgid "TSA authority root certificate"
@@ -487,9 +495,10 @@ msgstr "juste avant l'horodatage"
 
 #: sealgood:652
 msgid ""
-"Current file hash and validation of match using tsr and certificate chain"
-msgstr "Hash du fichier actuel et validation de la correspondance à l'aide du\n"
-"tsr et de la chaîne de certificats"
+"Current file hash and validation of match using tsr\n"
+"# and certificate chain"
+msgstr "Hash du fichier actuel et validation de la\n"
+"# correspondance à l'aide du tsr et de la chaîne de certificats"
 
 #: sealgood:653
 msgid "Links the file hash to the tsr date in the TSA trust chain"
