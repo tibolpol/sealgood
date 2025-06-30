@@ -788,8 +788,14 @@ lookup() {
     fi
   fi
   if [[ $result =~ application/gzip ]];then
-    if zgrep -aq '### BEGIN SEALGOOD' lookup."$sfx";then
+    zcat lookup."$sfx" > lookup."$sfx".unzip
+    if grep -aq '### BEGIN SEALGOOD' lookup."$sfx".unzip;then
       result="${result/gzip/sealgood+gzip}"
+    fi
+    content_filetype="$(lookup < lookup."$sfx".unzip)"
+    # echo "#debug $content_filetype" >&2
+    if [[ $content_filetype =~ application/(x-)tar ]];then
+      result="${result/gzip/tar+gzip}"
     fi
   elif [[ $result =~ text/xml ]];then
     if grep -aq '^<!-- ### BEGIN SEALGOOD' lookup."$sfx";then
@@ -818,7 +824,7 @@ lookup() {
     fi
   fi
   echo "${result/\/+/\/}"
-  [ "$sfx" = "$1" ] || rm -f lookup."$sfx"
+  [ "$sfx" = "$1" ] || rm -f lookup."$sfx"{,.unzip}
 }
 
 ###########################################

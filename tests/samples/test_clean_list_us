@@ -6,7 +6,7 @@
 [1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_us -> test_inject_us ===[0m
 
 [1;36m=== End of verifications ===[0m
-[1;32mmain output: application/gzip; charset=binary[0m
+[1;32mmain output: application/tar+gzip; charset=binary[0m
 test_inject_es
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
