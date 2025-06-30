@@ -13,7 +13,7 @@ COMMANDES:
 
   Les commandes se composent en pipeline implicitement ordonné:
 
-  clean | inject | date | sign | verify
+  clean | inject | sign | date | verify
   - lit les données sur stdin
   - commente la progression sur stderr
   - écrit les données sur stdout
@@ -25,11 +25,11 @@ COMMANDES:
   cryptographiques intégrées aux noms de fichiers signés/horodatés
   enumerate
    \
-     +-- clean | inject | date | sign | verify
+     +-- clean | inject | sign | date | verify
 
   inject          respecte le payload SealGood déjà présent;
-  date sign       opèrent implicitement inject;
-  date sign       respectent une signature/horodatage déjà présente;
+  sign date       opèrent implicitement inject;
+  sign date       respectent une signature/horodatage déjà présente;
   enumerate sign  ne demande qu'une fois la passphrase de la clé privée.
 
 Exemples:

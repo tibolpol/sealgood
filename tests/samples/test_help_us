@@ -13,7 +13,7 @@ COMMANDS:
 
   Commands compose into an implicitly ordered pipeline:
 
-  clean | inject | date | sign | verify
+  clean | inject | sign | date | verify
   - reads data from stdin
   - comments progress on stderr
   - writes data to stdout
@@ -25,11 +25,11 @@ COMMANDS:
   hashes embedded in signed/timestamped filenames
   enumerate
    \
-     +-- clean | inject | date | sign | verify
+     +-- clean | inject | sign | date | verify
 
   inject          respects existing SealGood payload;
-  date sign       implicitly perform inject;
-  date sign       respect existing signature/timestamp;
+  sign date       implicitly perform inject;
+  sign date       respect existing signature/timestamp;
   enumerate sign  asks private key passphrase only once.
 
 Examples:

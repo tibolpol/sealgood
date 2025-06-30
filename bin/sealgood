@@ -67,7 +67,7 @@ $(_ "COMMANDS"):
 
   $(_ "Commands compose into an implicitly ordered pipeline"):
 
-  clean | inject | date | sign | verify
+  clean | inject | sign | date | verify
   - $(_ "reads data from") stdin
   - $(_ "comments progress on") stderr
   - $(_ "writes data to") stdout
@@ -79,11 +79,11 @@ $(_ "COMMANDS"):
   $(_ "hashes embedded in signed/timestamped filenames")
   enumerate
    \\
-     +-- clean | inject | date | sign | verify
+     +-- clean | inject | sign | date | verify
 
   inject          $(_ "respects existing SealGood payload");
-  date sign       $(_ "implicitly perform") inject;
-  date sign       $(_ "respect existing signature/timestamp");
+  sign date       $(_ "implicitly perform") inject;
+  sign date       $(_ "respect existing signature/timestamp");
   enumerate sign  $(_ "asks private key passphrase only once").
 
 $(_ "Examples"):
@@ -303,7 +303,7 @@ inject() {
     rm -f lookup.inject
   else
     cat
-  fi | date "$args"
+  fi | sign "$args"
 }
 
 #######################################################
@@ -321,15 +321,17 @@ date() {
       if [[ $filetype =~ gzip ]];then
         if zgrep -aq "^PLACEHOLDER_UNTIMESTAMPED_FILE" lookup.date; then
           local count=$(gzip -cd lookup.date | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
-          head -c "$count"
-          gzip -cd | sed "s|^PLACEHOLDER_UNTIMESTAMPED_FILE|$(<lookup.date timestamp | base64 -w 0)|" | gzip -nc
+          head -c "$count" | tee original_document
+          gzip -cd > payload
+          <payload sed "s|^PLACEHOLDER_UNTIMESTAMPED_FILE|$(<original_document tsr_64)|" | gzip -nc
         else
           cat
           warning "$(_ "Already timestamped")"
         fi
       else
-        if grep -aq "^PLACEHOLDER_UNTIMESTAMPED_FILE" lookup.date; then
-          sed "s|^PLACEHOLDER_UNTIMESTAMPED_FILE|$(<lookup.date timestamp | base64 -w 0)|"
+        <lookup.date awk '/^(<!-- )?### BEGIN SEALGOOD /{state=1}state{print}/^### END SEALGOOD /{state=0}' >payload
+        if grep -aq "^PLACEHOLDER_UNTIMESTAMPED_FILE" payload; then
+          sed "s|^PLACEHOLDER_UNTIMESTAMPED_FILE|$(<lookup.date clean clean | tsr_64)|" # À revoir : peut taper dans le docu
         else
           cat
           warning "$(_ "Already timestamped")"
@@ -341,7 +343,7 @@ date() {
     rm -f lookup.date
   else
     cat
-  fi | sign "$args"
+  fi | verify "$args"
 }
 
 ######################################################
@@ -382,7 +384,7 @@ sign() {
     rm -f lookup.sign
   else
     cat
-  fi | verify "$args"
+  fi | date "$args"
 }
 
 ##################################################
@@ -668,14 +670,40 @@ openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/\
 EOD
 }
 
+#########################
+# <payload              #
+# <stdin  : original    #
+# >stdout : timestamp64 #
+#########################
+tsr_64(){
+  <payload awk '/\/sig\.64$/,/base64/' |
+  grep -vE '^#|base64|PLACEHOLDER' |
+  tr -d ' \n' >signature.tmp
+  if [ -s signature.tmp ]; then
+    cat signature.tmp # Horodatage sur la signature (préférable ? obligatoire ? WORK)
+  else
+    cat # Horodatage sur le document clean (ancienne méthode)
+  fi | timestamp | base64 -w 0
+}
+
 ########################
 # Calcule un timestamp #
 # <stdin               #
 # >stdout : tsr.bin    #
 ########################
 timestamp() {
-  clean clean | openssl ts -query -data /dev/stdin -sha256 -cert |
+  openssl ts -query -data /dev/stdin -sha256 -cert |
   curl -s -H "Content-Type: application/timestamp-query" --data-binary @- --output - https://freetsa.org/tsr
+}
+
+timestamp_sign() {
+  # Prend maintenant en entrée la signature plutôt que le document brut
+  if [ -f signature.bin ]; then
+    openssl ts -query -data signature.bin -sha256 | 
+    curl -s -H "Content-Type: application/timestamp-query" --data-binary @- https://freetsa.org/tsr
+  else
+    die 8 "Signature manquante pour l'horodatage"
+  fi
 }
 
 ###########################
@@ -937,8 +965,8 @@ _(){
 ###########################################################################################
 # Principes de design :                                                                   #
 # Un seul répertoire temporaire commun.                                                   #
-# Options minimalistes, piloté par les data
-# Peut s'exécuter en servlet ssh
+# Options minimalistes, piloté par les data                                               #
+# Peut s'exécuter en servlet ssh                                                          #
 # N'écrit aucun fichier hors du répertoire temporaire (sauf genkey)                       #
 # Les fonctions principales sont conçues pour se composer en Unix pipe.                   #
 # Pas d'éléments partagés entre fonctions, tout passe par le pipe, sauf exception.        #
@@ -947,7 +975,7 @@ _(){
 # $args est consommée au fil du pipe.                                                     #
 # L'ordre du pipe complet est :                                                           #
 #                                                                                         #
-# main | help | getkey | clean | inject | date | signe | verify                           #
+# main | help | getkey | clean | inject | sign | datee | verify                           #
 #          \      \                                        \                              #
 #            dead   dead                                     dead                         #
 ###########################################################################################
