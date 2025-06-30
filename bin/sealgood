@@ -829,13 +829,12 @@ lookup() {
 ###########################################
 check_file_or_url_list() {
   if [[ $2 =~ text/plain ]] ; then
-    echo $(cd "$INITIAL_DIR"
+    echo $(
+      cd "$INITIAL_DIR"
       while read -r; do # traitement des noms de fichier ou URL
-        if ! is_file_or_url "$REPLY";then # toutes les lignes désignent url ou fichier lisible
-          break;
-        fi
-        echo file_or_url_list
+        is_file_or_url "$REPLY" || return
       done
+      echo file_or_url_list
     )
   fi < lookup."$1"
 }
@@ -931,6 +930,8 @@ _(){
 ###########################################################################################
 # Principes de design :                                                                   #
 # Un seul répertoire temporaire commun.                                                   #
+# Options minimalistes, piloté par les data
+# Peut s'exécuter en servlet ssh
 # N'écrit aucun fichier hors du répertoire temporaire (sauf genkey)                       #
 # Les fonctions principales sont conçues pour se composer en Unix pipe.                   #
 # Pas d'éléments partagés entre fonctions, tout passe par le pipe, sauf exception.        #
@@ -939,9 +940,9 @@ _(){
 # $args est consommée au fil du pipe.                                                     #
 # L'ordre du pipe complet est :                                                           #
 #                                                                                         #
-# main | help | getkey | clean | inject | date | signe | verify | dead                    #
-#          \      \                                                                       #
-#            dead   dead                                                                  #
+# main | help | getkey | clean | inject | date | signe | verify                           #
+#          \      \                                        \                              #
+#            dead   dead                                     dead                         #
 ###########################################################################################
 
 ################################
@@ -960,7 +961,7 @@ export TMPDIR="$(mktemp -d)"
 trap exit_policy EXIT
 cd "$TMPDIR" || die 16 "$LINENO: FATAL"
 INITIAL_DIR="$OLDPWD"
-STOPFILE="${STOPFILE:-}"
+STOPFILE="${STOPFILE:-}" # simple et efficace pour la servlet
 shopt -s nullglob
 
 (( fdtty )) || exec {fdtty}</dev/tty
