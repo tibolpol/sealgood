@@ -73,6 +73,10 @@ msgstr "comenta progreso en"
 msgid "writes data to"
 msgstr "escribe datos en"
 
+#: sealgood:74
+msgid "does NEVER write/modify any file directly"
+msgstr "NUNCA escribe/modifica ningún archivo directamente"
+
 #: sealgood:75
 msgid "Whenever input is a file list, the list is enumerated"
 msgstr "Cuando la entrada es una lista de archivos, esta se enumera"

@@ -14,9 +14,10 @@ COMMANDES:
   Les commandes se composent en pipeline implicitement ordonné:
 
   clean | inject | date | sign | verify
-    - lit les données sur stdin
-    - commente la progression sur stderr
-    - écrit les données sur stdout
+  - lit les données sur stdin
+  - commente la progression sur stderr
+  - écrit les données sur stdout
+  - ne modifie JAMAIS directement aucun fichier
 
   Quand l'entrée est une liste de fichiers, celle-ci est énumérée
   et chaque élément est traité dans le pipeline de transformation.

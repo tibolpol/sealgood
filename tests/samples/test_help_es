@@ -14,9 +14,10 @@ COMANDOS:
   Los comandos forman un pipeline ordenado implícitamente:
 
   clean | inject | date | sign | verify
-    - lee datos desde stdin
-    - comenta progreso en stderr
-    - escribe datos en stdout
+  - lee datos desde stdin
+  - comenta progreso en stderr
+  - escribe datos en stdout
+  - NUNCA escribe/modifica ningún archivo directamente
 
   Cuando la entrada es una lista de archivos, esta se enumera
   y cada elemento se procesa en el pipeline de transformación.

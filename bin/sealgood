@@ -68,9 +68,10 @@ $(_ "COMMANDS"):
   $(_ "Commands compose into an implicitly ordered pipeline"):
 
   clean | inject | date | sign | verify
-    - $(_ "reads data from") stdin
-    - $(_ "comments progress on") stderr
-    - $(_ "writes data to") stdout
+  - $(_ "reads data from") stdin
+  - $(_ "comments progress on") stderr
+  - $(_ "writes data to") stdout
+  - $(_ "does NEVER write/modify any file directly")
 
   $(_ "Whenever input is a file list, the list is enumerated")
   $(_ "and each item is streamed to the processing pipeline").

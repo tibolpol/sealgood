@@ -14,9 +14,10 @@ COMMANDS:
   Commands compose into an implicitly ordered pipeline:
 
   clean | inject | date | sign | verify
-    - reads data from stdin
-    - comments progress on stderr
-    - writes data to stdout
+  - reads data from stdin
+  - comments progress on stderr
+  - writes data to stdout
+  - does NEVER write/modify any file directly
 
   Whenever input is a file list, the list is enumerated
   and each item is streamed to the processing pipeline.
