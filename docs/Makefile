@@ -12,5 +12,5 @@ default:
 override MAKECMDGOALS :=
 endif
 
-FR/sealgood.md : ../bin/sealgood
+fr/sealgood.md : ../bin/sealgood
 	tail -n +2 "$<" > "$@"

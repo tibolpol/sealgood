@@ -204,7 +204,6 @@ END
 Next: [clean](#clean) ou [file2tgz](#file2tgz) Previous: [genkey](#genkey)
 ```mermaid
 flowchart TB
-genkey -->|data| l0
 l0((0)) -->|data| lookup{file or url list ?}
 TTY[/lazy prompt/] -->|password| file2tgz
 subgraph enumerate
