@@ -1,5 +1,3 @@
-#!/bin/bash
-:<<'```bash'
 [This file](https://github.com/tibolpol/sealgood/blob/main/bin/sealgood)
 
 
