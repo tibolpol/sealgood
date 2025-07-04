@@ -1,0 +1,4 @@
+#!/bin/bash
+# copie dans docs/FR/{basename}.md sans le shebang
+
+tail -n+2 < "$1" > "docs/FR/$(basename "$1").md"

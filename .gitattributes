@@ -1,1 +1,1 @@
-bin/sealgood        linguist-language=Markdown
+bin/sealgood        filter=mdview
