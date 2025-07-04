@@ -1,3 +1,0 @@
-
-[filter "mdview"]
-  clean = tee %f | tail -n+2 < %f > "docs/FR/$(basename %f).md"

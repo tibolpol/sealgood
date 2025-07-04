@@ -1,6 +1,5 @@
+:<<'```bash'
 [This file](https://github.com/tibolpol/sealgood/blob/main/bin/sealgood)
-
-
 ```bash
 ##########################################################
 # Copyright (c) 2025 Thibault Le Paul (@tibolpol)        #
@@ -808,43 +807,6 @@ strip() {
   fi
 }
 
-:<<'```bash'
-```
-## <a id=pass>pass</a>: Contourne une fonction
-```mermaid
-flowchart TB
-args($name $args) -->|args| t0{$name in $args ?}
-t0 -->|args| $newargs
-t0 -->|no| $name-no($name) 
-t0 -->|yes| $name-yes($name)
-l0((0)) -->|data| $name-no
-args -->|args| $name-no
-$newargs -->|args| $name-yes
-l0 -->|data| $name-yes
-```
-```bash
-# Exécute $1 ou $2
-# <$1 : name
-# <$3 : args
-# <stdin
-# >stdout
-pass() {
-  if [ -s name-yes ]
-  then
-    process
-  else
-    cat
-  fi | next "$(strip name $args)"
-
-  >args strip $name "$@"
-  local rargs=$?
-  local args="$(cat args)"
-  if ((rargs == 0));then
-    $process
-  else
-    cat
-  fi | $next "$args"
-}
 :<<'```bash'
 ```
 ## <a id=get_payload>get_payload</a>: PAYLOAD : Incorpore les explications et les signatures
