@@ -13,4 +13,4 @@ override MAKECMDGOALS :=
 endif
 
 fr/sealgood.md : ../bin/sealgood
-	tail -n +2 "$<" > "$@"
+	tail -n +2 "$<" > "$@" && git add "$@"

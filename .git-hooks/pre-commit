@@ -1,14 +1,5 @@
 #!/bin/bash
-# .git-hooks/pre-commit
 
-# Vérifie si bin/sealgood est modifié
-if git diff --cached --name-only | grep -q "bin/sealgood"; then
-  echo "Mise à jour de la documentation Markdown..."
-  # Génère docs/FR/sealgood.md à partir du script
-  echo '```bash' > docs/FR/sealgood.md
-  cat bin/sealgood >> docs/FR/sealgood.md
-  echo '```' >> docs/FR/sealgood.md
-  git add docs/FR/sealgood.md
-fi
+make -f docs/Makefile
 
 exit 0  # Important : code de sortie 0 = succès
