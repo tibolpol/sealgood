@@ -3,6 +3,8 @@
 
 [1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_fr -> test_inject_fr ===[0m
 
+[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_pt -> test_inject_pt ===[0m
+
 [1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_us -> test_inject_us ===[0m
 
 [1;36m=== Fin des vérifications ===[0m
@@ -16,6 +18,14 @@ Déclaration de signataire : Thibault LE PAUL | tlp@laposte.net
 Clé publique ed25519 du signataire : https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealdate.pem
 
 test_inject_fr
+-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
+-----END PUBLIC KEY-----
+
+Déclaration de signataire : Thibault LE PAUL | tlp@laposte.net
+Clé publique ed25519 du signataire : https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealdate.pem
+
+test_inject_pt
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----

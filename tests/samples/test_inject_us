@@ -89,9 +89,10 @@ openssl ts -reply -text -in /tmp/tsr.bin # show timestamp details
 ## Verification element 3:  Untimestamped file without payload (just before timestamping)
 awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Unsigned file without payload
 
-## Final verification:  Current file hash and validation of match using tsr
-# and certificate chain
-# Links the file hash to the tsr date in the TSA trust chain
+## Final verification:  Either current file or your signature hash, and validation of match
+# using tsr and certificate chain
+# Links your signature or file hash to the tsr date in the TSA trust chain
+openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig.bin # verify timestamp
 openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$filename.pdf # verify timestamp
 
 ### END SEALGOOD ###

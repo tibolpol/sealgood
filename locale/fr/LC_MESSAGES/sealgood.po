@@ -253,14 +253,6 @@ msgstr "TSR introuvable dans le document"
 msgid "TSR extracted and decoded"
 msgstr "TSR extrait et décodé"
 
-#: sealgood:440
-msgid "TSA certificate not found - Downloading from"
-msgstr "Certificat TSA introuvable - Téléchargement depuis"
-
-#: sealgood:441
-msgid "Failed to download TSA certificate"
-msgstr "Échec du téléchargement du certificat TSA"
-
 #: sealgood:444
 msgid "TSA certificate extracted"
 msgstr "Certificat TSA extrait"
@@ -476,10 +468,25 @@ msgstr "vérifier la signature"
 
 #: sealgood:630
 msgid ""
-"If verification element 2 is not a PLACEHOLDER but a base64 code, the signing\n"
+"If verification element 2 is not a PLACEHOLDER but a base64 code, the "
+"signing\n"
 "date can be proven"
 msgstr "Si l'élément de vérification 2 n'est pas un PLACEHOLDER mais un code en base64,\n"
 "la date de signature peut être prouvée"
+
+#: sealgood:916
+msgid "Either current file or your signature hash, and validation of match\n"
+"# using tsr and certificate chain"
+msgstr "Fichier actuel ou hash de votre signature, et validation de la correspondance\n"
+"# avec le tsr et la chaîne de certificats"
+
+#: sealgood:1007
+msgid "TSA certificate not found - Downloading from"
+msgstr "Certificat TSA introuvable - Téléchargement depuis"
+
+#: sealgood:1009
+msgid "Failed to download TSA certificate"
+msgstr "Échec du téléchargement du certificat TSA"
 
 #: sealgood:632
 msgid "TSA authority root certificate"
@@ -521,8 +528,8 @@ msgstr "Hash du fichier actuel et validation de la\n"
 "# correspondance à l'aide du tsr et de la chaîne de certificats"
 
 #: sealgood:653
-msgid "Links the file hash to the tsr date in the TSA trust chain"
-msgstr "Lie le hash du fichier à la date du tsr dans la chaîne de confiance de la TSA"
+msgid "Links your signature or file hash to the tsr date in the TSA trust chain"
+msgstr "Lie votre signature ou le hash du fichier à la date du tsr dans la chaîne de confiance de la TSA"
 
 #: sealgood:654
 msgid "verify timestamp"

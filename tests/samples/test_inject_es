@@ -90,9 +90,11 @@ openssl ts -reply -text -in /tmp/tsr.bin # mostrar detalles del sello temporal
 ## Elemento de verificación 3:  Archivo sin sello temporal y sin payload (justo antes del sellado temporal)
 awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Archivo no firmado sin payload
 
-## Verificación final:  Current file hash and validation of match using tsr
-# and certificate chain
-# Vincula el hash del archivo a la fecha tsr en la cadena de confianza TSA
+## Verificación final:  Archivo actual o hash de su firma, y validación de coincidencia
+# usando tsr y cadena de certificados
+# Vincula tu firma o el hash del archivo a la fecha del TSR en la cadena
+# de confianza de la TSA
+openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig.bin # verificar sello temporal
 openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$filename.pdf # verificar sello temporal
 
 ### END SEALGOOD ###

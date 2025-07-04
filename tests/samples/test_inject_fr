@@ -91,9 +91,10 @@ openssl ts -reply -text -in /tmp/tsr.bin # montrer les détails de l'horodatage
 ## Élément de vérification 3:  Fichier non horodaté sans payload (juste avant l'horodatage)
 awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Fichier non signé sans payload
 
-## Vérification finale:  Hash du fichier actuel et validation de la
-# correspondance à l'aide du tsr et de la chaîne de certificats
-# Lie le hash du fichier à la date du tsr dans la chaîne de confiance de la TSA
+## Vérification finale:  Fichier actuel ou hash de votre signature, et validation de la correspondance
+# avec le tsr et la chaîne de certificats
+# Lie votre signature ou le hash du fichier à la date du tsr dans la chaîne de confiance de la TSA
+openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig.bin # vérifier l'horodatage
 openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$filename.pdf # vérifier l'horodatage
 
 ### END SEALGOOD ###

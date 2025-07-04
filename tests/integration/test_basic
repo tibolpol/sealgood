@@ -22,29 +22,31 @@ mydif(){
   printf $'ok %4d %s\n' $lineno "$*"
 }
 export -f mydif
+exec {fddebug}> >(stdbuf -oL sed -e 's/++[0-9]*++$/\n&/;p' -e 's/^/== /' >&2)
+export fddebug
 
 export mydir="$(cd "$(dirname "$0")";pwd)"
 PATH="$(cd "$mydir/../../bin";pwd):$PATH"
 export TMPDIR=$(mktemp -d)
 exec {fdtty}</dev/null
 export fdtty # neutralise read <&$fdtty
-parallel "cd $mydir/../../locale/{}/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po" ::: fr es
+parallel "cd $mydir/../../locale/{}/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po" ::: fr es pt
 
-#########################################################
-# help                                                  #
-# locale/{{run/fr,data/},{run/es,data/},{run/us,data/}} #
-#########################################################
+########################################################################
+# help                                                                 #
+# locale/{{run/fr,data/},{run/es,data/},{run/us,data/},{run/pt,data/}} #
+########################################################################
 parallel "mydif $LINENO test_help_{} < <(
-LANGUAGE={} sealgood help 2>&1)" ::: us es fr
+LANGUAGE={} sealgood help 2>&1)" ::: us es fr pt
 
-######################################################
-# lookup/PEM pubkey                                  #
-# inject/PEM pubkey                                  #
-# get_payload                                        #
-# locale/{{run,data}/fr,{run,data}/es,{run,data}/us} #
-######################################################
+####################################################################
+# lookup/PEM pubkey                                                #
+# inject/PEM pubkey                                                #
+# get_payload                                                      #
+# locale/{{run,data}/fr,{run,data}/es,{run,data}/pt,{run,data}/us} #
+####################################################################
 parallel "mydif $LINENO test_inject_{} < <(
-LANGUAGE={} sealgood inject < $mydir/../samples/pempub 2>/dev/null)" ::: us es fr
+LANGUAGE={} sealgood inject < $mydir/../samples/pempub 2>/dev/null)" ::: us es fr pt
 
 #################################################################################################
 # lookup/PEM pubkey                                                                             #
@@ -52,7 +54,7 @@ LANGUAGE={} sealgood inject < $mydir/../samples/pempub 2>/dev/null)" ::: us es f
 # locale/run/{fr\ locale/data/{fr,es,us},es\ locale/data/{fr,es,us},us\ locale/data/{fr,es,us}} #
 #################################################################################################
 parallel "mydif $LINENO test_clean < <(
-LANGUAGE={1} sealgood clean < $mydir/../samples/test_inject_{2} 2>/dev/null)" ::: fr es us ::: fr es us
+LANGUAGE={1} sealgood clean < $mydir/../samples/test_inject_{2} 2>/dev/null)" ::: fr es us pt ::: fr es us pt
 
 #################################################################################################
 # lookup/file_or_url_list                                                                       #
@@ -60,18 +62,19 @@ LANGUAGE={1} sealgood clean < $mydir/../samples/test_inject_{2} 2>/dev/null)" ::
 # clean/PEM pubkey                                                                              #
 # locale/run/{fr\ locale/data/{fr,es,us},es\ locale/data/{fr,es,us},us\ locale/data/{fr,es,us}} #
 #################################################################################################
-parallel --linebuffer "mydif $LINENO test_clean_list_{} < <(( ls $mydir/../samples/test_inject_{fr,es,us} |
-LANGUAGE={} sealgood clean | tar -zvxOf-) 2>&1)" ::: fr es us
+parallel --linebuffer "mydif $LINENO test_clean_list_{} < <(( ls $mydir/../samples/test_inject_{fr,es,us,pt} |
+LANGUAGE={} sealgood clean | tar -zvxOf-) 2>&1)" ::: fr es us pt
 
 ###################################
 # lookup/file_or_url_list         #
 # lookup/sealgood+PEM pubkey      #
+# lookup/gzip                     #
 # date/sealgood+PEM pubkey        #
 # clean/sealgood+PEM pubkey       #
 # verify/sealgood+PEM pubkey      #
 # locale/{run/es,data/{fr,es,us}} #
 ###################################
-mydif $LINENO test_date_pubkey  < <(( ls $mydir/../samples/test_inject_{fr,es,us} |
+mydif $LINENO test_date_pubkey  < <(( ls $mydir/../samples/test_inject_{fr,es,us,pt} |
 LANGUAGE=es sealgood date verify |
                       tee $TMPDIR/pubkeys.tgz | # garde pour le test suivant
                       tar -zvxOf-) 2>&1 | sed -e 's/\(^MIIV\).*/\1/' -e 's/\(^Time stamp:\).*/\1/' )
@@ -79,9 +82,10 @@ LANGUAGE=es sealgood date verify |
 ########################
 # lookup/gzip          #
 # inject/gzip          #
+# lookup/gzip          #
 # lookup/sealgood+gzip #
-# date/sealgood+gzip   #
-# clean/sealgood+gzip  #
+# date/gzip            #
+# clean/gzip           #
 # verify/sealgood+gzip #
 # locale/{run,data}/us #
 ########################
@@ -94,5 +98,5 @@ LANGUAGE=us sealgood date verify |
 # $STOPFILE                       #
 # locale/{run,data}/fr            #
 ###################################
-parallel "mydif $LINENO test_stopfile_{}  < <(ls $mydir/../samples/test_inject_{fr,es,us} |
+parallel "mydif $LINENO test_stopfile_{}  < <(ls $mydir/../samples/test_inject_{fr,es,us,pt} |
 LANGUAGE=fr STOPFILE=/stopfile sealgood {} 2>&1)" ::: clean inject

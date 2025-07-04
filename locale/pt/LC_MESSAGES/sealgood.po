@@ -1,4 +1,4 @@
-# Spanish translations for sealgood package.
+# Portuguese translations for sealgood package.
 # Copyright (c) 2025 Thibault Le Paul (@tibolpol)
 # This file is distributed under the same license as the sealgood package.
 # Automatically generated, 2025.
@@ -11,19 +11,19 @@ msgstr ""
 "POT-Creation-Date: 2025-06-27 15:58+0100\n"
 "PO-Revision-Date: 2025-06-27 15:58+0100\n"
 "Last-Translator: @tibolpol\n"
-"Language: es\n"
+"Language: pt\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 #: sealgood:56
 msgid "Document signing and timestamping via"
-msgstr "Firma y sellado temporal de documentos mediante"
+msgstr "Assinatura e carimbo do tempo de documentos via"
 
 #: sealgood:58
 msgid "Usage"
-msgstr "Uso"
+msgstr "Utilização"
 
 #: sealgood:60
 msgid "COMMANDS"
@@ -31,227 +31,227 @@ msgstr "COMANDOS"
 
 #: sealgood:61
 msgid "Generate a new password-protected ed25519 key pair"
-msgstr "Genera un nuevo par de claves ed25519 protegido por contraseña"
+msgstr "Gerar um novo par de chaves ed25519 protegido por senha"
 
 #: sealgood:62
 msgid "Show this help"
-msgstr "Mostrar esta ayuda"
+msgstr "Mostrar esta ajuda"
 
 #: sealgood:64
 msgid "Extract original content without SEALGOOD tags"
-msgstr "Extraer contenido original sin etiquetas SEALGOOD"
+msgstr "Extrair conteúdo original sem tags SEALGOOD"
 
 #: sealgood:65
 msgid "Inject SealGood payload into PDF, HTML or PEM file"
-msgstr "Inyectar payload SealGood en archivos PDF, HTML o PEM"
+msgstr "Injetar payload SealGood em arquivo PDF, HTML ou PEM"
 
 #: sealgood:66
 msgid "Timestamp a document via trusted third party (TSA)"
-msgstr "Sellar temporalmente un documento mediante tercero de confianza (TSA)"
+msgstr "Carimbar documento via terceira parte confiável (TSA)"
 
 #: sealgood:67
 msgid "Sign a document with your private key"
-msgstr "Firmar un documento con tu clave privada"
+msgstr "Assinar documento com sua chave privada"
 
 #: sealgood:68
 msgid "Verify document signature and timestamp"
-msgstr "Verificar firma y sello temporal del documento"
+msgstr "Verificar assinatura e carimbo do tempo do documento"
 
 #: sealgood:70
 msgid "Commands compose into an implicitly ordered pipeline"
-msgstr "Los comandos forman un pipeline ordenado implícitamente"
+msgstr "Comandos compõem um pipeline implicitamente ordenado"
+
+#: sealgood:71
+msgid "reads data from"
+msgstr "lê dados de"
+
+#: sealgood:72
+msgid "comments progress on"
+msgstr "comenta progresso em"
 
 #: sealgood:73
-msgid "reads data from"
-msgstr "lee datos desde"
-
-#: sealgood:74 sealgood:82
-msgid "comments progress on"
-msgstr "comenta progreso en"
-
-#: sealgood:75
 msgid "writes data to"
-msgstr "escribe datos en"
+msgstr "escreve dados em"
 
 #: sealgood:74
 msgid "does NEVER write/modify any file directly"
-msgstr "NUNCA escribe/modifica ningún archivo directamente"
+msgstr "NUNCA escreve/modifica arquivos diretamente"
 
 #: sealgood:75
 msgid "Whenever input is a file list, the list is enumerated"
-msgstr "Cuando la entrada es una lista de archivos, esta se enumera"
+msgstr "Quando entrada é lista de arquivos, a lista é enumerada"
 
 #: sealgood:76
 msgid "and each item is streamed to the processing pipeline"
-msgstr "y cada elemento se procesa en el pipeline de transformación"
+msgstr "e cada item é processado no pipeline"
 
 #: sealgood:77
 msgid "The output is packaged in tar+gzip format with cryptographic"
-msgstr "El resultado se empaqueta en formato tar+gzip con hashes criptográficos"
+msgstr "Saída é empacotada em formato tar+gzip com hashes"
 
 #: sealgood:78
 msgid "hashes embedded in signed/timestamped filenames"
-msgstr "incrustados en nombres de archivo firmados/marcados temporalmente"
+msgstr "criptográficos embutidos em nomes de arquivos assinados/carimbados"
 
 #: sealgood:80
 msgid "reads filenames from"
-msgstr "lee nombres de archivo desde"
+msgstr "lê nomes de arquivos de"
 
 #: sealgood:81
 msgid "sends each file through pipeline"
-msgstr "envía cada archivo a través del pipeline"
+msgstr "envia cada arquivo pelo pipeline"
 
 #: sealgood:83
 msgid "outputs a tar+gzip archive to"
-msgstr "genera un archivo tar+gzip en"
+msgstr "gera arquivo tar+gzip em"
 
 #: sealgood:84
 msgid "introduces a hash into each signed or timestamped filename"
-msgstr "introduce un hash en cada nombre de archivo firmado o sellado temporalmente"
+msgstr "insere hash em cada nome de arquivo assinado ou carimbado"
 
 #: sealgood:86
 msgid "respects existing SealGood payload"
-msgstr "respeta el payload SealGood existente"
+msgstr "respeita payload SealGood existente"
 
 #: sealgood:87
 msgid "implicitly perform"
-msgstr "realiza implícitamente"
+msgstr "executa implicitamente"
 
 #: sealgood:88
 msgid "respect existing signature/timestamp"
-msgstr "respeta firma/sello temporal existente"
+msgstr "respeita assinatura/carimbo existente"
 
 #: sealgood:89
 msgid "asks private key passphrase only once"
-msgstr "solicita frase de contraseña de clave privada solo una vez"
+msgstr "pede senha da chave privada apenas uma vez"
 
 #: sealgood:91
 msgid "Examples"
-msgstr "Ejemplos"
+msgstr "Exemplos"
 
 #: sealgood:100
 msgid "Files used"
-msgstr "Archivos utilizados"
+msgstr "Arquivos utilizados"
 
 #: sealgood:101
 msgid "signer private keys"
-msgstr "claves privadas del firmante"
+msgstr "chaves privadas do signatário"
 
 #: sealgood:102
 msgid "associated public keys"
-msgstr "claves públicas asociadas"
+msgstr "chaves públicas associadas"
 
 #: sealgood:103
 msgid "signer identity declaration"
-msgstr "declaración de identidad del firmante"
+msgstr "declaração de identidade do signatário"
 
 #: sealgood:104
 msgid "TSA root certificate"
-msgstr "certificado raíz TSA"
+msgstr "certificado raiz TSA"
 
 #: sealgood:106 sealgood:596
 msgid "Free servlet"
-msgstr "Servlet gratuita"
+msgstr "Servlet livre"
 
 #: sealgood:106
 msgid "See also"
-msgstr "Ver también"
+msgstr "Veja também"
 
 #: sealgood:129 sealgood:136
 msgid "%s already exists and has non-zero size"
-msgstr "%s ya existe y tiene tamaño distinto de cero"
+msgstr "%s já existe e tem tamanho não zero"
 
 #: sealgood:131
 msgid "This key will be used to sign documents, please enter signer name"
-msgstr "Esta clave se usará para firmar documentos, ingrese el nombre del firmante"
+msgstr "Esta chave será usada para assinar documentos, informe o nome do signatário"
 
-#: sealgood:144
+#: sealgood:145
 msgid ""
 "You can (should) publish %s on a trusted public repository and mention its "
 "URL in %s"
-msgstr "Puedes (deberías) publicar %s en un repositorio público confiable y mencionar su URL en %s"
+msgstr "Você pode (deve) publicar %s em repositório público confiável e mencionar sua URL em %s"
 
 #: sealgood:145
 msgid ""
 "This way your document signatures will be non-repudiable and therefore "
 "accepted"
-msgstr "Así tus firmas de documentos serán irrepudiables y por lo tanto aceptadas"
+msgstr "Assim suas assinaturas serão irrepudiáveis e portanto aceitas"
 
 #: sealgood:170
 msgid "Private key password"
-msgstr "Contraseña de clave privada"
+msgstr "Senha da chave privada"
 
 #: sealgood:214
 msgid "Hash in old filename %s doesn't match document hash"
-msgstr "El hash en el nombre antiguo %s no coincide con el hash del documento"
+msgstr "Hash no nome antigo %s não corresponde ao hash do documento"
 
 #: sealgood:232
 msgid "File is not readable: \"%s\""
-msgstr "El archivo no es legible: \"%s\""
+msgstr "Arquivo não legível: \"%s\""
 
 #: sealgood:233
 msgid "Too many consecutive errors: %d"
-msgstr "Demasiados errores consecutivos: %d"
+msgstr "Muitos erros consecutivos: %d"
 
 #: sealgood:240 sealgood:495
 msgid "Verification summary"
-msgstr "Resumen de verificación"
+msgstr "Resumo das verificações"
 
 #: sealgood:242
 msgid "End of verifications"
-msgstr "Fin de verificaciones"
+msgstr "Fim das verificações"
 
 #: sealgood:294 sealgood:842 sealgood:844
 msgid "Public key"
-msgstr "Clave pública"
+msgstr "Chave pública"
 
 #: sealgood:297
 msgid "I don't know how to inject into"
-msgstr "No sé cómo inyectar en"
+msgstr "Não sei como injetar em"
 
 #: sealgood:325 sealgood:332
 msgid "Already timestamped"
-msgstr "Ya sellado temporalmente"
+msgstr "Já carimbado"
 
 #: sealgood:359 sealgood:369
 msgid "%s is not encrypted"
-msgstr "%s no está cifrado"
+msgstr "%s não está criptografado"
 
 #: sealgood:365 sealgood:373
 msgid "Already signed"
-msgstr "Ya firmado"
+msgstr "Já assinado"
 
 #: sealgood:400
 msgid "Extracting verification elements"
-msgstr "Extrayendo elementos de verificación"
+msgstr "Extraindo elementos de verificação"
 
 #: sealgood:410
 msgid "Original content extracted"
-msgstr "Contenido original extraído"
+msgstr "Conteúdo original extraído"
 
 #: sealgood:415
 msgid "Signature not found in document"
-msgstr "Firma no encontrada en el documento"
+msgstr "Assinatura não encontrada no documento"
 
 #: sealgood:418
 msgid "Signature extracted and decoded"
-msgstr "Firma extraída y decodificada"
+msgstr "Assinatura extraída e decodificada"
 
 #: sealgood:422
 msgid "Public key not found in document"
-msgstr "Clave pública no encontrada en el documento"
+msgstr "Chave pública não encontrada no documento"
 
 #: sealgood:425
 msgid "Public key extracted"
-msgstr "Clave pública extraída"
+msgstr "Chave pública extraída"
 
 #: sealgood:432
 msgid "TSR not found in document"
-msgstr "TSR no encontrado en el documento"
+msgstr "TSR não encontrado no documento"
 
 #: sealgood:435
 msgid "TSR extracted and decoded"
-msgstr "TSR extraído y decodificado"
+msgstr "TSR extraído e decodificado"
 
 #: sealgood:444
 msgid "TSA certificate extracted"
@@ -259,35 +259,35 @@ msgstr "Certificado TSA extraído"
 
 #: sealgood:452
 msgid "Verifying digital signature"
-msgstr "Verificando firma digital"
+msgstr "Verificando assinatura digital"
 
 #: sealgood:461
 msgid "Signature successfully verified"
-msgstr "Firma verificada exitosamente"
+msgstr "Assinatura verificada com sucesso"
 
 #: sealgood:464
 msgid "Signature verification failed"
-msgstr "Falló la verificación de firma"
+msgstr "Falha na verificação da assinatura"
 
 #: sealgood:472
 msgid "Verifying TSA timestamp"
-msgstr "Verificando sello temporal TSA"
+msgstr "Verificando carimbo do tempo TSA"
 
 #: sealgood:480
 msgid "Timestamp successfully verified"
-msgstr "Sello temporal verificado exitosamente"
+msgstr "Carimbo do tempo verificado com sucesso"
 
 #: sealgood:483
 msgid "Timestamp verification failed"
-msgstr "Falló la verificación de sello temporal"
+msgstr "Falha na verificação do carimbo"
 
 #: sealgood:489
 msgid "Timestamp details"
-msgstr "Detalles del sello temporal"
+msgstr "Detalhes do carimbo"
 
 #: sealgood:497
 msgid "Signature status"
-msgstr "Estado de la firma"
+msgstr "Status da assinatura"
 
 #: sealgood:497 sealgood:498
 msgid "VALID"
@@ -303,39 +303,39 @@ msgstr "AUSENTE"
 
 #: sealgood:498
 msgid "Timestamp status"
-msgstr "Estado del sello temporal"
+msgstr "Status do carimbo"
 
 #: sealgood:506 sealgood:509 sealgood:512 sealgood:515 sealgood:518
 msgid "Document"
-msgstr "El documento"
+msgstr "Documento"
 
 #: sealgood:506 sealgood:507
 msgid "is signed, timestamped and intact"
-msgstr "está firmado, sellado temporalmente e intacto"
+msgstr "está assinado, carimbado e íntegro"
 
 #: sealgood:509 sealgood:510
 msgid "is signed and intact"
-msgstr "está firmado e intacto"
+msgstr "está assinado e íntegro"
 
 #: sealgood:512 sealgood:513
 msgid "is timestamped and intact"
-msgstr "tiene sello temporal e intacto"
+msgstr "está carimbado e íntegro"
 
 #: sealgood:515 sealgood:516
 msgid "is neither signed nor timestamped"
-msgstr "no está firmado ni sellado temporalmente"
+msgstr "não está assinado nem carimbado"
 
 #: sealgood:518 sealgood:519
 msgid "has been altered"
-msgstr "ha sido alterado"
+msgstr "foi alterado"
 
 #: sealgood:535
 msgid "Remaining arguments \"%s\" could not be processed"
-msgstr "Argumentos restantes \"%s\" no pudieron ser procesados"
+msgstr "Argumentos restantes \"%s\" não puderam ser processados"
 
 #: sealgood:572
 msgid "The 100%% DIY Document Authenticator"
-msgstr "El Autenticador de Documentos 100%% DIY"
+msgstr "O Autenticador de Documentos 100%% DIY"
 
 #: sealgood:575
 msgid ""
@@ -348,36 +348,36 @@ msgid ""
 "therefore be done manually with this guide.  A lightweight integration is\n"
 "proposed on the site"
 msgstr ""
-"ADVERTENCIA:  Como con un documento físico, verificar autenticidad y firma es\n"
-"más difícil que firmar.  La clave es garantizar que los medios existan, que\n"
-"estén disponibles pública y gratuitamente, y que usen herramientas estándar,\n"
-"documentadas y reconocidas en cada paso para transparencia de prueba.  Cada\n"
-"paso puede hacerse manualmente con esta guía.  Se propone una integración\n"
-"ligera en el sitio"
+"ATENÃÃO!  Como com documentos físicos, verificar autenticidade e assinatura\n"
+"é mais difícil que assinar.  O essencial é garantir que os meios existam,\n"
+"sejam livres e publicamente disponíveis, e usem ferramentas reconhecidas,\n"
+"documentadas e padrão em cada etapa para transparência da prova.  Cada passo\n"
+"pode ser feito manualmente com este guia.  Uma integração leve é proposta\n"
+"no site"
 
 #: sealgood:582
 msgid "Verification tools"
-msgstr "Herramientas de verificación"
+msgstr "Ferramentas de verificação"
 
 #: sealgood:583
 msgid "POSIX standard"
-msgstr "estándar POSIX"
+msgstr "padrão POSIX"
 
 #: sealgood:584
 msgid "non-POSIX but recognized standard"
-msgstr "no POSIX pero estándar reconocido"
+msgstr "não-POSIX mas padrão reconhecido"
 
 #: sealgood:586
 msgid "The signed document has the following properties"
-msgstr "El documento firmado tiene las siguientes propiedades"
+msgstr "O documento assinado tem as seguintes propriedades"
 
 #: sealgood:590
 msgid "Signer declaration"
-msgstr "Declaración del firmante"
+msgstr "Declaração do signatário"
 
 #: sealgood:591
 msgid "Signer ed25519 public key"
-msgstr "Clave pública ed25519 del firmante"
+msgstr "Chave pública ed25519 do signatário"
 
 #: sealgood:593
 msgid ""
@@ -388,164 +388,160 @@ msgid ""
 "personal exchange, blockchain, public key sealed and published on an\n"
 "irrefutable address by the signer)"
 msgstr ""
-"¡ADVERTENCIA!  La declaración legible del firmante pudo haber sido\n"
-"falsificada.  Lo que la hace válida es el tercero confiable asociado a esta\n"
-"clave (sitio web, intercambio personal, blockchain, clave pública sellada y\n"
-"publicada en una dirección irrefutable por el firmante)"
+"ATENÃÃO!  A declaração legível do signatário aqui pode ter sido forjada.\n"
+"O que a valida é o terceiro confiável associado a esta chave (site,\n"
+"troca pessoal, blockchain, chave pública selada e publicada em endereço\n"
+"irrefutável pelo signatário)"
 
 #: sealgood:598
 msgid ""
 "The signature and timestamp remain valid as long as the content outside the\n"
 "BEGIN SEALGOOD and END SEALGOOD tags is not altered"
-msgstr ""
-"La firma y sello temporal permanecen válidos mientras el contenido fuera de\n"
-"las etiquetas BEGIN SEALGOOD y END SEALGOOD no sea alterado"
+msgstr "A assinatura e carimbo permanecem válidos enquanto conteúdo fora das\n"
+"tags BEGIN SEALGOOD e END SEALGOOD não for alterado"
 
-#: sealgood:601
+#: sealgood:603
 msgid ""
 "If verification element 4 is not a PLACEHOLDER but a base64 signature code,\n"
 "the signer's identity can be proven"
-msgstr ""
-"Si el elemento de verificación 4 no es un PLACEHOLDER sino un código\n"
-"de firma base64, la identidad del firmante puede probarse"
+msgstr "Se elemento 4 não for PLACEHOLDER mas código de assinatura base64,\n"
+"a identidade do signatário pode ser provada"
 
-#: sealgood:604
+#: sealgood:606
 msgid "Key presentation URL, presented by the\n"
 "# signer as trusted, so that they cannot repudiate this signature"
 msgstr ""
-"URL de presentación de clave, presentada por\n"
-"# el firmante como confiable, para que no pueda repudiar esta firma"
+"URL de apresentação da chave, apresentada pelo\n"
+"# signatário como confiável, para que não possa repudiar esta assinatura"
 
-#: sealgood:608 sealgood:615 sealgood:618 sealgood:632 sealgood:643
-#: sealgood:649
+#: sealgood:610 sealgood:617 sealgood:620 sealgood:635 sealgood:646
+#: sealgood:652
 msgid "Verification element"
-msgstr "Elemento de verificación"
+msgstr "Elemento de verificação"
 
 #: sealgood:608
 msgid "Signer's ed25519 public key"
-msgstr "Clave pública ed25519 del firmante"
+msgstr "Chave pública ed25519 do signatário"
 
 #: sealgood:609
 msgid "COPY the three lines below and PASTE into file /tmp/%s"
-msgstr "COPIAR las tres líneas siguientes y PEGAR en el archivo /tmp/%s"
+msgstr "COPIE as três linhas abaixo e COLE no arquivo /tmp/%s"
 
 #: sealgood:610
 msgid "or download %s to /tmp/%s"
-msgstr "o descargar %s a /tmp/%s"
+msgstr "ou baixe %s para /tmp/%s"
 
 #: sealgood:615 sealgood:616 sealgood:650
 msgid "Unsigned file without payload"
-msgstr "Archivo no firmado sin payload"
+msgstr "Arquivo não assinado sem payload"
 
 #: sealgood:615
 msgid "just before signing"
-msgstr "justo antes de firmar"
+msgstr "pouco antes de assinar"
 
 #: sealgood:618
 msgid "Signature of the original file hash"
-msgstr "Firma del hash original del archivo"
+msgstr "Assinatura do hash original do arquivo"
 
 #: sealgood:619 sealgood:644
 msgid "COPY the line below and PASTE into file"
-msgstr "COPIAR la línea siguiente y PEGAR en el archivo"
+msgstr "COPIE a linha abaixo e COLE no arquivo"
 
 #: sealgood:623 sealgood:652
 msgid "Final verification"
-msgstr "Verificación final"
+msgstr "Verificação final"
 
 #: sealgood:623
 msgid "Current file hash and validation of match using public key"
-msgstr "Hash actual del archivo y validación de coincidencia\n"
-"# usando clave pública"
+msgstr "Hash atual do arquivo e validação de correspondência usando chave pública"
 
 #: sealgood:624
 msgid "Links the file hash to the private key owner's trust chain"
-msgstr "Vincula el hash del archivo a la cadena de confianza del dueño de la clave privada"
+msgstr "Vincula o hash do arquivo à cadeia de confiança do dono da chave privada"
 
 #: sealgood:626
 msgid "verify signature"
-msgstr "verificar firma"
+msgstr "verificar assinatura"
 
 #: sealgood:630
 msgid ""
 "If verification element 2 is not a PLACEHOLDER but a base64 code, the signing\n"
 "date can be proven"
-msgstr ""
-"Si el elemento de verificación 2 no es un PLACEHOLDER sino un código base64,\n"
-"la fecha de firma puede probarse"
+msgstr "Se elemento 2 não for PLACEHOLDER mas código base64, a data\n"
+"de assinatura pode ser provada"
 
 #: sealgood:916
 msgid "Either current file or your signature hash, and validation of match\n"
 "# using tsr and certificate chain"
-msgstr "Archivo actual o hash de su firma, y validación de coincidencia\n"
-"# usando tsr y cadena de certificados"
+msgstr "Arquivo atual ou hash de sua assinatura, e validação de correspondência\n"
+"# usando tsr e cadeia de certificados"
 
 #: sealgood:1007
 msgid "TSA certificate not found - Downloading from"
-msgstr "Certificado TSA no encontrado - Descargando desde"
+msgstr "Certificado TSA não encontrado - Baixando de"
 
-#: sealgood:441
+#: sealgood:1009
 msgid "Failed to download TSA certificate"
-msgstr "Error al descargar certificado TSA"
+msgstr "Falha ao baixar certificado TSA"
 
 #: sealgood:632
 msgid "TSA authority root certificate"
-msgstr "Certificado raíz de autoridad TSA"
+msgstr "Certificado raiz da autoridade TSA"
 
 #: sealgood:633
 msgid "COPY the three lines below and PASTE into file"
-msgstr "COPIAR las tres líneas siguientes y PEGAR en el archivo"
+msgstr "COPIE as três linhas abaixo e COLE no arquivo"
 
 #: sealgood:634
 msgid "or download %s to %s"
-msgstr "o descargar %s a %s"
+msgstr "ou baixe %s para %s"
 
 #: sealgood:641
 msgid "show certificate details"
-msgstr "mostrar detalles del certificado"
+msgstr "mostrar detalhes do certificado"
 
 #: sealgood:643
 msgid "Base64 encoding of TSA-validated tsr"
-msgstr "Codificación base64 del tsr validado por TSA"
+msgstr "Codificação Base64 do tsr validado por TSA"
 
 #: sealgood:647
 msgid "show timestamp details"
-msgstr "mostrar detalles del sello temporal"
+msgstr "mostrar detalhes do carimbo"
 
 #: sealgood:649
 msgid "Untimestamped file without payload"
-msgstr "Archivo sin sello temporal y sin payload"
+msgstr "Arquivo não carimbado sem payload"
 
 #: sealgood:649
 msgid "just before timestamping"
-msgstr "justo antes del sellado temporal"
+msgstr "pouco antes de carimbar"
 
 #: sealgood:652
 msgid ""
-"Current file hash and validation of match using tsr and certificate chain"
-msgstr ""
-"Hash actual del archivo y validación de coincidencia usando tsr y cadena de certificados"
+"Current file hash and validation of match using tsr\n"
+"# and certificate chain"
+msgstr "Hash atual do arquivo e validação de correspondência usando tsr\n"
+"# e cadeia de certificados"
 
 #: sealgood:653
 msgid "Links your signature or file hash to the tsr date in the TSA trust chain"
-msgstr "Vincula tu firma o el hash del archivo a la fecha del TSR en la cadena\n"
-"# de confianza de la TSA"
+msgstr "Vincula sua assinatura ou hash do arquivo à data tsr na cadeia TSA"
 
 #: sealgood:654
 msgid "verify timestamp"
-msgstr "verificar sello temporal"
+msgstr "verificar carimbo"
 
 #: sealgood:754
 msgid "Keep temporary directory for inspection"
-msgstr "¿Mantener directorio temporal para inspección"
+msgstr "Manter diretório temporário para inspeção"
 
 #: sealgood:756
 msgid "is kept"
-msgstr "se mantiene"
+msgstr "foi mantido"
 
 #: sealgood:822
 msgid "Key+certificate container"
-msgstr "Contenedor clave+certificado"
+msgstr "Contêiner de chave+certificado"
 
 #: sealgood:825 sealgood:850
 msgid "Certificate"
@@ -553,28 +549,28 @@ msgstr "Certificado"
 
 #: sealgood:828 sealgood:836 sealgood:846
 msgid "Private key"
-msgstr "Clave privada"
+msgstr "Chave privada"
 
 #: sealgood:830 sealgood:834
 msgid "Certificate signing request"
-msgstr "Solicitud de firma de certificado"
+msgstr "Pedido de assinatura de certificado"
 
 #: sealgood:838
 msgid "UNENCRYPTED private key"
-msgstr "Clave privada SIN cifrar"
+msgstr "Chave privada NÃO CRIPTOGRAFADA"
 
 #: sealgood:840
 msgid "ENCRYPTED private key"
-msgstr "Clave privada CIFRADA"
+msgstr "Chave privada CRIPTOGRAFADA"
 
 #: sealgood:848
 msgid "DEM file (GDAL format)"
-msgstr "Archivo DEM (formato GDAL)"
+msgstr "Arquivo DEM (formato GDAL)"
 
 #: sealgood:866
 msgid "ERROR"
-msgstr "ERROR"
+msgstr "ERRO"
 
 #: sealgood:905
 msgid "Missing command"
-msgstr "Comando faltante"
+msgstr "Comando faltando"
