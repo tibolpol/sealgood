@@ -1,0 +1,39 @@
+MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
+ifeq ($(MAKE_RESTARTED),)
+MAKE_RESTARTED := yes
+export MAKE_RESTARTED
+
+# redémarre make depuis le bon répertoire
+default:
+	exec $(MAKE) -C $(MAKEFILE_DIR) --no-print-directory $(MAKECMDGOALS)
+
+# empêche l'exécution du reste
+override MAKECMDGOALS :=
+endif
+
+default : fr/sealgood.md fr/help_fr.md pt/help_pt.md us/help_us.md es/help_es.md
+
+fr/sealgood.md : ../bin/sealgood
+	tail -n +2 "$<" > "$@" && git add "$@"
+
+us/help_us.md : ../bin/sealgood
+	(echo '```console'; LANGUAGE=us "$<" help; echo '```' ) >"$@"
+
+fr/help_fr.md : ../bin/sealgood ../locale/fr/LC_MESSAGES/sealgood.mo
+	(echo '```console'; LANGUAGE=fr "$<" help; echo '```' ) >"$@"
+
+pt/help_pt.md : ../bin/sealgood ../locale/pt/LC_MESSAGES/sealgood.mo
+	(echo '```console'; LANGUAGE=pt "$<" help; echo '```' ) >"$@"
+
+es/help_es.md : ../bin/sealgood ../locale/es/LC_MESSAGES/sealgood.mo
+	(echo '```console'; LANGUAGE=es "$<" help; echo '```' ) >"$@"
+
+../locale/es/LC_MESSAGES/sealgood.mo : ../locale/es/LC_MESSAGES/sealgood.po
+	cd es/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po
+
+../locale/fr/LC_MESSAGES/sealgood.mo : ../locale/fr/LC_MESSAGES/sealgood.po
+	cd fr/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po
+
+../locale/pt/LC_MESSAGES/sealgood.mo : ../locale/pt/LC_MESSAGES/sealgood.po
+	cd pt/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po
