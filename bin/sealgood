@@ -74,7 +74,7 @@ main() {
     else
       help help # affiche l'aide
     fi
-    rm -f lookup.main
+    rm -f lookup.main{,.unzip,.payload,.original}
   fi | tee >(success "main output: $(lookup)" >&2) | cat
 }
 
@@ -369,7 +369,7 @@ clean() {
     local filetype="$(lookup clean)"
     if [[ $filetype =~ sealgood ]];then
       if [[ $filetype =~ gzip ]];then
-        local count=$(gzip -cd lookup.clean | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
+        local count=$((gzip -cd lookup.clean || die $LINENO assert) | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
         head -c "$count"
       else
         awk '/^(<!-- )?### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}'
@@ -377,7 +377,7 @@ clean() {
     else
       cat
     fi <lookup.clean
-    rm -f lookup.clean
+    rm -f lookup.clean{,.unzip,.payload,.original}
   else
     cat
   fi | inject "$args"
@@ -432,7 +432,7 @@ inject() {
       warning "$(_ "I don't know how to inject into") mimetype: $filetype"
       cat
     fi <lookup.inject | tee >(echo "inject output: $(lookup)" >&2)
-    rm -f lookup.inject
+    rm -f lookup.inject{,.unzip,.payload,.original}
   else
     cat
   fi | sign "$args"
@@ -480,23 +480,31 @@ date() {
   if ((rargs == 0));then
     local filetype="$(lookup date)"
     if [[ $filetype =~ sealgood ]];then
-      if [[ $filetype =~ gzip ]];then
-        # wc : x x x payload field 5
-        local count=$(<lookup.date gzip -cd | awk '/### BEGIN SEALGOOD /{state=1} state && /^wc *: /{print $5;exit}')
-        head -c "$count" | tee >((echo ++$LINENO++;cat)>/dev/fd/$fddebug) >original_data
-        gzip -cd | tee >((echo ++$LINENO++;cat)>/dev/fd/$fddebug) >payload
-      else
-        >payload 28>original_data \
-        awk '/^(<!-- )?### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD /{state=0}'
+      <lookup.date.payload awk '/\/sig\.64$/,/\/sig\.bin$/' | grep -vE '/sig\.64$|/sig\.bin$|^PLACEHOLDER' | tr -d ' \n'                  | base64 -d >sig.tmp
+      <lookup.date.payload awk '/\/tsr\.64$/,/\/tsr\.bin$/' | grep -vE '/tsr\.64$|/tsr\.bin$|^PLACEHOLDER' | tr -d ' \n' | tee tsr.tmp.64 | base64 -d >tsr.tmp
+      # parse payload existing sign + existing tsr
+      rm -f tsr.64
+      if ! <lookup.date.payload grep -aq "^PLACEHOLDER_UNTIMESTAMPED_FILE"; then
+        <lookup.date.payload tsa_cert
+        if ! openssl ts -verify -in tsr.tmp -CAfile tsa_cert.pem -data sig.tmp &> ts_result; then
+          if [ -s sig.tmp ]; then
+            cat sig.tmp # Horodatage sur la signature (préférable ? obligatoire ?)
+          else
+            cat lookup.date.original # Horodatage sur le document clean (ancienne méthode)
+          fi | timestamp | base64 -w 0 | tr -d ' \n' >tsr.64
+        fi
       fi
-      if new_tsr_64 >tsr.64;then
+      if [ -s tsr.64 ];then
         local REXP="^PLACEHOLDER_UNTIMESTAMPED_FILE"
-        grep -aq "$REXP" <payload || REXP="$(cat  tsr.tmp.64)"
-        grep -aq "$REXP" <payload || die 8 "$LINENO: assert failure"
+        grep -aq "$REXP" <lookup.date.payload || {
+          REXP="$(cat  tsr.tmp.64)"
+          grep -aq "$REXP" <lookup.date.payload ||
+            die 8 "$LINENO: assert failure"
+        }
         # edit du résultat
         if [[ $filetype =~ gzip ]];then
-          cat original_data
-          <payload sed "s|$REXP|$(cat tsr.64)|" | gzip -nc
+          cat lookup.date.original
+          <lookup.date.payload sed "s|$REXP|$(cat tsr.64)|" | gzip -nc
         else
           <lookup.date sed "s|$REXP|$(cat tsr.64)|" # À revoir : lit tout le doc
         fi
@@ -507,7 +515,7 @@ date() {
     else
       die 8 "$LINENO: assert failure"
     fi <lookup.date | tee >(echo "date output: $(lookup)" >&2)
-    rm -f lookup.date
+    rm -f lookup.date{,.unzip,.payload,.original}
   else
     cat
   fi | verify "$args"
@@ -558,9 +566,9 @@ sign() {
       if [[ $filetype =~ gzip ]];then
         if zgrep -aq "^PLACEHOLDER_UNSIGNED_FILE" lookup.sign; then
           grep -q 'empty password' <( openssl pkey -in "$PRIVATE_KEY" -noout -passin pass: </dev/null 2>&1) | cat || die 4 "$(_ "%s is not encrypted" "$PRIVATE_KEY")"
-          local count=$(gzip -cd lookup.sign | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
+          local count=$((gzip -cd lookup.sign || die $LINENO assert) | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
           head -c "$count"
-          gzip -cd | sed "s|^PLACEHOLDER_UNSIGNED_FILE|$(<lookup.sign signraw | base64 -w 0)|" | gzip -nc
+          (gzip -cd || dier $LINENO assert) | sed "s|^PLACEHOLDER_UNSIGNED_FILE|$(<lookup.sign signraw | base64 -w 0)|" | gzip -nc
         else
           cat
           warning "$(_ "Already signed")"
@@ -577,7 +585,7 @@ sign() {
     else
       die 8 "$LINENO: assert failure"
     fi | tee >(echo "sign output: $(lookup)" >&2)
-    rm -f lookup.sign
+    rm -f lookup.sign{,.unzip,.payload,.original}
   else
     cat
   fi | date "$args"
@@ -644,23 +652,17 @@ verify() {
       step "$(_ "Extracting verification elements")"
 
       # 1. Extraction du contenu original
-      if [[ $filetype =~ gzip ]]; then
-        local count=$(gzip -cd lookup.verify | awk '/### BEGIN SEALGOOD /{state=1}state && /^wc *: /{print $5;exit}')
-        head -c "$count"
-        zcat >payload
-      else
-        tee >(awk '/^(<!-- )?### BEGIN SEALGOOD /{state=1}state{print}/^### END SEALGOOD /{state=0}' >payload) | clean clean
-      fi <lookup.verify >original_data
+      [ -s lookup.verify.original ] &&
       success "$(_ "Original content extracted")"
 
       # 2. Extraction de la signature
-      <payload awk '/\/sig\.64$/,/\/sig\.bin$/' | grep -vE '/sig\.64$|/sig\.bin$|^PLACEHOLDER' | tr -d ' \n' | base64 -d >signature.bin
+      <lookup.verify.payload awk '/\/sig\.64$/,/\/sig\.bin$/' | grep -vE '/sig\.64$|/sig\.bin$|^PLACEHOLDER' | tr -d ' \n' | base64 -d >signature.bin
       if ! [ -s signature.bin ]; then
         warning "$(_ "Signature not found in document")"
       else
         success "$(_ "Signature extracted and decoded")"
         # 3. Extraction de la clé publique
-        <payload awk '/-----BEGIN PUBLIC KEY-----/,/-----END PUBLIC KEY-----/' payload | head -n 3 >public_key.pem
+        <lookup.verify.payload awk '/-----BEGIN PUBLIC KEY-----/,/-----END PUBLIC KEY-----/' payload | head -n 3 >public_key.pem
         if ! [ -s public_key.pem ]; then
           warning "$(_ "Public key not found in document")"
         else
@@ -669,14 +671,14 @@ verify() {
       fi
 
       # 4. Extraction du TSR
-      <payload awk '/\/tsr\.64$/,/\/tsr\.bin$/' | grep -vE '/tsr\.64$|/tsr\.bin$|^PLACEHOLDER' | tr -d ' \n' | base64 -d >tsr.bin
+      <lookup.verify.payload awk '/\/tsr\.64$/,/\/tsr\.bin$/' | grep -vE '/tsr\.64$|/tsr\.bin$|^PLACEHOLDER' | tr -d ' \n' | base64 -d >tsr.bin
       if ! [ -s tsr.bin ]; then
         warning "$(_ "TSR not found in document")"
       else
         success "$(_ "TSR extracted and decoded")"
 
         # 5. Extraction du certificat TSA
-        tsa_cert <payload
+        tsa_cert <lookup.verify.payload
         [ -s tsa_cert.pem ] && success "$(_ "TSA certificate extracted")"
       fi
 
@@ -687,8 +689,8 @@ verify() {
           step "$(_ "Verifying digital signature")"
           (
             set -x
-            openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in original_data -rawin &> sig_result ||
-            openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in <(openssl dgst -sha256 -binary original_data) &> sig_result | cat
+            openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in lookup.verify.original -rawin &> sig_result ||
+            openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in <(openssl dgst -sha256 -binary lookup.verify.original) &> sig_result | cat
           )
           SIG_VERIFY=$?
 
@@ -703,7 +705,7 @@ verify() {
         fi
 
         # Vérification de l'horodatage
-        if [ -s tsr.bin ] && [ -s tsa_cert.pem ] && [ -s original_data ] ; then
+        if [ -s tsr.bin ] && [ -s tsa_cert.pem ] && [ -s lookup.verify.original ] ; then
           step "$(_ "Verifying TSA timestamp")"
           (( DATE_VERIFY = 1 ))
           if [ -s signature.bin ];then
@@ -716,7 +718,7 @@ verify() {
           if (( DATE_VERIFY != 0 ));then
             (
               set -x
-              openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data original_data &> ts_result
+              openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data lookup.verify.original &> ts_result
             )
             DATE_VERIFY=$?
           fi
@@ -920,63 +922,6 @@ openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/\
 
 ### END SEALGOOD ###
 EOD
-}
-
-:<<'```bash'
-```
-## <a id=new_tsr_64>new_tsr_64</a>: Décision d'horodatage
-```mermaid
-flowchart TB
-payload[/payload/] -->|payload| awk-sig[awk]
-payload -->|payload| awk-tsr[awk]
-payload -->|payload| tsa_cert
-od[/original_data/] -->|data| c2
-subgraph new_tsr_64
-  awk-sig -->|sig| sig[/sig.tmp/]
-  awk-tsr -->|tsr| tsr[/tsr.tmp/]
-  awk-tsr -->|tsr| tsr64[/tsr.tmp.64/]
-  tsa_cert -->|pem| pem[/tsa_cert.pem/]
-  tsr -->|tsr| ts{ts verify ?}
-  pem -->|pem| ts
-  sig -->|data| ts
-  ts -->|no| t2{"signed ?"}
-  t2 -->|has signature| c1((use sig))
-  sig -->|sig| c1
-  t2 -->|no signature| c2((use data))
-  c2 -->|data| timestamp
-  c1 -->|sig| timestamp
-  timestamp -->|tsr| base64
-end
-ts -->|already signed| c0((return 1))
-base64 -->|tsr.64| l1((1))
-```
-```bash
-####################################
-# Décision d'horodatage            #
-# <payload                         #
-# <original_data                   #
-# >stdout : nouveau tsr.64 ou vide #
-# >sig.tmp : signature existante   #
-# >tsr.tmp : tsr existant          #
-# >tsr.tmp.64 : tsr existant b64   #
-# >tsa_cert : certificat TSA       #
-# >$?     : 1 si déjà horodaté     #
-####################################
-new_tsr_64(){
-  # parse payload existing sign + existing tsr
-  <payload awk '/\/sig\.64$/,/\/sig\.bin$/' | grep -vE '/sig\.64$|/sig\.bin$|^PLACEHOLDER' | tr -d ' \n'                  | base64 -d >sig.tmp
-  <payload awk '/\/tsr\.64$/,/\/tsr\.bin$/' | grep -vE '/tsr\.64$|/tsr\.bin$|^PLACEHOLDER' | tr -d ' \n' | tee tsr.tmp.64 | base64 -d >tsr.tmp
-  if ! <payload grep -aq "^PLACEHOLDER_UNTIMESTAMPED_FILE"; then
-    <payload tsa_cert
-    if openssl ts -verify -in tsr.tmp -CAfile tsa_cert.pem -data sig.tmp &> ts_result; then
-      return 1 # Déjà horodaté
-    fi
-  fi
-  if [ -s sig.tmp ]; then
-    cat sig.tmp # Horodatage sur la signature (préférable ? obligatoire ?)
-  else
-    cat original_data # Horodatage sur le document clean (ancienne méthode)
-  fi | timestamp | base64 -w 0 | tr -d ' \n' 
 }
 
 :<<'```bash'
@@ -1209,12 +1154,13 @@ exit_policy(){
 ## <a id=lookup>lookup</a>: Scan l'input pour valider les actions
 ```mermaid
 flowchart TB
-l0((0)) -->|data| lookup
+l0((0)) -->|payload+data| x0{{"file -bi"}}
 subgraph lookup
-  x0[/lookup.$1/] --> cfl[chek file or url list]
-  x0 --> ccy[chek crypto file]
+  x0 -->|payload+data| raw_input[/raw_input/]
+  x0 -->|payload| payload[/payload/]
+  x0 -->|data| data[/original_data/]
 end
-lookup -->|mime-type| l1((1))
+x0 -->|mime-type| l1((1))
 ```
 ```bash
 ###########################################
@@ -1226,67 +1172,97 @@ lookup -->|mime-type| l1((1))
 ###########################################
 lookup() {
   sfx="${1:-$RANDOM}"
-  cat >lookup."$sfx"
-  local result="$(file -b -i lookup."$sfx")"
-  if [[ $result =~ application/octet-stream ]];then
-    if grep -aq '^%PDF-' lookup."$sfx" && grep -aq '^%%EOF' lookup."$sfx" ; then
-      result="${result/octet-stream/pdf+octet-stream}"
-    else
-      result="${result/octet-stream/$(check_crypto_file "$sfx" "$result")+octet-stream}"
+  local result="$(tcat lookup | tee --output-error=warn lookup."$sfx" | file -b -i -)"
+  if ! [[ $result =~ /x-empty ]];then
+    # find "$PWD"/* -type f -ls >&$fddebug
+    # Filetypes jouant sur le parsing de lookup."$sfx".payload
+    if [[ $result =~ application/octet-stream ]];then
+      if grep -aq '^%PDF-' lookup."$sfx" && grep -aq '^%%EOF' lookup."$sfx" ; then
+        result="${result/octet-stream/pdf+octet-stream}"
+      else
+        result="${result/octet-stream/$(check_crypto_file "$sfx" "$result")+octet-stream}"
+      fi
     fi
-  fi
-  if [[ $result =~ application/gzip ]];then
-    zcat lookup."$sfx" > lookup."$sfx".unzip
-    if grep -aq '### BEGIN SEALGOOD' lookup."$sfx".unzip;then
-      ## ATTENTION gzip puis sealgood != sealgood puis gzip à ignorer ici
-      # count < dernier wc : x x x
-      local count=$(< lookup."$sfx".unzip awk '
-      /### BEGIN SEALGOOD /{state=1}
-      /### END SEALGOOD /{state=0}
-      state && /^wc *: /{count=$5}
-      END{if(count) print count}'
-      )
-      # exactement gunzip après count
-      # exactement 1ère et dernière ligne
-      < <(<lookup."$sfx" tail -c+$((1+count)) | gunzip -cd 2>/dev/null) awk '
-      /^### BEGIN SEALGOOD .*###$/ {begin=FNR}
-      /^### END SEALGOOD ###$/{end=FNR}
-      END{exit !(begin==1 && end==FNR)}' &&
-      result="${result/gzip/sealgood+gzip}"
+    # Parsing & lookup."$sfx".payload lookup."$sfx".original une seule fois
+    if ! [ -f lookup."$sfx".payload ];then
+      # Tentative de parsing du lookup."$sfx".payload selon le filetype
+      if [[ $result =~ application/gzip ]];then
+        (zcat lookup."$sfx" || die $LINENO assert) > lookup."$sfx".unzip
+        if grep -aq '### BEGIN SEALGOOD' lookup."$sfx".unzip;then
+          # count < dernier wc : x x x
+          local count=$(< lookup."$sfx".unzip awk '
+          /### BEGIN SEALGOOD /{state=1}
+          /### END SEALGOOD /{state=0}
+          state && /^wc *: /{count=$5}
+          END{if(count) print count}'
+          )
+          { head -c $count >lookup."$sfx".original &&
+            zcat >lookup."$sfx".payload 2>/dev/null &&
+            zcat lookup."$sfx".original >lookup."$sfx".unzip ||
+            rm -f lookup."$sfx".{original,payload}
+          } <lookup."$sfx" 
+        fi
+      elif [[ $result =~ text/xml ]];then
+        <lookup."$sfx" >lookup."$sfx".payload 28>lookup."$sfx".original \
+        awk '/^<!-- ### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD ###/{state=0}'
+      elif [[ $result =~ text/html ]];then
+        <lookup."$sfx" >lookup."$sfx".payload 28>lookup."$sfx".original \
+        awk '/^<!-- ### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD ###/{state=0}'
+      elif [[ $result =~ application/pdf ]];then
+        <lookup."$sfx" >lookup."$sfx".payload 28>lookup."$sfx".original \
+        awk '/^### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD ###/{state=0}'
+      elif [[ $result =~ text/plain ]];then
+        if grep -aq '^-----BEGIN' lookup."$sfx";then
+          <lookup."$sfx" >lookup."$sfx".payload 28>lookup."$sfx".original \
+          awk '/^### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD ###/{state=0}'
+          result="${result/plain/$(check_crypto_file "$sfx" "$result")+plain}"
+        elif LC_ALL=C grep -aEq '^([^[:space:]]|https?://[^/]).{1,256}[^[:space:]]$' lookup."$sfx";then
+          result="${result/plain/$(check_file_or_url_list "$sfx" "$result")+plain}"
+        fi
+      fi
+      if ! [ -f lookup."$sfx".payload ];then
+        <lookup."$sfx" >lookup."$sfx".payload 28>lookup."$sfx".original \
+        awk '/^(<!-- )?### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD ###/{state=0}'
+      fi
+      [ -f lookup."$sfx".unzip ] || cp -l lookup."$sfx" lookup."$sfx".unzip
+      # Check du lookup."$sfx".payload obtenu sinon raz
+      if [ -s lookup."$sfx".payload ];then
+        if awk '
+          /^(<!-- )?### BEGIN SEALGOOD .*###$/ {begin=FNR}
+          /^### END SEALGOOD ###/{end=FNR}
+          # exactement 1ère et dernière ligne
+          END{exit (begin == 1 && end == FNR)}' lookup."$sfx".payload
+        then
+          local count=$(awk '/^wc *: /{print $5;exit}' lookup."$sfx".payload)
+          (( count == $(wc -c <lookup."$sfx".original) )) ||
+          rm -f lookup."$sfx".payload lookup."$sfx".original
+        else
+          rm -f lookup."$sfx".payload lookup."$sfx".original
+        fi
+      fi
+      [ -f lookup."$sfx".original ] || cp -l lookup."$sfx" lookup."$sfx".original
+      [ -f lookup."$sfx".payload ] || touch lookup."$sfx".payload
+      chmod -w lookup."$sfx" lookup."$sfx".unzip lookup."$sfx".original
     fi
-    content_filetype="$(lookup < lookup."$sfx".unzip)"
-    # echo "#debug $content_filetype" >&2
-    if [[ $content_filetype =~ application/(x-)tar ]];then
-      result="${result/gzip/tar+gzip}"
+    # Extraction réentrante terminée
+    # Filetypes dépendant de l'extraction
+    if [[ $result =~ gzip ]];then
+      content_filetype="$(mkdir wd;(cd wd&&lookup) <lookup."$sfx".unzip;rm -rf wd)"
+      if [[ $content_filetype =~ /(x-)tar ]];then
+        result="${result/gzip/tar+gzip}"
+      fi
+    elif [[ $result =~ text/plain ]];then
+      if grep -aq '^-----BEGIN' lookup."$sfx".original;then
+        result="${result/plain/$(check_crypto_file "$sfx" "$result")+plain}"
+      elif LC_ALL=C grep -aEq '^([^[:space:]]|https?://[^/]).{1,256}[^[:space:]]$' lookup."$sfx".original;then
+        result="${result/plain/$(check_file_or_url_list "$sfx" "$result")+plain}"
+      fi
     fi
-  elif [[ $result =~ text/xml ]];then
-    if grep -aq '^<!-- ### BEGIN SEALGOOD' lookup."$sfx";then
-      result="${result/xml/sealgood+xml}"
-    fi
-  elif [[ $result =~ text/html ]];then
-    if grep -aq '^<!-- ### BEGIN SEALGOOD' lookup."$sfx";then
-      result="${result/html/sealgood+html}"
-    fi
-  elif [[ $result =~ application/pdf ]];then
-    if grep -aq '^### BEGIN SEALGOOD' lookup."$sfx";then
-      result="${result/pdf/sealgood+pdf}"
-    elif pdftotext lookup."$sfx" - 2>/dev/null | grep -aq '^### BEGIN SEALGOOD';then
-      result="${result/pdf/sealgood-old+pdf}"
-    fi
-  elif [[ $result =~ text/plain ]];then
-    if grep -aq '^-----BEGIN' lookup."$sfx";then
-      result="${result/plain/$(check_crypto_file "$sfx" "$result")+plain}"
-    elif LC_ALL=C grep -aEq '^([^[:space:]]|https?://[^/]).{1,256}[^[:space:]]$' lookup."$sfx";then
-      result="${result/plain/$(check_file_or_url_list "$sfx" "$result")+plain}"
-    fi
-  fi
-  if [[ ! $result =~ sealgood ]];then
-    if grep -aEq '^(<!-- )?### BEGIN SEALGOOD' lookup."$sfx";then
-      result="${result/\//\/sealgood+}"
-    fi
+    [ -s lookup."$sfx".payload ] && result="${result/\//\/sealgood+}"
+    [ -s lookup."$sfx" ] || die $LINENO "assert failure"
   fi
   echo "${result/\/+/\/}"
-  [ "$sfx" = "$1" ] || rm -f lookup."$sfx"{,.unzip}
+  [ "$sfx" = "$1" ] || rm -f lookup."$sfx"{,.unzip,.payload,.original}
 }
 
 :<<'```bash'
@@ -1446,5 +1422,10 @@ shopt -s nullglob
 
 (( fdtty )) || exec {fdtty}</dev/tty
 export fdtty
+
+tcat(){
+  cat #tee >( ((fddebug)) && echo "#tcat $* $(file -bi -)" >&$fddebug)
+}
+export -f tcat
 
 main "$@" | cat

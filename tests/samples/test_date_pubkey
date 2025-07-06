@@ -9,7 +9,7 @@ date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 [1;32mCertificado TSA extraído[0m
 
 [1;36m=== Verificando sello temporal TSA ===[0m
-++ openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data original_data
+++ openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data lookup.verify.original
 [1;32mSello temporal verificado exitosamente[0m
 
 Detalles del sello temporal:
@@ -25,6 +25,7 @@ Estado del sello temporal: [1;32mVÃLIDO[0m
 verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
 [1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_es -> test_inject_es_sealgood:e037f239 ===[0m
+tee: lookup.verify: Permiso denegado
 inject output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 Using configuration from /usr/lib/ssl/openssl.cnf
 date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
@@ -36,7 +37,7 @@ date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 [1;32mCertificado TSA extraído[0m
 
 [1;36m=== Verificando sello temporal TSA ===[0m
-++ openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data original_data
+++ openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data lookup.verify.original
 [1;32mSello temporal verificado exitosamente[0m
 
 Detalles del sello temporal:
@@ -52,6 +53,7 @@ Estado del sello temporal: [1;32mVÃLIDO[0m
 verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
 [1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_fr -> test_inject_fr_sealgood:e037f239 ===[0m
+tee: lookup.verify: Permiso denegado
 inject output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 Using configuration from /usr/lib/ssl/openssl.cnf
 date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
@@ -63,7 +65,7 @@ date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 [1;32mCertificado TSA extraído[0m
 
 [1;36m=== Verificando sello temporal TSA ===[0m
-++ openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data original_data
+++ openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data lookup.verify.original
 [1;32mSello temporal verificado exitosamente[0m
 
 Detalles del sello temporal:
@@ -79,6 +81,7 @@ Estado del sello temporal: [1;32mVÃLIDO[0m
 verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
 [1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_pt -> test_inject_pt_sealgood:e037f239 ===[0m
+tee: lookup.verify: Permiso denegado
 inject output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 Using configuration from /usr/lib/ssl/openssl.cnf
 date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
@@ -90,7 +93,7 @@ date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 [1;32mCertificado TSA extraído[0m
 
 [1;36m=== Verificando sello temporal TSA ===[0m
-++ openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data original_data
+++ openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data lookup.verify.original
 [1;32mSello temporal verificado exitosamente[0m
 
 Detalles del sello temporal:
@@ -219,96 +222,96 @@ Déclaration de signataire : Thibault LE PAUL | tlp@laposte.net
 Clé publique ed25519 du signataire : https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealdate.pem
 
 ### BEGIN SEALGOOD SIGNATURE ###
-SealGood - L'authentificateur de documents 100% DIY
+SealGood - El Autenticador de Documentos 100% DIY
 Copyright (c) 2025 Thibault Le Paul (@tibolpol)
 Licence MIT - https://opensource.org/license/mit/
 https://github.com/tibolpol/sealgood/
 
-AVERTISSEMENT :  Comme pour un document matériel, vérifier l'authenticité et
-la signature est plus difficile que de signer.  L'essentiel est de garantir
-que les moyens existent, qu'ils soient disponibles gratuitement et
-publiquement, et qu'ils utilisent à chaque étape des outils reconnus,
-documentés et standards, pour la transparence de la preuve.  Chaque étape est
-donc réalisable à la main à l'aide de ce guide.  Une intégration légère est
-proposée sur le site:  https://github.com/tibolpol/sealgood
+ADVERTENCIA:  Como con un documento físico, verificar autenticidad y firma es
+más difícil que firmar.  La clave es garantizar que los medios existan, que
+estén disponibles pública y gratuitamente, y que usen herramientas estándar,
+documentadas y reconocidas en cada paso para transparencia de prueba.  Cada
+paso puede hacerse manualmente con esta guía.  Se propone una integración
+ligera en el sitio:  https://github.com/tibolpol/sealgood
 
-Outils de vérification:
-- standard POSIX: awk, base64, file, wc
-- non POSIX mais standard reconnu: openssl
+Herramientas de verificación:
+- estándar POSIX: awk, base64, file, wc
+- no POSIX pero estándar reconocido: openssl
 
-Servlet ouverte:
+Servlet gratuita:
 ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
 
-Le document signé a les propriétés suivantes:
-file -bi : text/[PEM] Clé publique+plain; charset=utf-8
+El documento firmado tiene las siguientes propiedades:
+file -bi : text/[PEM] Clave pública+plain; charset=utf-8
 wc       :   7  23 290 -
 
-Déclaration de signataire: Thibault LE PAUL | tlp@laposte.net
-Clé publique ed25519 du signataire: https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem
+Declaración del firmante: Thibault LE PAUL | tlp@laposte.net
+Clave pública ed25519 del firmante: https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem
 
-ATTENTION !  La déclaration de signataire lisible ici pourrait avoir été
-forgée.  Ce qui fait foi est le tiers de confiance associé à cette clé (site
-web, échange personnel, blockchain, clé publique scellée et publiée sur une
-adresse irrépudiable par le signataire).
+¡ADVERTENCIA!  La declaración legible del firmante pudo haber sido
+falsificada.  Lo que la hace válida es el tercero confiable asociado a esta
+clave (sitio web, intercambio personal, blockchain, clave pública sellada y
+publicada en una dirección irrefutable por el firmante).
 
-La signature et l'horodatage restent valides tant que le contenu hors des
-balises BEGIN SEALGOOD et END SEALGOOD n'est pas altéré.
+La firma y sello temporal permanecen válidos mientras el contenido fuera de
+las etiquetas BEGIN SEALGOOD y END SEALGOOD no sea alterado.
 
-Si l'élément de vérification 4 n'est pas un PLACEHOLDER mais un code de
-signature en base64, l'identité du signataire peut être prouvée.
+Si el elemento de verificación 4 no es un PLACEHOLDER sino un código
+de firma base64, la identidad del firmante puede probarse.
 
-## Élément de vérification 1:  URL de présentation de la clé, présentée par le
-# signataire comme de confiance, afin que celui-ci ne fasse pas opposition à
-# cette signature (non répudiation).
+## Elemento de verificación 1:  URL de presentación de clave, presentada por
+# el firmante como confiable, para que no pueda repudiar esta firma.
 # https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem
 
-## Élément de vérification 2:  Clé publique ed25519 du signataire
-# COPIER trois lignes ci-dessous et COLLER dans le fichier /tmp/ "ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem"
-# ou télécharger  vers /tmp/ "https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem" "ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem"
+## Elemento de verificación 2:  Clave pública ed25519 del firmante
+# COPIAR las tres líneas siguientes y PEGAR en el archivo /tmp/ "ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem"
+# o descargar  a /tmp/ "https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem" "ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem"
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----
 
-## Élément de vérification 3:  Fichier non signé sans payload (juste avant la signature)
-awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Fichier non signé sans payload
+## Elemento de verificación 3:  Archivo no firmado sin payload (justo antes de firmar)
+awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Archivo no firmado sin payload
 
-## Élément de vérification 4:  Signature du hash original du fichier
-# COPIER la ligne ci-dessous et COLLER dans le fichier /tmp/sig.64
+## Elemento de verificación 4:  Firma del hash original del archivo
+# COPIAR la línea siguiente y PEGAR en el archivo /tmp/sig.64
 PLACEHOLDER_UNSIGNED_FILE
 base64 -d < /tmp/sig.64 > /tmp/sig.bin
 
-## Vérification finale:  Hash du fichier actuel et validation de la correspondance à l'aide de la clé publique
-# Lie le hash du fichier à la chaîne de confiance du possesseur de laclé privée
+## Verificación final:  Hash actual del archivo y validación de coincidencia
+# usando clave pública
+# Vincula el hash del archivo a la cadena de confianza del dueño de la clave privada
 openssl dgst -sha256 -binary /tmp/file.pdf >/tmp/hash.bin
-openssl pkeyutl -verify -pubin -inkey /tmp/$(basename "$PUBLIC_KEY") -sigfile /tmp/sig.bin -in /tmp/hash.bin # vérifier la signature
+openssl pkeyutl -verify -pubin -inkey /tmp/$(basename "$PUBLIC_KEY") -sigfile /tmp/sig.bin -in /tmp/hash.bin # verificar firma
 
 ### BEGIN SEALGOOD TIMESTAMP ###
 
-Si l'élément de vérification 2 n'est pas un PLACEHOLDER mais un code en base64,
-la date de signature peut être prouvée.
+Si el elemento de verificación 2 no es un PLACEHOLDER sino un código base64,
+la fecha de firma puede probarse.
 
-## Élément de vérification 1:  Certificat racine de l'autorité TSA
-# COPIER les trois lignes suivantes et COLLER dans le fichier /tmp/freetsa_cacert.pem
-# ou télécharger https://freetsa.org/files/cacert.pem dans /tmp/freetsa_cacert.pem
+## Elemento de verificación 1:  Certificado raíz de autoridad TSA
+# COPIAR las tres líneas siguientes y PEGAR en el archivo /tmp/freetsa_cacert.pem
+# o descargar https://freetsa.org/files/cacert.pem a /tmp/freetsa_cacert.pem
 -----BEGIN CERTIFICATE-----
 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
 -----END CERTIFICATE-----
-openssl x509 -reply -text -in /tmp/freetsa_cacert.pem # montrer les détails di certificat
+openssl x509 -reply -text -in /tmp/freetsa_cacert.pem # mostrar detalles del certificado
 
-## Élément de vérification 2:  Encodage 64 du tsr validé par la TSA
-# COPIER la ligne ci-dessous et COLLER dans le fichier /tmp/tsr.64
+## Elemento de verificación 2:  Codificación base64 del tsr validado por TSA
+# COPIAR la línea siguiente y PEGAR en el archivo /tmp/tsr.64
 MIIV
 base64 -d < /tmp/tsr.64 > /tmp/tsr.bin
-openssl ts -reply -text -in /tmp/tsr.bin # montrer les détails de l'horodatage
+openssl ts -reply -text -in /tmp/tsr.bin # mostrar detalles del sello temporal
 
-## Élément de vérification 3:  Fichier non horodaté sans payload (juste avant l'horodatage)
-awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Fichier non signé sans payload
+## Elemento de verificación 3:  Archivo sin sello temporal y sin payload (justo antes del sellado temporal)
+awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Archivo no firmado sin payload
 
-## Vérification finale:  Fichier actuel ou hash de votre signature, et validation de la correspondance
-# avec le tsr et la chaîne de certificats
-# Lie votre signature ou le hash du fichier à la date du tsr dans la chaîne de confiance de la TSA
-openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig.bin # vérifier l'horodatage
-openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$filename.pdf # vérifier l'horodatage
+## Verificación final:  Archivo actual o hash de su firma, y validación de coincidencia
+# usando tsr y cadena de certificados
+# Vincula tu firma o el hash del archivo a la fecha del TSR en la cadena
+# de confianza de la TSA
+openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig.bin # verificar sello temporal
+openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$filename.pdf # verificar sello temporal
 
 ### END SEALGOOD ###
 test_inject_pt_sealgood:e037f239
@@ -321,93 +324,95 @@ Déclaration de signataire : Thibault LE PAUL | tlp@laposte.net
 Clé publique ed25519 du signataire : https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealdate.pem
 
 ### BEGIN SEALGOOD SIGNATURE ###
-SealGood - The 100% DIY Document Authenticator
+SealGood - El Autenticador de Documentos 100% DIY
 Copyright (c) 2025 Thibault Le Paul (@tibolpol)
 Licence MIT - https://opensource.org/license/mit/
 https://github.com/tibolpol/sealgood/
 
-WARNING!  As with a physical document, verifying authenticity and signature is
-harder than signing.  The key is to guarantee that the means exist, that they
-are freely and publicly available, and that they use recognized, documented
-and standard tools at each step for transparency of proof.  Each step can
-therefore be done manually with this guide.  A lightweight integration is
-proposed on the site:  https://github.com/tibolpol/sealgood
+ADVERTENCIA:  Como con un documento físico, verificar autenticidad y firma es
+más difícil que firmar.  La clave es garantizar que los medios existan, que
+estén disponibles pública y gratuitamente, y que usen herramientas estándar,
+documentadas y reconocidas en cada paso para transparencia de prueba.  Cada
+paso puede hacerse manualmente con esta guía.  Se propone una integración
+ligera en el sitio:  https://github.com/tibolpol/sealgood
 
-Verification tools:
-- POSIX standard: awk, base64, file, wc
-- non-POSIX but recognized standard: openssl
+Herramientas de verificación:
+- estándar POSIX: awk, base64, file, wc
+- no POSIX pero estándar reconocido: openssl
 
-Free servlet:
+Servlet gratuita:
 ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
 
-The signed document has the following properties:
-file -bi : text/[PEM] Public key+plain; charset=utf-8
+El documento firmado tiene las siguientes propiedades:
+file -bi : text/[PEM] Clave pública+plain; charset=utf-8
 wc       :   7  23 290 -
 
-Signer declaration: Thibault LE PAUL | tlp@laposte.net
-Signer ed25519 public key: https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem
+Declaración del firmante: Thibault LE PAUL | tlp@laposte.net
+Clave pública ed25519 del firmante: https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem
 
-WARNING!  The readable signer declaration here could have been forged.  What
-makes it valid is the trusted third party associated with this key (website,
-personal exchange, blockchain, public key sealed and published on an
-irrefutable address by the signer).
+¡ADVERTENCIA!  La declaración legible del firmante pudo haber sido
+falsificada.  Lo que la hace válida es el tercero confiable asociado a esta
+clave (sitio web, intercambio personal, blockchain, clave pública sellada y
+publicada en una dirección irrefutable por el firmante).
 
-The signature and timestamp remain valid as long as the content outside the
-BEGIN SEALGOOD and END SEALGOOD tags is not altered.
+La firma y sello temporal permanecen válidos mientras el contenido fuera de
+las etiquetas BEGIN SEALGOOD y END SEALGOOD no sea alterado.
 
-If verification element 4 is not a PLACEHOLDER but a base64 signature code,
-the signer's identity can be proven.
+Si el elemento de verificación 4 no es un PLACEHOLDER sino un código
+de firma base64, la identidad del firmante puede probarse.
 
-## Verification element 1:  Key presentation URL, presented by the
-# signer as trusted, so that they cannot repudiate this signature.
+## Elemento de verificación 1:  URL de presentación de clave, presentada por
+# el firmante como confiable, para que no pueda repudiar esta firma.
 # https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem
 
-## Verification element 2:  Signer's ed25519 public key
-# COPY the three lines below and PASTE into file /tmp/ "ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem"
-# or download  to /tmp/ "https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem" "ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem"
+## Elemento de verificación 2:  Clave pública ed25519 del firmante
+# COPIAR las tres líneas siguientes y PEGAR en el archivo /tmp/ "ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem"
+# o descargar  a /tmp/ "https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem" "ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem"
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----
 
-## Verification element 3:  Unsigned file without payload (just before signing)
-awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Unsigned file without payload
+## Elemento de verificación 3:  Archivo no firmado sin payload (justo antes de firmar)
+awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Archivo no firmado sin payload
 
-## Verification element 4:  Signature of the original file hash
-# COPY the line below and PASTE into file /tmp/sig.64
+## Elemento de verificación 4:  Firma del hash original del archivo
+# COPIAR la línea siguiente y PEGAR en el archivo /tmp/sig.64
 PLACEHOLDER_UNSIGNED_FILE
 base64 -d < /tmp/sig.64 > /tmp/sig.bin
 
-## Final verification:  Current file hash and validation of match using public key
-# Links the file hash to the private key owner's trust chain
+## Verificación final:  Hash actual del archivo y validación de coincidencia
+# usando clave pública
+# Vincula el hash del archivo a la cadena de confianza del dueño de la clave privada
 openssl dgst -sha256 -binary /tmp/file.pdf >/tmp/hash.bin
-openssl pkeyutl -verify -pubin -inkey /tmp/$(basename "$PUBLIC_KEY") -sigfile /tmp/sig.bin -in /tmp/hash.bin # verify signature
+openssl pkeyutl -verify -pubin -inkey /tmp/$(basename "$PUBLIC_KEY") -sigfile /tmp/sig.bin -in /tmp/hash.bin # verificar firma
 
 ### BEGIN SEALGOOD TIMESTAMP ###
 
-If verification element 2 is not a PLACEHOLDER but a base64 code, the signing
-date can be proven.
+Si el elemento de verificación 2 no es un PLACEHOLDER sino un código base64,
+la fecha de firma puede probarse.
 
-## Verification element 1:  TSA authority root certificate
-# COPY the three lines below and PASTE into file /tmp/freetsa_cacert.pem
-# or download https://freetsa.org/files/cacert.pem to /tmp/freetsa_cacert.pem
+## Elemento de verificación 1:  Certificado raíz de autoridad TSA
+# COPIAR las tres líneas siguientes y PEGAR en el archivo /tmp/freetsa_cacert.pem
+# o descargar https://freetsa.org/files/cacert.pem a /tmp/freetsa_cacert.pem
 -----BEGIN CERTIFICATE-----
 MIIH/zCCBeegAwIBAgIJAMHphhYNqOmAMA0GCSqGSIb3DQEBDQUAMIGVMREwDwYDVQQKEwhGcmVlIFRTQTEQMA4GA1UECxMHUm9vdCBDQTEYMBYGA1UEAxMPd3d3LmZyZWV0c2Eub3JnMSIwIAYJKoZIhvcNAQkBFhNidXNpbGV6YXNAZ21haWwuY29tMRIwEAYDVQQHEwlXdWVyemJ1cmcxDzANBgNVBAgTBkJheWVybjELMAkGA1UEBhMCREUwHhcNMTYwMzEzMDE1MjEzWhcNNDEwMzA3MDE1MjEzWjCBlTERMA8GA1UEChMIRnJlZSBUU0ExEDAOBgNVBAsTB1Jvb3QgQ0ExGDAWBgNVBAMTD3d3dy5mcmVldHNhLm9yZzEiMCAGCSqGSIb3DQEJARYTYnVzaWxlemFzQGdtYWlsLmNvbTESMBAGA1UEBxMJV3VlcnpidXJnMQ8wDQYDVQQIEwZCYXllcm4xCzAJBgNVBAYTAkRFMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAtgKODjAy8REQ2WTNqUudAnjhlCrpE6qlmQfNppeTmVvZrH4zutn+NwTaHAGpjSGv4/WRpZ1wZ3BRZ5mPUBZyLgq0YrIfQ5Fx0s/MRZPzc1r3lKWrMR9sAQx4mN4z11xFEO529L0dFJjPF9MD8Gpd2feWzGyptlelb+PqT+++fOa2oY0+NaMM7l/xcNHPOaMz0/2olk0i22hbKeVhvokPCqhFhzsuhKsmq4Of/o+t6dI7sx5h0nPMm4gGSRhfq+z6BTRgCrqQG2FOLoVFgt6iIm/BnNffUr7VDYd3zZmIwFOj/H3DKHoGik/xK3E82YA2ZulVOFRW/zj4ApjPa5OFbpIkd0pmzxzdEcL479hSA9dFiyVmSxPtY5ze1P+BE9bMU1PScpRzw8MHFXxyKqW13Qv7LWw4sbk3SciB7GACbQiVGzgkvXG6y85HOuvWNvC5GLSiyP9GlPB0V68tbxz4JVTRdw/Xn/XTFNzRBM3cq8lBOAVt/PAX5+uFcv1S9wFE8YjaBfWCP1jdBil+c4e+0tdywT2oJmYBBF/kEt1wmGwMmHunNEuQNzh1FtJY54hbUfiWi38mASE7xMtMhfj/C4SvapiDN837gYaPfs8x3KZxbX7C3YAsFnJinlwAUss1fdKar8Q/YVs7H/nU4c4Ixxxz4f67fcVqM2ITKentbCMCAwEAAaOCAk4wggJKMAwGA1UdEwQFMAMBAf8wDgYDVR0PAQH/BAQDAgHGMB0GA1UdDgQWBBT6VQ2MNGZRQ0z357OnbJWveuaklzCBygYDVR0jBIHCMIG/gBT6VQ2MNGZRQ0z357OnbJWveuakl6GBm6SBmDCBlTERMA8GA1UEChMIRnJlZSBUU0ExEDAOBgNVBAsTB1Jvb3QgQ0ExGDAWBgNVBAMTD3d3dy5mcmVldHNhLm9yZzEiMCAGCSqGSIb3DQEJARYTYnVzaWxlemFzQGdtYWlsLmNvbTESMBAGA1UEBxMJV3VlcnpidXJnMQ8wDQYDVQQIEwZCYXllcm4xCzAJBgNVBAYTAkRFggkAwemGFg2o6YAwMwYDVR0fBCwwKjAooCagJIYiaHR0cDovL3d3dy5mcmVldHNhLm9yZy9yb290X2NhLmNybDCBzwYDVR0gBIHHMIHEMIHBBgorBgEEAYHyJAEBMIGyMDMGCCsGAQUFBwIBFidodHRwOi8vd3d3LmZyZWV0c2Eub3JnL2ZyZWV0c2FfY3BzLmh0bWwwMgYIKwYBBQUHAgEWJmh0dHA6Ly93d3cuZnJlZXRzYS5vcmcvZnJlZXRzYV9jcHMucGRmMEcGCCsGAQUFBwICMDsaOUZyZWVUU0EgdHJ1c3RlZCB0aW1lc3RhbXBpbmcgU29mdHdhcmUgYXMgYSBTZXJ2aWNlIChTYWFTKTA3BggrBgEFBQcBAQQrMCkwJwYIKwYBBQUHMAGGG2h0dHA6Ly93d3cuZnJlZXRzYS5vcmc6MjU2MDANBgkqhkiG9w0BAQ0FAAOCAgEAaK9+v5OFYu9M6ztYC+L69sw1omdyli89lZAfpWMMh9CRmJhM6KBqM/ipwoLtnxyxGsbCPhcQjuTvzm+ylN6VwTMmIlVyVSLKYZcdSjt/eCUN+41K7sD7GVmxZBAFILnBDmTGJmLkrU0KuuIpj8lI/E6Z6NnmuP2+RAQSHsfBQi6sssnXMo4HOW5gtPO7gDrUpVXID++1P4XndkoKn7Svw5n0zS9fv1hxBcYIHPPQUze2u30bAQt0n0iIyRLzaWuhtpAtd7ffwEbASgzB7E+NGF4tpV37e8KiA2xiGSRqT5ndu28fgpOY87gD3ArZDctZvvTCfHdAS5kEO3gnGGeZEVLDmfEsv8TGJa3AljVa5E40IQDsUXpQLi8G+UC41DWZu8EVT4rnYaCw1VX7ShOR1PNCCvjb8S8tfdudd9zhU3gEB0rxdeTy1tVbNLXW99y90xcwr1ZIDUwM/xQ/noO8FRhm0LoPC73Ef+J4ZBdrvWwauF3zJe33d4ibxEcb8/pz5WzFkeixYM2nsHhqHsBKw7JPouKNXRnl5IAE1eFmqDyC7G/VT7OF669xM6hbUt5G21JE4cNK6NNucS+fzg1JPX0+3VhsYZjj7D5uljRvQXrJ8iHgr/M6j2oLHvTAI2MLdq2qjZFDOCXsxBxJpbmLGBx9ow6ZerlUxzws2AWv2pk=
 -----END CERTIFICATE-----
-openssl x509 -reply -text -in /tmp/freetsa_cacert.pem # show certificate details
+openssl x509 -reply -text -in /tmp/freetsa_cacert.pem # mostrar detalles del certificado
 
-## Verification element 2:  Base64 encoding of TSA-validated tsr
-# COPY the line below and PASTE into file /tmp/tsr.64
+## Elemento de verificación 2:  Codificación base64 del tsr validado por TSA
+# COPIAR la línea siguiente y PEGAR en el archivo /tmp/tsr.64
 MIIV
 base64 -d < /tmp/tsr.64 > /tmp/tsr.bin
-openssl ts -reply -text -in /tmp/tsr.bin # show timestamp details
+openssl ts -reply -text -in /tmp/tsr.bin # mostrar detalles del sello temporal
 
-## Verification element 3:  Untimestamped file without payload (just before timestamping)
-awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Unsigned file without payload
+## Elemento de verificación 3:  Archivo sin sello temporal y sin payload (justo antes del sellado temporal)
+awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Archivo no firmado sin payload
 
-## Final verification:  Either current file or your signature hash, and validation of match
-# using tsr and certificate chain
-# Links your signature or file hash to the tsr date in the TSA trust chain
-openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig.bin # verify timestamp
-openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$filename.pdf # verify timestamp
+## Verificación final:  Archivo actual o hash de su firma, y validación de coincidencia
+# usando tsr y cadena de certificados
+# Vincula tu firma o el hash del archivo a la fecha del TSR en la cadena
+# de confianza de la TSA
+openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig.bin # verificar sello temporal
+openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$filename.pdf # verificar sello temporal
 
 ### END SEALGOOD ###

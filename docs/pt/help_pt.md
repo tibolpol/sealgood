@@ -51,5 +51,5 @@ Veja também : https://github.com/tibolpol/sealgood
 
 Copyright (c) 2025 Thibault Le Paul (@tibolpol)
 Licence MIT - https://opensource.org/license/mit/
-[1;32mmain output: inode/x-empty; charset=binary[0m
+[1;32mmain output: application/x-empty; charset=binary[0m
 ```
