@@ -13,7 +13,7 @@ mydif(){
   lineno=$1
   shift
   tee "$TMPDIR/$(basename $1)" |
-  diff "$mydir/$1" - || {
+  diff -a "$mydir/$1" - || {
     rc=$?
     printf $'KO %4d %s\n' $lineno "$*"
     echo "!cp $TMPDIR/$(basename $1) $mydir/$1"
@@ -84,19 +84,27 @@ LANGUAGE=es sealgood date verify |
                       tee $TMPDIR/pubkeys.tgz | # garde pour le test suivant
                       tar -zvxOf-) 2>&1 | sed -e 's/\(^MIIV\).*/\1/' -e 's/\(^Time stamp:\).*/\1/' )
 
-########################
-# lookup/gzip          #
-# inject/gzip          #
-# lookup/gzip          #
-# lookup/sealgood+gzip #
-# date/gzip            #
-# clean/gzip           #
-# verify/sealgood+gzip #
-# locale/{run,data}/us #
-########################
+############################
+# lookup/tar+gzip          #
+# inject/sealgood+tar+gzip #
+# lookup/sealgood+tar+gzip #
+# verify/sealgood+tar+gzip #
+# locale/{run,data}/us     #
+############################
+mydif $LINENO ../samples/test_inject_gzip  < <(( cat $TMPDIR/pubkeys.tgz |
+LANGUAGE=us sealgood inject |
+                      zcat|strings -n12 -weS) 2>&1 | sed -e 's/\(^wc *: \).*/\1/' -e 's/\(^MIIV\).*/\1/' -e 's/\(^Time stamp:\).*/\1/' )
+
+############################
+# lookup/tar+gzip          #
+# inject/sealgood+tar+gzip #
+# lookup/sealgood+tar+gzip #
+# verify/sealgood+tar+gzip #
+# locale/{run,data}/us     #
+############################
 mydif $LINENO ../samples/test_date_gzip  < <(( cat $TMPDIR/pubkeys.tgz |
 LANGUAGE=us sealgood date verify |
-                      tar -zvxOf-) 2>&1 | sed -e 's/\(^MIIV\).*/\1/' -e 's/\(^Time stamp:\).*/\1/' )
+                      zcat|strings -n12 -weS) 2>&1 | sed -e 's/\(^wc *: \).*/\1/' -e 's/\(^MIIV\).*/\1/' -e 's/\(^Time stamp:\).*/\1/' )
 
 ###################################
 # lookup/file_or_url_list         #

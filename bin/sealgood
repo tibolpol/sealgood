@@ -483,16 +483,13 @@ date() {
       <lookup.date.payload awk '/\/sig\.64$/,/\/sig\.bin$/' | grep -vE '/sig\.64$|/sig\.bin$|^PLACEHOLDER' | tr -d ' \n'                  | base64 -d >sig.tmp
       <lookup.date.payload awk '/\/tsr\.64$/,/\/tsr\.bin$/' | grep -vE '/tsr\.64$|/tsr\.bin$|^PLACEHOLDER' | tr -d ' \n' | tee tsr.tmp.64 | base64 -d >tsr.tmp
       # parse payload existing sign + existing tsr
-      rm -f tsr.64
-      if ! <lookup.date.payload grep -aq "^PLACEHOLDER_UNTIMESTAMPED_FILE"; then
-        <lookup.date.payload tsa_cert
-        if ! openssl ts -verify -in tsr.tmp -CAfile tsa_cert.pem -data sig.tmp &> ts_result; then
+      if <lookup.date.payload grep -aq "^PLACEHOLDER_UNTIMESTAMPED_FILE" ||
+        ! openssl ts -verify -in tsr.tmp -CAfile <(<lookup.date.payload tsa_cert) -data sig.tmp &> ts_result; then
           if [ -s sig.tmp ]; then
             cat sig.tmp # Horodatage sur la signature (préférable ? obligatoire ?)
           else
             cat lookup.date.original # Horodatage sur le document clean (ancienne méthode)
           fi | timestamp | base64 -w 0 | tr -d ' \n' >tsr.64
-        fi
       fi
       if [ -s tsr.64 ];then
         local REXP="^PLACEHOLDER_UNTIMESTAMPED_FILE"
