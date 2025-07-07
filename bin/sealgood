@@ -487,8 +487,10 @@ date() {
         ! openssl ts -verify -in tsr.tmp -CAfile <(<lookup.date.payload tsa_cert) -data sig.tmp &> ts_result; then
           if [ -s sig.tmp ]; then
             cat sig.tmp # Horodatage sur la signature (préférable ? obligatoire ?)
+            ts_verify="openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig.bin # $(_ "verify timestamp")"
           else
             cat lookup.date.original # Horodatage sur le document clean (ancienne méthode)
+            ts_verify="openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/\$filename.pdf # $(_ "verify timestamp")"
           fi | timestamp | base64 -w 0 | tr -d ' \n' >tsr.64
       fi
       if [ -s tsr.64 ];then
@@ -498,12 +500,14 @@ date() {
           grep -aq "$REXP" <lookup.date.payload ||
             die 8 "$LINENO: assert failure"
         }
+        REXP="s|$REXP|$(cat tsr.64)|"
+        ts_verify="s|^openssl ts -verify -in.*|$ts_verify|"
         # edit du résultat
         if [[ $filetype =~ gzip ]];then
           cat lookup.date.original
-          <lookup.date.payload sed "s|$REXP|$(cat tsr.64)|" | gzip -nc
+          <lookup.date.payload sed -e "$REXP" | gzip -n
         else
-          <lookup.date sed "s|$REXP|$(cat tsr.64)|" # À revoir : lit tout le doc
+          <lookup.date         sed -e "$REXP" # DANGER : lit tout le doc
         fi
       else
         cat lookup.date
@@ -659,7 +663,7 @@ verify() {
       else
         success "$(_ "Signature extracted and decoded")"
         # 3. Extraction de la clé publique
-        <lookup.verify.payload awk '/-----BEGIN PUBLIC KEY-----/,/-----END PUBLIC KEY-----/' payload | head -n 3 >public_key.pem
+        <lookup.verify.payload awk '/-----BEGIN PUBLIC KEY-----/,/-----END PUBLIC KEY-----/' | head -n 3 >public_key.pem
         if ! [ -s public_key.pem ]; then
           warning "$(_ "Public key not found in document")"
         else
@@ -682,12 +686,16 @@ verify() {
       if [ -s tsa_cert.pem ] || [ -s public_key.pem ]; then
 
         # Vérification de la signature
-        if [ -s public_key.pem ] && [ -s signature.bin ] && [ -s original_data ]; then
+        if [ -s public_key.pem ] && [ -s signature.bin ] && [ -s lookup.verify.original ]; then
           step "$(_ "Verifying digital signature")"
           (
+            # <lookup.verify.payload grep -qa \
+            # -e 'openssl pkeyutl -verify -pubin -inkey /tmp/.* -sigfile /tmp/sig.bin -rawin -in /tmp/file.pdf' &&
             set -x
-            openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in lookup.verify.original -rawin &> sig_result ||
-            openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in <(openssl dgst -sha256 -binary lookup.verify.original) &> sig_result | cat
+            openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -rawin -in lookup.verify.original &> sig_result
+          ) || (
+            set -x
+            openssl pkeyutl -verify -pubin -inkey public_key.pem -sigfile signature.bin -in <(openssl dgst -sha256 -binary lookup.verify.original) &> sig_result
           )
           SIG_VERIFY=$?
 
@@ -707,8 +715,10 @@ verify() {
           (( DATE_VERIFY = 1 ))
           if [ -s signature.bin ];then
             (
-            set -x
-            openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data signature.bin &> ts_result
+              # <lookup.verify.payload grep -qa \
+              # -e 'openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig' &&
+              set -x
+              openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data signature.bin &> ts_result
             )
             DATE_VERIFY=$?
           fi
@@ -1231,7 +1241,7 @@ lookup() {
           END{exit (begin == 1 && end == FNR)}' lookup."$sfx".payload
         then
           local count=$(awk '/^wc *: /{print $5;exit}' lookup."$sfx".payload)
-          (( count == $(wc -c <lookup."$sfx".original) )) ||
+          (( count == 0 || count == $(wc -c <lookup."$sfx".original) )) ||
           rm -f lookup."$sfx".payload lookup."$sfx".original
         else
           rm -f lookup."$sfx".payload lookup."$sfx".original

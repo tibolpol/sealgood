@@ -1,5 +1,5 @@
 #!/bin/bash
 
-cd docs & make
+cd docs && make
 
 exit 0  # Important : code de sortie 0 = succès
