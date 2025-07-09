@@ -5,7 +5,7 @@
 # Copyright (c) 2025 Thibault Le Paul (@tibolpol)        #
 # Licence MIT - https://opensource.org/license/mit/      #
 #                                                        #
-# <$*    : help genkey { clean inject date sign verify } #
+# <$*    : help genkey { clean date sign verify } #
 # <stdin : data to sign | timestamp                      #
 # <$HOME/.ssh/ed25519_*.pem : Ed25519 keys               #
 # <$HOME/.ssh/id_rsa.pub : identity clear text           #
@@ -40,40 +40,36 @@ genkey --> end_of_pipe
 enumerate --> file2tgz
 file2tgz --> clean
 enumerate --> clean
-main --> clean
-clean --> inject
-inject --> sign
+clean --> sign
 sign --> date
 date --> verify
 verify --> end_of_pipe
 end_of_pipe[end of pipe] --> stdout((1))
+click lookup "#lookup"
+click clean "#clean"
+click date "#date"
+click end_of_pipe "#end_of_pipe"
+click enumerate "#enumerate"
+click file2tgz "#file2tgz"
+click genkey "#genkey"
+click help "#help"
+click inject "#inject"
+click main "#main"
+click sign "#sign"
+click verify "#verify"
 ```
 ```bash
 #######################################################
 # MAIN                                                #
-# <$* : help genkey { clean inject date sign verify } #
+# <$* : help genkey { clean date sign verify } #
 # <stdin  : input.raw                                 #
 # >stdout : output.raw                                #
 #######################################################
 main() {
   if (( $# ));then
-    local args="$*"
-    args="${args//date/inject date}"
-    args="${args//sign/inject sign}"
-    help "$args" # suite du pipe
+    help "$*" # suite du pipe
   else
-    local filetype="$(lookup main)"
-    if [[ $filetype =~ pdf ]];then
-      read -r -p "$myname { clean inject date sign verify } ? " <&"$fdtty"
-      [ -n "$REPLY" ] &&
-        local args="$REPLY" &&
-        args="${args//date/inject date}" &&
-        args="${args//sign/inject sign}" &&
-        clean "$args" < lookup.main
-    else
-      help help # affiche l'aide
-    fi
-    rm -f lookup.main{,.unzip,.payload,.original}
+    </dev/null help help # affiche l'aide
   fi | tee >(success "main output: $(lookup)" >&2) | cat
 }
 
@@ -97,20 +93,19 @@ help() {
     cat <<EOF >&2
 $(echo -e "\033[1;36m")SealGood - $(_ "Document signing and timestamping via") OpenSSL + TSA$(echo -e "\033[0m")
 
-$(_ "Usage"): $myname help genkey { clean inject date sign verify }
+$(_ "Usage"): $myname help genkey { clean date sign verify }
 
 $(_ "COMMANDS"):
   genkey    $(_ "Generate a new password-protected ed25519 key pair")
   help      $(_ "Show this help")
   clean     $(_ "Extract original content without SEALGOOD tags")
-  inject    $(_ "Inject SealGood payload into PDF, HTML or PEM file")
   date      $(_ "Timestamp a document via trusted third party (TSA)")
   sign      $(_ "Sign a document with your private key")
   verify    $(_ "Verify document signature and timestamp")
 
   $(_ "Commands compose into an implicitly ordered pipeline"):
 
-  clean | inject | sign | date | verify
+  clean | sign | date | verify
   - $(_ "reads data from") stdin
   - $(_ "comments progress on") stderr
   - $(_ "writes data to") stdout
@@ -122,10 +117,8 @@ $(_ "COMMANDS"):
   $(_ "hashes embedded in signed/timestamped filenames")
   enumerate
    \\
-     +-- clean | inject | sign | date | verify
+     +-- clean | sign | date | verify
 
-  inject          $(_ "respects existing SealGood payload");
-  sign date       $(_ "implicitly perform") inject;
   sign date       $(_ "respect existing signature/timestamp");
   enumerate sign  $(_ "asks private key passphrase only once").
 
@@ -141,7 +134,7 @@ $(_ "Files used"):
   https://freetsa.org/files/cacert.pem : $(_ "TSA root certificate")
 
 $(_ "Free servlet") :
-  ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify}
+  ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify}
 
 $(_ "See also") : https://github.com/tibolpol/sealgood
 
@@ -216,6 +209,18 @@ end
   file2tgz -->|tar+gzip| l1
 process -->|payload+data| l1((1))
 l1 -->|payload+data| clean
+click lookup "#lookup"
+click clean "#clean"
+click date "#date"
+click end_of_pipe "#end_of_pipe"
+click enumerate "#enumerate"
+click file2tgz "#file2tgz"
+click genkey "#genkey"
+click help "#help"
+click inject "#inject"
+click main "#main"
+click sign "#sign"
+click verify "#verify"
 ```
 ```bash
 ##############################
@@ -271,6 +276,18 @@ subgraph file2tgz
 end
 tar -->|tar+gzip| l1((1))
 l1 -->|payload+data| clean
+click lookup "#lookup"
+click clean "#clean"
+click date "#date"
+click end_of_pipe "#end_of_pipe"
+click enumerate "#enumerate"
+click file2tgz "#file2tgz"
+click genkey "#genkey"
+click help "#help"
+click inject "#inject"
+click main "#main"
+click sign "#sign"
+click verify "#verify"
 ```
 ```bash
 ############################################
@@ -338,7 +355,7 @@ file2tgz(){
 :<<'```bash'
 ```
 ## <a id=clean>clean</a>: Restitue input.raw sans payload
-Next: [inject](#inject) Previous: [main](#main), [enumerate](#enumerate), [file2tgz](#file2tgz)
+Next: [sign](#sign) Previous: [main](#main), [enumerate](#enumerate), [file2tgz](#file2tgz)
 ```mermaid
 flowchart TB
 l0((0)) -->|payload+data| lookup{payload ?}
@@ -352,6 +369,18 @@ end
 extract -->|data| l1((1))
 cat -->|data| l1((1))
 l1 -->|payload+data| inject
+click clean "#clean"
+click date "#date"
+click lookup "#lookup"
+click end_of_pipe "#end_of_pipe"
+click enumerate "#enumerate"
+click file2tgz "#file2tgz"
+click genkey "#genkey"
+click help "#help"
+click inject "#inject"
+click main "#main"
+click sign "#sign"
+click verify "#verify"
 ```
 ```bash
 ######################################
@@ -379,7 +408,7 @@ clean() {
     rm -f lookup.clean{,.unzip,.payload,.original}
   else
     cat
-  fi | inject "$args"
+  fi | sign "$args"
 }
 
 :<<'```bash'
@@ -389,20 +418,21 @@ Next: [sign](#sign) Previous: [clean](#clean)
 ```mermaid
 flowchart TB
 l0((0)) -->|payload+data| lookup{{filetype ?}}
+l3((3)) -->|payload| t1{{fd/3 ?}}
+get_payload -->|payload| t1
 subgraph inject
-  lookup -->|payload+data| lookup.inject[/lookup.inject/]
-  lookup -->|pdf| inject_pdf
-  lookup -->|xml| inject_xml
-  lookup -->|gzip| inject_gzip
-  lookup -->|pem| inject_after_eod
-  lookup -->|?| cat((cat))
+  t1 --> l3_((3))
+  lookup
 end
-cat -->|data| l1((1))
-inject_pdf -->|payload+data| l1((1))
-inject_xml -->|payload+data| l1((1))
-inject_gzip -->|payload+data| l1((1))
-inject_after_eod -->|payload+data| l1((1))
+lookup -->|payload+data| l1
+l3_ -->|payload| inject_type
+lookup -->|data| inject_type["inject_${filetype}"]
+inject_type -->|payload+data| l1((1))
 l1 -->|payload+data| sign
+click lookup "#lookup"
+click sign "#sign"
+click get_payload "#get_payload"
+click inject_type "#inject_gzip"
 ```
 ```bash
 ##############################################################
@@ -465,6 +495,17 @@ edit -->|payload+data| l1
 cat -->|payload+data| l1((1))
 lookup -->|no| die((die))
 l1 -->|payload+data| verify
+click clean "#clean"
+click date "#date"
+click end_of_pipe "#end_of_pipe"
+click enumerate "#enumerate"
+click file2tgz "#file2tgz"
+click genkey "#genkey"
+click help "#help"
+click inject "#inject"
+click main "#main"
+click sign "#sign"
+click verify "#verify"
 ```
 ```bash
 #######################################################
@@ -478,6 +519,14 @@ date() {
   local rargs=$? args="$(cat args)"
   if ((rargs == 0));then
     local filetype="$(lookup date)"
+    if ! [[ $filetype =~ sealgood ]];then
+      filetype="$(
+        mv lookup.date tmp
+        rm -f lookup.date{,.unzip,.payload,.original}
+        <tmp inject inject | lookup date
+        rm -f tmp
+      )"
+    fi <lookup.date
     if [[ $filetype =~ sealgood ]];then
       <lookup.date.payload awk '/\/sig\.64$/,/\/sig\.bin$/' | grep -vE '/sig\.64$|/sig\.bin$|^PLACEHOLDER' | tr -d ' \n'                  | base64 -d >sig.tmp
       <lookup.date.payload awk '/\/tsr\.64$/,/\/tsr\.bin$/' | grep -vE '/tsr\.64$|/tsr\.bin$|^PLACEHOLDER' | tr -d ' \n' | tee tsr.tmp.64 | base64 -d >tsr.tmp
@@ -513,8 +562,8 @@ date() {
         warning "$(_ "Already timestamped")"
       fi </dev/null  # protege stdin
     else
-      die 8 "$LINENO: assert failure"
-    fi <lookup.date | tee >(echo "date output: $(lookup)" >&2)
+      cat lookup.date
+    fi | tee >(echo "date output: $(lookup)" >&2)
     rm -f lookup.date{,.unzip,.payload,.original}
   else
     cat
@@ -524,7 +573,7 @@ date() {
 :<<'```bash'
 ```
 ## <a id=sign>sign</a>: Signature d'un document (payload, hash, signature)
-Next: [date](#date) Previous: [inject](#inject)
+Next: [date](#date) Previous: [clean](#inject)
 ```mermaid
 flowchart TB
 l0((0)) -->|payload+data| lookup{payload ?}
@@ -548,6 +597,18 @@ cat -->|payload+data| l1((1))
 t3 -->|no| die((die))
 lookup -->|no| die
 l1 -->|payload+data| date
+click lookup "#lookup"
+click clean "#clean"
+click date "#date"
+click end_of_pipe "#end_of_pipe"
+click enumerate "#enumerate"
+click file2tgz "#file2tgz"
+click genkey "#genkey"
+click help "#help"
+click inject "#inject"
+click main "#main"
+click sign "#sign"
+click verify "#verify"
 ```
 ```bash
 ######################################################
@@ -562,6 +623,14 @@ sign() {
   local rargs=$? args="$(cat args)"
   if ((rargs == 0));then
     local filetype="$(lookup sign)"
+    if ! [[ $filetype =~ sealgood ]];then
+      filetype="$(
+        mv lookup.sign tmp
+        rm -f lookup.sign{,.unzip,.payload,.original}
+        <tmp inject inject | lookup sign
+        rm -f tmp
+      )"
+    fi <lookup.sign
     if [[ $filetype =~ sealgood ]];then
       if [[ $filetype =~ gzip ]];then
         if zgrep -aq "^PLACEHOLDER_UNSIGNED_FILE" lookup.sign; then
@@ -583,7 +652,7 @@ sign() {
         fi
       fi <lookup.sign
     else
-      die 8 "$LINENO: assert failure"
+      cat lookup.sign
     fi | tee >(echo "sign output: $(lookup)" >&2)
     rm -f lookup.sign{,.unzip,.payload,.original}
   else
@@ -632,6 +701,18 @@ report -->|payload+data| l1((1))
 report -->|messages| l2((2))
 cat0 -->|data| l1((1))
 l1 -->|payload+data| end_of_pipe[end of pipe]
+click lookup "#lookup"
+click clean "#clean"
+click date "#date"
+click end_of_pipe "#end_of_pipe"
+click enumerate "#enumerate"
+click file2tgz "#file2tgz"
+click genkey "#genkey"
+click help "#help"
+click inject "#inject"
+click main "#main"
+click sign "#sign"
+click verify "#verify"
 ```
 ```bash
 ##################################################
@@ -851,7 +932,7 @@ $(_ "Verification tools"):
 - $(_ "non-POSIX but recognized standard"): openssl
 
 $(_ "Free servlet"):
-ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify} < "\$filename.pdf" > /tmp/result
+ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "\$filename.pdf" > /tmp/result
 
 $(_ "The signed document has the following properties"):
 file -bi : $(<original_data lookup)
@@ -943,6 +1024,18 @@ subgraph tsa_cert
 end
 awk -->|pem| tsacert[/tsa_cert.pem/]
 curl -->|pem| tsacert
+click lookup "#lookup"
+click clean "#clean"
+click date "#date"
+click end_of_pipe "#end_of_pipe"
+click enumerate "#enumerate"
+click file2tgz "#file2tgz"
+click genkey "#genkey"
+click help "#help"
+click inject "#inject"
+click main "#main"
+click sign "#sign"
+click verify "#verify"
 ```
 ```bash
 ################################
@@ -971,6 +1064,18 @@ subgraph timestamp
   ts -->|tsq| curl[freetsa.org/tsr]
 end
 curl -->|tsr.bin| l1((1))
+click lookup "#lookup"
+click clean "#clean"
+click date "#date"
+click end_of_pipe "#end_of_pipe"
+click enumerate "#enumerate"
+click file2tgz "#file2tgz"
+click genkey "#genkey"
+click help "#help"
+click inject "#inject"
+click main "#main"
+click sign "#sign"
+click verify "#verify"
 ```
 ```bash
 ########################
@@ -995,6 +1100,18 @@ subgraph signraw
   clean -->|data| pkeyutl
 end
 pkeyutl[openssl pkeyutl -sign] -->|raw signature| l1((1))
+click lookup "#lookup"
+click clean "#clean"
+click date "#date"
+click end_of_pipe "#end_of_pipe"
+click enumerate "#enumerate"
+click file2tgz "#file2tgz"
+click genkey "#genkey"
+click help "#help"
+click inject "#inject"
+click main "#main"
+click sign "#sign"
+click verify "#verify"
 ```
 ```bash
 ###########################
@@ -1026,6 +1143,18 @@ subgraph signdgst
   hash -->|hash| pkeyutl
 end
 pkeyutl[openssl pkeyutl -sign] -->|digest signature| l1((1))
+click lookup "#lookup"
+click clean "#clean"
+click date "#date"
+click end_of_pipe "#end_of_pipe"
+click enumerate "#enumerate"
+click file2tgz "#file2tgz"
+click genkey "#genkey"
+click help "#help"
+click inject "#inject"
+click main "#main"
+click sign "#sign"
+click verify "#verify"
 ```
 ```bash
 ###########################
@@ -1056,6 +1185,18 @@ subgraph inject_after_eod
   od  -->|data| get_payload
 end
 get_payload -->|payload+data| l1((1))
+click lookup "#lookup"
+click clean "#clean"
+click date "#date"
+click end_of_pipe "#end_of_pipe"
+click enumerate "#enumerate"
+click file2tgz "#file2tgz"
+click genkey "#genkey"
+click help "#help"
+click inject "#inject"
+click main "#main"
+click sign "#sign"
+click verify "#verify"
 ```
 ```bash
 ##############################################################
@@ -1097,6 +1238,18 @@ subgraph inject_xml
   od  -->|data| get_payload
 end
 get_payload -->|payload+data xml| l1((1))
+click lookup "#lookup"
+click clean "#clean"
+click date "#date"
+click end_of_pipe "#end_of_pipe"
+click enumerate "#enumerate"
+click file2tgz "#file2tgz"
+click genkey "#genkey"
+click help "#help"
+click inject "#inject"
+click main "#main"
+click sign "#sign"
+click verify "#verify"
 ```
 ```bash
 ##################################################################
@@ -1123,6 +1276,18 @@ subgraph inject_gzip
   get_payload -->|payload+data| gzip
 end
 gzip -->|payload+data+gzip| l1((1))
+click lookup "#lookup"
+click clean "#clean"
+click date "#date"
+click end_of_pipe "#end_of_pipe"
+click enumerate "#enumerate"
+click file2tgz "#file2tgz"
+click genkey "#genkey"
+click help "#help"
+click inject "#inject"
+click main "#main"
+click sign "#sign"
+click verify "#verify"
 ```
 ```bash
 ##################################################################
@@ -1167,6 +1332,18 @@ subgraph lookup
   x0 -->|data| data[/original_data/]
 end
 x0 -->|mime-type| l1((1))
+click lookup "#lookup"
+click clean "#clean"
+click date "#date"
+click end_of_pipe "#end_of_pipe"
+click enumerate "#enumerate"
+click file2tgz "#file2tgz"
+click genkey "#genkey"
+click help "#help"
+click inject "#inject"
+click main "#main"
+click sign "#sign"
+click verify "#verify"
 ```
 ```bash
 ###########################################
@@ -1197,12 +1374,12 @@ lookup() {
         if grep -aq '### BEGIN SEALGOOD' lookup."$sfx".unzip;then
           # count < dernier wc : x x x
           local count=$(< lookup."$sfx".unzip awk '
-          /### BEGIN SEALGOOD /{state=1}
-          /### END SEALGOOD /{state=0}
-          state && /^wc *: /{count=$5}
-          END{if(count) print count}'
+            /### BEGIN SEALGOOD /{state=1}
+            /### END SEALGOOD /{state=0}
+            state && /^wc *: /{count=$5}
+            END{if(count) print count}'
           )
-          { head -c $count >lookup."$sfx".original &&
+          { head -c $count >lookup."$sfx".original 2>/dev/null &&
             zcat >lookup."$sfx".payload 2>/dev/null &&
             zcat lookup."$sfx".original >lookup."$sfx".unzip ||
             rm -f lookup."$sfx".{original,payload}

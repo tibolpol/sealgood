@@ -23,7 +23,7 @@ Herramientas de verificación:
 - no POSIX pero estándar reconocido: openssl
 
 Servlet gratuita:
-ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
+ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "$filename.pdf" > /tmp/result
 
 El documento firmado tiene las siguientes propiedades:
 file -bi : text/[PEM] Clave pública+plain; charset=utf-8
@@ -83,7 +83,7 @@ openssl x509 -reply -text -in /tmp/freetsa_cacert.pem # mostrar detalles del cer
 
 ## Elemento de verificación 2:  Codificación base64 del tsr validado por TSA
 # COPIAR la línea siguiente y PEGAR en el archivo /tmp/tsr.64
-PLACEHOLDER_UNTIMESTAMPED_FILE
+MIIV
 base64 -d < /tmp/tsr.64 > /tmp/tsr.bin
 openssl ts -reply -text -in /tmp/tsr.bin # mostrar detalles del sello temporal
 

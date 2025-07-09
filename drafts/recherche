@@ -1,0 +1,28 @@
+!(export fddebug;../bin/sealgood clean) < recherche {fddebug}>&2
+!(export fddebug;../bin/sealgood clean) < ../tests/samples/pempub {fddebug}>&2
+!(export fddebug;../bin/sealgood inject) < ../tests/samples/pempub {fddebug}>&2
+
+
+!(export fddebug;ls ../tests/samples/test_inject_{fr,es,us,pt} | ../bin/sealgood date | tar -zxOf-) {fddebug}>&2
+!(export fddebug;../bin/sealgood date verify < /tests/samples/test_inject_* | ../bin/sealgood clean | tar -zxOf-) {fddebug}>&2
+mydif $LINENO ../samples/test_date_gzip  < <(( cat $TMPDIR/pubkeys.tgz |
+
+!(fddebug=$fddebug fdtty=$fdtty LANGUAGE=us sealgood date verify <pubkeys.tgz | tar -zvxOf- 2>&1) {fdtty}</dev/null {fddebug}>&2
+
+!(fddebug=$fddebug fdtty=$fdtty LANGUAGE=us sealgood verify       <pubkeys.tgz | zcat | strings -n12 -weS       2>&1) {fdtty}</dev/null {fddebug}>&2
+!(fddebug=$fddebug fdtty=$fdtty LANGUAGE=us sealgood inject       <pubkeys.tgz | zcat | strings -n12 -weS       2>&1) {fdtty}</dev/null {fddebug}>&2
+!(fddebug=$fddebug fdtty=$fdtty LANGUAGE=us sealgood date verify  <pubkeys.tgz | zcat | strings -n12 -weS       2>&1) {fdtty}</dev/null {fddebug}>&2
+
+!ls ../tests/samples/test_date_{fr,es,us,pt} | LANGUAGE=fr STOPFILE=/stopfile sealgood date
+
+!grep -n lookup ../bin/sealgood | grep -av ' -->'
+!grep -n 'rm -f lookup' ../bin/sealgood
+
+!git log --oneline --decorate --graph --all
+!git show
+
+
+
+!cd tests/integration&&./test_basic
+
+!tar -ztf pubkeys.tgz

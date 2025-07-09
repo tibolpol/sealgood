@@ -1,20 +1,19 @@
 ```console
 [1;36mSealGood - Firma y sellado temporal de documentos mediante OpenSSL + TSA[0m
 
-Uso: sealgood help genkey { clean inject date sign verify }
+Uso: sealgood help genkey { clean date sign verify }
 
 COMANDOS:
   genkey    Genera un nuevo par de claves ed25519 protegido por contraseña
   help      Mostrar esta ayuda
   clean     Extraer contenido original sin etiquetas SEALGOOD
-  inject    Inyectar payload SealGood en archivos PDF, HTML o PEM
   date      Sellar temporalmente un documento mediante tercero de confianza (TSA)
   sign      Firmar un documento con tu clave privada
   verify    Verificar firma y sello temporal del documento
 
   Los comandos forman un pipeline ordenado implícitamente:
 
-  clean | inject | sign | date | verify
+  clean | sign | date | verify
   - lee datos desde stdin
   - comenta progreso en stderr
   - escribe datos en stdout
@@ -26,10 +25,8 @@ COMANDOS:
   incrustados en nombres de archivo firmados/marcados temporalmente
   enumerate
    \
-     +-- clean | inject | sign | date | verify
+     +-- clean | sign | date | verify
 
-  inject          respeta el payload SealGood existente;
-  sign date       realiza implícitamente inject;
   sign date       respeta firma/sello temporal existente;
   enumerate sign  solicita frase de contraseña de clave privada solo una vez.
 
@@ -45,7 +42,7 @@ Archivos utilizados:
   https://freetsa.org/files/cacert.pem : certificado raíz TSA
 
 Servlet gratuita :
-  ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify}
+  ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify}
 
 Ver también : https://github.com/tibolpol/sealgood
 

@@ -1,15 +1,15 @@
 
-[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_es -> test_inject_es ===[0m
+[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_date_es -> test_date_es ===[0m
 
-[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_fr -> test_inject_fr ===[0m
+[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_date_fr -> test_date_fr ===[0m
 
-[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_pt -> test_inject_pt ===[0m
+[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_date_pt -> test_date_pt ===[0m
 
-[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_us -> test_inject_us ===[0m
+[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_date_us -> test_date_us ===[0m
 
 [1;36m=== Fin des vérifications ===[0m
 [1;32mmain output: application/tar+gzip; charset=binary[0m
-test_inject_es
+test_date_es
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----
@@ -17,7 +17,7 @@ MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 Déclaration de signataire : Thibault LE PAUL | tlp@laposte.net
 Clé publique ed25519 du signataire : https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealdate.pem
 
-test_inject_fr
+test_date_fr
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----
@@ -25,7 +25,7 @@ MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 Déclaration de signataire : Thibault LE PAUL | tlp@laposte.net
 Clé publique ed25519 du signataire : https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealdate.pem
 
-test_inject_pt
+test_date_pt
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----
@@ -33,7 +33,7 @@ MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 Déclaration de signataire : Thibault LE PAUL | tlp@laposte.net
 Clé publique ed25519 du signataire : https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealdate.pem
 
-test_inject_us
+test_date_us
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----

@@ -1,20 +1,19 @@
 ```console
 [1;36mSealGood - Assinatura e carimbo do tempo de documentos via OpenSSL + TSA[0m
 
-Utilização: sealgood help genkey { clean inject date sign verify }
+Utilização: sealgood help genkey { clean date sign verify }
 
 COMANDOS:
   genkey    Gerar um novo par de chaves ed25519 protegido por senha
   help      Mostrar esta ajuda
   clean     Extrair conteúdo original sem tags SEALGOOD
-  inject    Injetar payload SealGood em arquivo PDF, HTML ou PEM
   date      Carimbar documento via terceira parte confiável (TSA)
   sign      Assinar documento com sua chave privada
   verify    Verificar assinatura e carimbo do tempo do documento
 
   Comandos compõem um pipeline implicitamente ordenado:
 
-  clean | inject | sign | date | verify
+  clean | sign | date | verify
   - lê dados de stdin
   - comenta progresso em stderr
   - escreve dados em stdout
@@ -26,10 +25,8 @@ COMANDOS:
   criptográficos embutidos em nomes de arquivos assinados/carimbados
   enumerate
    \
-     +-- clean | inject | sign | date | verify
+     +-- clean | sign | date | verify
 
-  inject          respeita payload SealGood existente;
-  sign date       executa implicitamente inject;
   sign date       respeita assinatura/carimbo existente;
   enumerate sign  pede senha da chave privada apenas uma vez.
 
@@ -45,7 +42,7 @@ Arquivos utilizados:
   https://freetsa.org/files/cacert.pem : certificado raiz TSA
 
 Servlet livre :
-  ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify}
+  ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify}
 
 Veja também : https://github.com/tibolpol/sealgood
 

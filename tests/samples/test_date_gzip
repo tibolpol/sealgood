@@ -24,7 +24,7 @@ Timestamp status: [1;32mVALID[0m
 [1;32mDocument is timestamped and intact[0m
 verify output: application/sealgood+tar+gzip; charset=binary
 [1;32mmain output: application/sealgood+tar+gzip; charset=binary[0m
-test_inject_es_sealgood:e037f239
+test_date_es_sealgood:e037f239
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----
@@ -50,7 +50,7 @@ Herramientas de verificación:
 - no POSIX pero estándar reconocido: openssl
 
 Servlet gratuita:
-ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
+ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "$filename.pdf" > /tmp/result
 
 El documento firmado tiene las siguientes propiedades:
 file -bi : text/[PEM] Clave pública+plain; charset=utf-8
@@ -126,7 +126,7 @@ openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$
 
 ### END SEALGOOD ###
 
-test_inject_fr_sealgood:e037f239
+test_date_fr_sealgood:e037f239
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----
@@ -152,7 +152,7 @@ Herramientas de verificación:
 - no POSIX pero estándar reconocido: openssl
 
 Servlet gratuita:
-ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
+ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "$filename.pdf" > /tmp/result
 
 El documento firmado tiene las siguientes propiedades:
 file -bi : text/[PEM] Clave pública+plain; charset=utf-8
@@ -228,9 +228,9 @@ openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$
 
 ### END SEALGOOD ###
 
-test_inject_pt_sealgood:e037f239
- 1test_inject_es_sealgood:e037f239
-test_inject_us_sealgood:e037f239
+test_date_pt_sealgood:e037f239
+ 1test_date_es_sealgood:e037f239
+test_date_us_sealgood:e037f239
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----
@@ -256,7 +256,7 @@ Herramientas de verificación:
 - no POSIX pero estándar reconocido: openssl
 
 Servlet gratuita:
-ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
+ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "$filename.pdf" > /tmp/result
 
 El documento firmado tiene las siguientes propiedades:
 file -bi : text/[PEM] Clave pública+plain; charset=utf-8
@@ -350,7 +350,7 @@ Verification tools:
 - non-POSIX but recognized standard: openssl
 
 Free servlet:
-ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
+ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "$filename.pdf" > /tmp/result
 
 The signed document has the following properties:
 file -bi : application/tar+gzip; charset=binary

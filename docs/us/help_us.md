@@ -1,20 +1,19 @@
 ```console
 [1;36mSealGood - Document signing and timestamping via OpenSSL + TSA[0m
 
-Usage: sealgood help genkey { clean inject date sign verify }
+Usage: sealgood help genkey { clean date sign verify }
 
 COMMANDS:
   genkey    Generate a new password-protected ed25519 key pair
   help      Show this help
   clean     Extract original content without SEALGOOD tags
-  inject    Inject SealGood payload into PDF, HTML or PEM file
   date      Timestamp a document via trusted third party (TSA)
   sign      Sign a document with your private key
   verify    Verify document signature and timestamp
 
   Commands compose into an implicitly ordered pipeline:
 
-  clean | inject | sign | date | verify
+  clean | sign | date | verify
   - reads data from stdin
   - comments progress on stderr
   - writes data to stdout
@@ -26,10 +25,8 @@ COMMANDS:
   hashes embedded in signed/timestamped filenames
   enumerate
    \
-     +-- clean | inject | sign | date | verify
+     +-- clean | sign | date | verify
 
-  inject          respects existing SealGood payload;
-  sign date       implicitly perform inject;
   sign date       respect existing signature/timestamp;
   enumerate sign  asks private key passphrase only once.
 
@@ -45,7 +42,7 @@ Files used:
   https://freetsa.org/files/cacert.pem : TSA root certificate
 
 Free servlet :
-  ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify}
+  ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify}
 
 See also : https://github.com/tibolpol/sealgood
 

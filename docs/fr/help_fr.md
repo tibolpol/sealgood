@@ -1,20 +1,19 @@
 ```console
 [1;36mSealGood - Signature et horodatage de documents via OpenSSL + TSA[0m
 
-Utilisation: sealgood help genkey { clean inject date sign verify }
+Utilisation: sealgood help genkey { clean date sign verify }
 
 COMMANDES:
   genkey    Génère une nouvelle paire de clés ed25519 protégée par mot de passe
   help      Affiche cette aide
   clean     Extrait le contenu original sans les balises SEALGOOD
-  inject    Injecte le payload SealGood dans un fichier PDF, HTML ou PEM
   date      Horodate un document via un tiers de confiance (TSA)
   sign      Signe un document avec votre clé privée
   verify    Vérifie la signature et l'horodatage d'un document
 
   Les commandes se composent en pipeline implicitement ordonné:
 
-  clean | inject | sign | date | verify
+  clean | sign | date | verify
   - lit les données sur stdin
   - commente la progression sur stderr
   - écrit les données sur stdout
@@ -26,10 +25,8 @@ COMMANDES:
   cryptographiques intégrées aux noms de fichiers signés/horodatés
   enumerate
    \
-     +-- clean | inject | sign | date | verify
+     +-- clean | sign | date | verify
 
-  inject          respecte le payload SealGood déjà présent;
-  sign date       opèrent implicitement inject;
   sign date       respectent une signature/horodatage déjà présente;
   enumerate sign  ne demande qu'une fois la passphrase de la clé privée.
 
@@ -45,7 +42,7 @@ Fichiers utilisés:
   https://freetsa.org/files/cacert.pem : certificat racine TSA
 
 Servlet ouverte :
-  ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify}
+  ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify}
 
 Voir aussi : https://github.com/tibolpol/sealgood
 

@@ -1,4 +1,3 @@
-inject output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 Using configuration from /usr/lib/ssl/openssl.cnf
 date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
@@ -24,9 +23,8 @@ Estado del sello temporal: [1;32mVÃLIDO[0m
 [1;32mEl documento tiene sello temporal e intacto[0m
 verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
-[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_es -> test_inject_es_sealgood:e037f239 ===[0m
+[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_date_es -> test_date_es_sealgood:e037f239 ===[0m
 tee: lookup.verify: Permiso denegado
-inject output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 Using configuration from /usr/lib/ssl/openssl.cnf
 date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
@@ -52,9 +50,8 @@ Estado del sello temporal: [1;32mVÃLIDO[0m
 [1;32mEl documento tiene sello temporal e intacto[0m
 verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
-[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_fr -> test_inject_fr_sealgood:e037f239 ===[0m
+[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_date_fr -> test_date_fr_sealgood:e037f239 ===[0m
 tee: lookup.verify: Permiso denegado
-inject output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 Using configuration from /usr/lib/ssl/openssl.cnf
 date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
@@ -80,9 +77,8 @@ Estado del sello temporal: [1;32mVÃLIDO[0m
 [1;32mEl documento tiene sello temporal e intacto[0m
 verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
-[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_pt -> test_inject_pt_sealgood:e037f239 ===[0m
+[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_date_pt -> test_date_pt_sealgood:e037f239 ===[0m
 tee: lookup.verify: Permiso denegado
-inject output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 Using configuration from /usr/lib/ssl/openssl.cnf
 date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
@@ -108,11 +104,11 @@ Estado del sello temporal: [1;32mVÃLIDO[0m
 [1;32mEl documento tiene sello temporal e intacto[0m
 verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
-[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_inject_us -> test_inject_us_sealgood:e037f239 ===[0m
+[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_date_us -> test_date_us_sealgood:e037f239 ===[0m
 
 [1;36m=== Fin de verificaciones ===[0m
 [1;32mmain output: application/tar+gzip; charset=binary[0m
-test_inject_es_sealgood:e037f239
+test_date_es_sealgood:e037f239
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----
@@ -138,7 +134,7 @@ Herramientas de verificación:
 - no POSIX pero estándar reconocido: openssl
 
 Servlet gratuita:
-ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
+ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "$filename.pdf" > /tmp/result
 
 El documento firmado tiene las siguientes propiedades:
 file -bi : text/[PEM] Clave pública+plain; charset=utf-8
@@ -213,7 +209,7 @@ openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/s
 openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$filename.pdf # verificar sello temporal
 
 ### END SEALGOOD ###
-test_inject_fr_sealgood:e037f239
+test_date_fr_sealgood:e037f239
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----
@@ -239,7 +235,7 @@ Herramientas de verificación:
 - no POSIX pero estándar reconocido: openssl
 
 Servlet gratuita:
-ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
+ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "$filename.pdf" > /tmp/result
 
 El documento firmado tiene las siguientes propiedades:
 file -bi : text/[PEM] Clave pública+plain; charset=utf-8
@@ -314,8 +310,8 @@ openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/s
 openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$filename.pdf # verificar sello temporal
 
 ### END SEALGOOD ###
-test_inject_pt_sealgood:e037f239
-test_inject_us_sealgood:e037f239
+test_date_pt_sealgood:e037f239
+test_date_us_sealgood:e037f239
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----
@@ -341,7 +337,7 @@ Herramientas de verificación:
 - no POSIX pero estándar reconocido: openssl
 
 Servlet gratuita:
-ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean inject date verify} < "$filename.pdf" > /tmp/result
+ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "$filename.pdf" > /tmp/result
 
 El documento firmado tiene las siguientes propiedades:
 file -bi : text/[PEM] Clave pública+plain; charset=utf-8
