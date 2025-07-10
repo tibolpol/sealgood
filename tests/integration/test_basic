@@ -31,12 +31,14 @@ export -f mdstyle
 exec {fddebug}> >(stdbuf -oL sed -e 's/++[0-9]*++$/\n&/;p' -e 's/^/== /' >&2)
 export fddebug
 
-export mydir="$(cd "$(dirname "$0")";pwd)"
+export mydir="$(cd "$(dirname "$0")";pwd)" myname="$(basename "$0")"
 PATH="$(cd "$mydir/../../bin";pwd):$PATH"
 export TMPDIR=$(mktemp -d)
 exec {fdtty}</dev/null
 export fdtty # neutralise read <&$fdtty
 parallel "cd $mydir/../../locale/{}/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po" ::: fr es pt
+
+exec 1> >(tee $mydir/$myname.stdout)
 
 ########################################################################
 # help                                                                 #
@@ -46,7 +48,7 @@ parallel "mydif $LINENO ../../docs/{}/help_{}.md < <(LANGUAGE={} sealgood help 2
 
 ####################################################################
 # lookup/PEM pubkey                                                #
-# date/PEM pubkey                                                #
+# date/PEM pubkey                                                  #
 # get_payload                                                      #
 # locale/{{run,data}/fr,{run,data}/es,{run,data}/pt,{run,data}/us} #
 ####################################################################
@@ -80,10 +82,10 @@ LANGUAGE={} sealgood clean | tar -zvxOf-) 2>&1)" ::: fr es us pt
 # verify/sealgood+PEM pubkey      #
 # locale/{run/es,data/{fr,es,us}} #
 ###################################
-mydif $LINENO ../samples/test_date_pubkey  < <(( ls $mydir/../samples/test_date_{fr,es,us,pt} |
+mydif $LINENO ../samples/test_date_pubkey  < <(( ls $mydir/../samples/test_date_{es,fr,pt} |
 LANGUAGE=es sealgood date verify |
                       tee $TMPDIR/pubkeys.tgz | # garde pour le test suivant
-                      tar -zvxOf-) 2>&1 | sed -e 's/\(^MIIV\).*/\1/' -e 's/\(^Time stamp:\).*/\1/' )
+                      zcat|strings -n12 -weS) 2>&1 | sed -e 's/\(^MIIV\).*/\1/' -e 's/\(^Time stamp:\).*/\1/' )
 
 ############################
 # lookup/tar+gzip          #
@@ -94,7 +96,8 @@ LANGUAGE=es sealgood date verify |
 ############################
 mydif $LINENO ../samples/test_date_gzip  < <(( cat $TMPDIR/pubkeys.tgz |
 LANGUAGE=us sealgood date verify |
-                      zcat|strings -n12 -weS) 2>&1 | sed -e 's/\(^wc *: \).*/\1/' -e 's/\(^MIIV\).*/\1/' -e 's/\(^Time stamp:\).*/\1/' )
+                      zcat|strings -n12 -weS) 2>&1 | sed -e 's/\(^MIIV\).*/\1/' -e 's/\(^Time stamp:\).*/\1/' \
+                      -e 's/\(^wc       :\)   .[^ ].*/\1/' )
 
 ###################################
 # lookup/file_or_url_list         #

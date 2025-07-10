@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+# coding: utf-8
+import pathlib
+from flask import Flask, send_from_directory
+
+app = Flask(__name__)
+racine = pathlib.Path(__file__).parent.parent.resolve()
+bin_dir = racine / 'bin'  # Utilisation de l'opérateur / de pathlib
+
+@app.route('/<path:subpath>.md')
+def serve_md(subpath):
+    try:
+        return send_from_directory(bin_dir, f"{subpath}.md", mimetype='text/markdown')
+    except FileNotFoundError:
+        return "Fichier non trouvé", 404
+
+if __name__ == '__main__':
+    app.run(port=8000, debug=True)  # Mode debug pour voir les erreurs

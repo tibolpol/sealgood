@@ -1,5 +1,5 @@
 # synchro script
-!cd ../bin&&xgettext --keyword=_ --from-code=utf-8 -LShell -o $OLDPWD/sealgood.pot sealgood
+!cd ../bin&&xgettext --keyword=_ --from-code=utf-8 -LShell -o $OLDPWD/sealgood.pot sealgood filetypes
 
 # mesure les nouveautés
 !diff sealgood.pot fr/LC_MESSAGES/sealgood.po

@@ -3,7 +3,11 @@
 !(export fddebug;../bin/sealgood inject) < ../tests/samples/pempub {fddebug}>&2
 
 
-!(export fddebug;ls ../tests/samples/test_inject_{fr,es,us,pt} | ../bin/sealgood date | tar -zxOf-) {fddebug}>&2
+
+!(export fddebug;while ((ii++<3));do ls ../tests/samples/test_date_{es,fr,pt,us};done | ../bin/sealgood date | tar  -zvxOf-            ) {fddebug}>&2
+!(export fddebug;while ((ii++<1));do ls ../tests/samples/test_date_{es,fr,pt,us};done |tee >(while read ff;do wc - <$ff;done >&2)| ../bin/sealgood verify | tar  -zxf- --to-command="wc -") {fddebug}>&2
+!(export fddebug fdtty;while ((ii++<1));do ls ../tests/samples/test_date_{es,fr,pt,us};done |tee >(while read ff;do ssh sealgood@perso.tlp.name verify <$ff;done >&2)| ../bin/sealgood verify | tar  -zxf- --to-command="wc -") {fdtty}</dev/null {fddebug}>&2
+
 !(export fddebug;../bin/sealgood date verify < /tests/samples/test_inject_* | ../bin/sealgood clean | tar -zxOf-) {fddebug}>&2
 mydif $LINENO ../samples/test_date_gzip  < <(( cat $TMPDIR/pubkeys.tgz |
 
@@ -13,7 +17,7 @@ mydif $LINENO ../samples/test_date_gzip  < <(( cat $TMPDIR/pubkeys.tgz |
 !(fddebug=$fddebug fdtty=$fdtty LANGUAGE=us sealgood inject       <pubkeys.tgz | zcat | strings -n12 -weS       2>&1) {fdtty}</dev/null {fddebug}>&2
 !(fddebug=$fddebug fdtty=$fdtty LANGUAGE=us sealgood date verify  <pubkeys.tgz | zcat | strings -n12 -weS       2>&1) {fdtty}</dev/null {fddebug}>&2
 
-!ls ../tests/samples/test_date_{fr,es,us,pt} | LANGUAGE=fr STOPFILE=/stopfile sealgood date
+!ls ../tests/samples/test_date_{fr,es,us,pt} | sort -R | LANGUAGE=fr STOPFILE=/stopfile sealgood date
 
 !grep -n lookup ../bin/sealgood | grep -av ' -->'
 !grep -n 'rm -f lookup' ../bin/sealgood
@@ -26,3 +30,5 @@ mydif $LINENO ../samples/test_date_gzip  < <(( cat $TMPDIR/pubkeys.tgz |
 !cd tests/integration&&./test_basic
 
 !tar -ztf pubkeys.tgz
+
+!cd tests/integration&&(export fddebug;while ((ii++<2));do ls ../samples/test_date_{es,fr,pt,us};done | ../../bin/sealgood date | zcat | strings -n12 -weS) {fddebug}>&2
