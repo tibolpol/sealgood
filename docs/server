@@ -1,18 +1,38 @@
 #!/usr/bin/env python3
 # coding: utf-8
+import http.server
+import socketserver
 import pathlib
-from flask import Flask, send_from_directory
+import os
 
-app = Flask(__name__)
+PORT = 8000
 racine = pathlib.Path(__file__).parent.parent.resolve()
-bin_dir = racine / 'bin'  # Utilisation de l'opérateur / de pathlib
+BIN_DIR = racine / 'bin'
 
-@app.route('/<path:subpath>.md')
-def serve_md(subpath):
-    try:
-        return send_from_directory(bin_dir, f"{subpath}.md", mimetype='text/markdown')
-    except FileNotFoundError:
-        return "Fichier non trouvé", 404
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+            super().__init__(*args, directory=str(racine), **kwargs)
 
-if __name__ == '__main__':
-    app.run(port=8000, debug=True)  # Mode debug pour voir les erreurs
+    def do_GET(self):
+            # Vérifie si l'URL se termine par .md
+            if self.path.endswith('.md'):
+                # Extrait le nom de fichier sans le .md et sans le slash initial
+                file_name = self.path[1:-3]  # Enlève '/' et '.md'
+                file_path = BIN_DIR / f"{file_name}"
+
+                if file_path.exists():
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/markdown; charset=utf-8')
+                    self.end_headers()
+                    with open(file_path, 'rb') as f:
+                        self.wfile.write(f.read())
+                    return
+
+            # Si pas un .md ou fichier non trouvé, comportement par défaut
+            super().do_GET()
+
+with socketserver.TCPServer(("", PORT), Handler) as httpd:
+    print(f"Serveur HTTP sur le port {PORT}")
+    print(f"Accès aux fichiers Markdown: http://localhost:{PORT}/nomfichier.md")
+    print(f"Dossier source: {BIN_DIR}")
+    httpd.serve_forever()
