@@ -1,0 +1,16 @@
+#!/bin/bash
+
+export mydir="$(cd "$(dirname "$0")";pwd)" myname="$(basename "$0")"
+. "$mydir/test_prereq"
+exec 1> >(tee $mydir/$myname.stdout)
+
+
+####################################################################
+# lookup/PEM pubkey                                                #
+# date/PEM pubkey                                                  #
+# get_payload                                                      #
+# locale/{{run,data}/fr,{run,data}/es,{run,data}/pt,{run,data}/us} #
+####################################################################
+parallel "mydif $LINENO ../samples/test_date_{} < <((
+LANGUAGE={} sealgood clean date < $mydir/../samples/test_date_pt 2>/dev/null) 2>&1 | sed -e 's/\(^MIIV\).*/\1/' )
+" ::: us es fr pt

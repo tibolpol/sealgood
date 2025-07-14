@@ -34,6 +34,7 @@ es/help_es.md : ../bin/sealgood ../bin/filetypes ../locale/es/LC_MESSAGES/sealgo
 	cd pt/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po
 
 # signale lorsque les tests ne sont pas à jour
-../tests/integration/test_basic.stdout : ../bin/sealgood ../bin/filetypes \
+../tests/integration/test_basic.stdout \
+../tests/integration/test_aa.stdout : ../bin/sealgood ../bin/filetypes \
 ../locale/es/LC_MESSAGES/sealgood.mo ../locale/fr/LC_MESSAGES/sealgood.mo ../locale/pt/LC_MESSAGES/sealgood.mo
 	echo "KO test non effectué depuis les dernières modifications" >>"$@" && git add "$@"

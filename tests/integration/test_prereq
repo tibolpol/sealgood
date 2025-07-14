@@ -1,0 +1,38 @@
+#!/bin/bash
+
+#######################################
+# <$1                   : LINENO      #
+# <stdin                : input       #
+# <../samples/$2        : reference   #
+# <../../bin/sealgood   : binary      #
+# <../../locale/{fr,es} : locale      #
+# >$TMPDIR/$2           : output      #
+# >stdout               : test result #
+#######################################
+mydif(){
+  lineno=$1
+  shift
+  tee "$TMPDIR/$(basename $1)" |
+  diff -a "$mydir/$1" - || {
+    rc=$?
+    printf $'KO %4d %s\n' $lineno "$*"
+    echo "!cp $TMPDIR/$(basename $1) $mydir/$1"
+    return $rc
+  }
+  printf $'ok %4d %s\n' $lineno "$*"
+}
+export -f mydif
+mdstyle(){
+  echo '```'$1
+  cat
+  echo '```'
+}
+export -f mdstyle
+exec {fddebug}> >(stdbuf -oL sed -e 's/++[0-9]*++$/\n&/;p' -e 's/^/== /' >&2)
+export fddebug
+
+PATH="$(cd "$mydir/../../bin";pwd):$PATH"
+export TMPDIR=$(mktemp -d)
+exec {fdtty}</dev/null
+export fdtty # neutralise read <&$fdtty
+parallel "cd $mydir/../../locale/{}/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po" ::: fr es pt

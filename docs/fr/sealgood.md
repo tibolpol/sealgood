@@ -397,7 +397,7 @@ clean() {
   strip clean "$@" > args
   local rargs=$? args="$(cat args)"
   if ((rargs == 0));then
-    rm -rf lookup.clean{,.payload,.original,.unzip} 
+    rm -rf lookup.clean{,.payload,.original,.unzip}
     local filetype="$(lookup clean)"
     if [[ $filetype =~ sealgood ]];then
       if [[ $filetype =~ gzip ]];then

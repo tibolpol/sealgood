@@ -33,7 +33,7 @@ extract_gzip(){
         zcat >lookup."$sfx".payload 2>/dev/null &&
         zcat lookup."$sfx".original >lookup."$sfx".unzip ||
         rm -f lookup."$sfx".{original,payload}
-      } <lookup."$sfx" 
+      } <lookup."$sfx"
     fi
   return 0;else return 1;fi
 }
