@@ -209,16 +209,8 @@ end
 process -->|payload+data| l1((1))
 l1 -->|payload+data| clean
 click lookup "filetypes.md#lookup"
-click clean "sealgood.md#clean"
-click date "sealgood.md#date"
-click end_of_pipe "sealgood.md#end_of_pipe"
 click enumerate "sealgood.md#enumerate"
 click file2tgz "sealgood.md#file2tgz"
-click genkey "sealgood.md#genkey"
-click help "sealgood.md#help"
-click main "sealgood.md#main"
-click sign "sealgood.md#sign"
-click verify "sealgood.md#verify"
 ```
 ```bash
 ##############################
@@ -414,9 +406,10 @@ subgraph inject
   lookup
 end
 lookup -->|payload+data| l1
-lookup -->|data| inject_type["inject_${filetype}"]
+lookup -->|data| inject_type["inject_type"]
 inject_type -->|payload+data| l1((1))
 click lookup "filetypes.md#lookup"
+click inject_type "filetypes.md#inject_type"
 click sign "sealgood.md#sign"
 click get_payload "sealgood.md#get_payload"
 click inject_type "filetypes.md#inject_type"

@@ -12,24 +12,24 @@
 ## <a id=lookup>lookup</a>: Scan l'input pour valider les actions
 ```mermaid
 flowchart TB
-l0((0)) -->|payload+data| x0{{"file -bi"}}
+l0((0)) -->|payload+data| raw_input[/lookup.$1/]
+$1 -.->|suffix| lookup
 subgraph lookup
-  x0 -->|payload+data| raw_input[/raw_input/]
-  x0 -->|payload| payload[/payload/]
-  x0 -->|data| data[/original_data/]
+  raw_input -->|payload+data| t0{{"file -bi"}}
+  raw_input -->|payload+data| t1{{check_crypto_file}}
+  raw_input -->|payload+data| t2{{file_or_url_list}}
+  raw_input -->|payload+data| x0[extract_type]
+  t0 -.->|type| x0
+  t1 -.->|type| x0
+  t2 -.->|type| x0
 end
-x0 -->|mime-type| l1((1))
-click lookup "sealgood.md#lookup"
-click clean "sealgood.md#clean"
-click date "sealgood.md#date"
-click end_of_pipe "sealgood.md#end_of_pipe"
-click enumerate "sealgood.md#enumerate"
-click file2tgz "sealgood.md#file2tgz"
-click genkey "sealgood.md#genkey"
-click help "sealgood.md#help"
-click main "sealgood.md#main"
-click sign "sealgood.md#sign"
-click verify "sealgood.md#verify"
+x0 -->|payload| payload[/lookup.$1.payload/]
+x0 -->|data| data[/lookup.$1.original/]
+x0 -->|unzip| unzip[/lookup.$1.unzip/]
+lookup -->|mime-type| l1((1))
+click x0 "#extract_type"
+click t1 "#check_crypto_file"
+click t2 "#file_or_url_list"
 ```
 ```bash
 ###########################################
@@ -104,19 +104,36 @@ lookup() {
 
 :<<'```bash'
 ```
-## Extraction de original data & payload selon filetype
-Le filetype est d'abord déterminé par [lookup](sealgood#lookup) qui dépose
+## <a id=extract_type>extract_type</a>: Extraction de original data & payload selon filetype
+Le filetype est d'abord déterminé par [lookup](#lookup) qui dépose
 les données dans lookup.$1.
 ```mermaid
-flowchart TB
-t -->|true| x["extract_{type}"]
-$2[$2=filetype] -.-> t{"$2 =~ {type}?"}
-$1[$1=suffix] -.-> x
-lookup[/lookup.$1/] -->|payload+data| x
-x -->|payload| p[/lookup.$1.payload/]
-x -->|data| q[/lookup.$1.original/]
-t -->|false| result((result))
-x -->|true| result
+flowchart LR
+$1,$2 -.->|suffix&filetype| extract_gzip
+$1,$2 -.->|suffix&filetype| extract_html
+$1,$2 -.->|suffix&filetype| extract_xml
+$1,$2 -.->|suffix&filetype| extract_pdf
+$1,$2 -.->|suffix&filetype| extract_plain
+lookup[/lookup.$1/] -->|payload+data| extract_gzip
+lookup[/lookup.$1/] -->|payload+data| extract_xml
+lookup[/lookup.$1/] -->|payload+data| extract_html
+lookup[/lookup.$1/] -->|payload+data| extract_pdf
+lookup[/lookup.$1/] -->|payload+data| extract_plain
+extract_gzip -->|unzip| lookup.$1.unzip[/lookup.$1.unzip/]
+extract_html -->|unzip| lookup.$1.unzip
+extract_pdf -->|unzip| lookup.$1.unzip
+extract_plain -->|unzip| lookup.$1.unzip
+extract_xml -->|unzip| lookup.$1.unzip
+extract_gzip -->|original| lookup.$1.original[/lookup.$1.original/]
+extract_html -->|original| lookup.$1.original
+extract_pdf -->|original| lookup.$1.original
+extract_plain -->|original| lookup.$1.original
+extract_xml -->|original| lookup.$1.original
+extract_gzip -->|payload| lookup.$1.payload[/lookup.$1.payload/]
+extract_html -->|payload| lookup.$1.payload
+extract_pdf -->|payload| lookup.$1.payload
+extract_plain -->|payload| lookup.$1.payload
+extract_xml -->|payload| lookup.$1.payload
 ```
 ```bash
 #############################
@@ -189,11 +206,39 @@ extract_plain(){
   return 0;else return 1;fi
 }
 
+:<<'```bash'
+```
+## <a id=inject_type>inject_type</a>: Injection du payload
+```mermaid
+flowchart LR
+$1 -.->|filetype| inject_type{{filetype?}}
+inject_type -.->|pdf| inject_after_eod 
+inject_type -.->|xml| inject_html 
+inject_type -.->|html| inject_html 
+inject_type -.->|gzip| inject_gzip 
+inject_type -.->|PEM| inject_after_eod 
+inject_type -.->|None| warning 
+lookup.original[/lookup.inject.original/] --> warning
+lookup.payload[/lookup.inject.payload/] -->|payload| inject_after_eod
+lookup.payload -->|payload| inject_html
+lookup.$1[/lookup.inject/] -->|payload+data| inject_gzip
+lookup.original -->|data| inject_after_eod
+lookup.original -->|data| inject_html
+inject_after_eod --> l1((1))
+inject_html --> l1
+inject_gzip --> l1
+warning --> l1
+click inject_after_eod "#inject_after_eod"
+click inject_html "#inject_html"
+click inject_xml "#inject_xml"
+click inject_gzip "#inject_gzip"
+```
+```bash
 inject_type() {
     filetype="$1"
     # Le type d'injection dépend de filetype
     if [[ $filetype =~ pdf ]];then
-      inject_pdf
+      inject_after_eod
     elif [[ $filetype =~ xml  ]];then
       inject_xml
     elif [[ $filetype =~ html ]];then
@@ -212,24 +257,11 @@ inject_type() {
 ## <a id=inject_after_eod>inject_after_eod</a>: Injection d'informations cachées dans une copie du fichier
 ```mermaid
 flowchart TB
-l0((0)) -->|data| tee
-subgraph inject_after_eod
-  tee -->|data| od[/original_data/]
-  tee -->|data| get_payload
-  od  -->|data| get_payload
-end
-get_payload -->|payload+data| l1((1))
-click lookup "sealgood.md#lookup"
-click clean "sealgood.md#clean"
-click date "sealgood.md#date"
-click end_of_pipe "sealgood.md#end_of_pipe"
-click enumerate "sealgood.md#enumerate"
-click file2tgz "sealgood.md#file2tgz"
-click genkey "sealgood.md#genkey"
-click help "sealgood.md#help"
-click main "sealgood.md#main"
-click sign "sealgood.md#sign"
-click verify "sealgood.md#verify"
+od[/lookup.inject.original/]
+pl[/lookup.inject.payload/]
+od -->|data| inject_after_eod
+pl -->|payload| inject_after_eod
+inject_after_eod -->|payload+data| l1((1))
 ```
 ```bash
 ##############################################################
@@ -244,51 +276,22 @@ inject_after_eod() {
 
 :<<'```bash'
 ```
-## <a id=inject_pdf>inject_pdf</a>: Injection d'informations cachées dans une copie du fichier pdf
-```bash
-############################################################################################################################
-# Injection d'informations cachées dans une copie du fichier pdf                                                           #
-# https://stackoverflow.com/questions/11896858/does-the-eof-in-a-pdf-have-to-appear-within-the-last-1024-bytes-of-the-file #
-# Un peu limite mais pas rencontré de cas rhédibitoire et clean rend le pdf récupérable anyway                             #
-# <lookup.inject.original                                                                                                  #
-# <lookup.inject.payload                                                                                                   #
-# >stdout : copie avec payload & PLACEHOLDER                                                                               #
-############################################################################################################################
-inject_pdf() {
-  inject_after_eod
-}
-
-:<<'```bash'
-```
 ## <a id=inject_xml>inject_xml</a>: Injection d'informations cachées dans une copie du HTML | XML
 ```mermaid
 flowchart TB
-l0((0)) -->|data| tee
-subgraph inject_xml
-  tee -->|data| od[/original_data/]
-  tee -->|data| get_payload
-  od  -->|data| get_payload
-end
-get_payload -->|payload+data xml| l1((1))
-click lookup "sealgood.md#lookup"
-click clean "sealgood.md#clean"
-click date "sealgood.md#date"
-click end_of_pipe "sealgood.md#end_of_pipe"
-click enumerate "sealgood.md#enumerate"
-click file2tgz "sealgood.md#file2tgz"
-click genkey "sealgood.md#genkey"
-click help "sealgood.md#help"
-click main "sealgood.md#main"
-click sign "sealgood.md#sign"
-click verify "sealgood.md#verify"
+od[/lookup.inject.original/]
+pl[/lookup.inject.payload/]
+od -->|data| inject_xml
+pl -->|payload| inject_xml
+inject_xml -->|payload+data| l1((1))
 ```
 ```bash
-##################################################################
-# Injection d'informations cachées dans une copie du HTML | XML  #
-# <lookup.inject.original                                    #
-# <lookup.inject.payload                                     #
-# >stdout : copie avec payload & PLACEHOLDER                     #
-##################################################################
+#################################################################
+# Injection d'informations cachées dans une copie du HTML | XML #
+# <lookup.inject.original                                       #
+# <lookup.inject.payload                                        #
+# >stdout : copie avec payload & PLACEHOLDER                    #
+#################################################################
 inject_xml() {
   cat lookup.inject.original
   echo "<!-- $(cat lookup.inject.payload) -->"
@@ -299,25 +302,16 @@ inject_xml() {
 ## <a id=inject_gzip>inject_gzip</a>: Injection d'informations cachées dans une copie du gzip
 ```mermaid
 flowchart TB
-l0((0)) -->|data| tee
+lookup.inject[/lookup.inject/] -->|payload+data| tee
+filetype[filetype=$1] -.-> inject_gzip
 subgraph inject_gzip
   tee -->|data| od[/original_data/]
   tee -->|data| get_payload
-  od  -->|data| get_payload
+  od -->|data| get_payload
   get_payload -->|payload+data| gzip
 end
 gzip -->|payload+data+gzip| l1((1))
-click  lookup       "sealgood.md#lookup"
-click  clean        "sealgood.md#clean"
-click  date         "sealgood.md#date"
-click  end_of_pipe  "sealgood.md#end_of_pipe"
-click  enumerate    "sealgood.md#enumerate"
-click  file2tgz     "sealgood.md#file2tgz"
-click  genkey       "sealgood.md#genkey"
-click  help         "sealgood.md#help"
-click  main         "sealgood.md#main"
-click  sign         "sealgood.md#sign"
-click  verify       "sealgood.md#verify"
+click get_payload "sealgood.md#get_payload"
 ```
 ```bash
 ##################################################################
