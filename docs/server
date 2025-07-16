@@ -22,7 +22,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     if (RACINE / rel_path).exists():
       # redirige sur file.md pour présenter en markdown
       if rel_path.suffix == '' and not (RACINE / rel_path).is_dir() and check_file_pattern(RACINE / rel_path, r'^```', 5):
-        self.send_response(301)
+        self.send_response(302)
         self.send_header('Location', f'/{str(rel_path.with_suffix(".md"))}')
         self.end_headers()
         return
@@ -60,7 +60,7 @@ with ReusableTCPServer(("", PORT), Handler) as httpd:
 
   signal.signal(signal.SIGINT, signal_handler)  # CTRL-C
   signal.signal(signal.SIGTERM, signal_handler)  # kill command
-  
+
   try:
     httpd.serve_forever()
   except KeyboardInterrupt:
