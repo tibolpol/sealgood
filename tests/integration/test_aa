@@ -1,9 +1,9 @@
 #!/bin/bash
-
 export mydir="$(cd "$(dirname "$0")";pwd)" myname="$(basename "$0")"
-. "$mydir/test_prereq"
+(cd "$mydir/../../docs" && make ../tests/integration/$myname.stdout)
 exec 1> >(tee $mydir/$myname.stdout)
 
+. "$mydir/test_prereq"
 
 ####################################################################
 # lookup/PEM pubkey                                                #
@@ -14,3 +14,32 @@ exec 1> >(tee $mydir/$myname.stdout)
 parallel "mydif $LINENO ../samples/test_date_{} < <((
 LANGUAGE={} sealgood clean date < $mydir/../samples/test_date_pt 2>/dev/null) 2>&1 | sed -e 's/\(^MIIV\).*/\1/' )
 " ::: us es fr pt
+
+##############
+# lookup/pdf #
+# date/pdf   #
+# verify/pdf #
+##############
+mydif $LINENO ../samples/test_date_pdf < <( cat $mydir/../samples/svg.pdf |
+(LANGUAGE=fr sealgood date verify | tee /tmp/svg.date.pdf) 2>&1 | sed -e 's/\(Time stamp:\).*/\1/' -e 's/\(^MIIV\).*/\1/' )
+
+#############
+# clean/pdf #
+#############
+mydif $LINENO ../samples/svg.pdf < <( cat /tmp/svg.date.pdf |
+LANGUAGE=fr sealgood clean 2>/dev/null )
+
+##############
+# date/pdf   #
+# verify/pdf #
+##############
+mydif $LINENO ../samples/test_date_tgz_pdf < <( while ((++i < 4));do cp -l /tmp/svg.date{,_$i}.pdf && echo /tmp/svg.date_$i.pdf;done |
+(LANGUAGE=fr sealgood date verify  | zcat) 2>&1 | strings -weS -n12 | sed -e 's/\(Time stamp:\).*/\1/' -e 's/\(^MIIV\).*/\1/' )
+
+##############
+# clean/pdf  #
+# date/pdf   #
+# verify/pdf #
+##############
+mydif $LINENO ../samples/test_date_es_tgz_pdf < <( while ((++i < 4));do cp -l /tmp/svg.date{,_$i}.pdf && echo /tmp/svg.date_$i.pdf;done |
+(LANGUAGE=es sealgood clean date verify | zcat) 2>&1 | strings -weS -n12 | sed -e 's/\(Time stamp:\).*/\1/' -e 's/\(^MIIV\).*/\1/' )

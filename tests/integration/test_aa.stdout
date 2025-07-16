@@ -1,4 +1,8 @@
-ok   15 ../samples/test_date_fr
-ok   15 ../samples/test_date_us
-ok   15 ../samples/test_date_es
-ok   15 ../samples/test_date_pt
+ok   16 ../samples/test_date_fr
+ok   16 ../samples/test_date_us
+ok   16 ../samples/test_date_pt
+ok   16 ../samples/test_date_es
+ok   24 ../samples/test_date_pdf
+ok   28 ../samples/svg.pdf
+ok   31 ../samples/test_date_tgz_pdf
+ok   34 ../samples/test_date_es_tgz_pdf

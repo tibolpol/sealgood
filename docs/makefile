@@ -1,40 +1,40 @@
+# Configuration
+LANGUAGES := fr es pt
+SCRIPTS   := ../bin/sealgood ../bin/filetypes
+LOCALES   := $(foreach LANG,$(LANGUAGES),../locale/$(LANG)/LC_MESSAGES/sealgood.mo)
+PGHELP    := $(foreach LANG,$(LANGUAGES),$(LANG)/help_$(LANG).md)
+MARKDOWN  := fr/sealgood.md fr/filetypes.md
+INTTEST   := ../tests/integration/test_basic.stdout ../tests/integration/test_aa.stdout
 
-default : fr/sealgood.md fr/filetypes.md fr/help_fr.md pt/help_pt.md us/help_us.md es/help_es.md \
-../locale/es/LC_MESSAGES/sealgood.mo ../locale/pt/LC_MESSAGES/sealgood.mo \
-../tests/integration/test_basic.stdout
+# Cible par défaut
+.PHONY: default
+default: $(LOCALES) $(MARKDOWN) $(PGHELP) us/help_us.md $(INTTEST)
 
-# vues markdown pour github
-fr/filetypes.md : ../bin/filetypes
-	tail -n +2 "$<" > "$@" && git add "$@"
+# Règle pour les fichiers Markdown génériques
+fr/%.md: ../bin/%
+	tail -n +2 "$<" > "$@"
 
-fr/sealgood.md : ../bin/sealgood
-	tail -n +2 "$<" > "$@" && git add "$@"
+# Règle pour les fichiers d'aide (avec dépendance explicite des locales)
+define HELP_RULE
+$(1)/help_$(1).md: ../locale/$(1)/LC_MESSAGES/sealgood.mo $(SCRIPTS)
+	(echo '```console'; LANGUAGE=$(1) ../bin/sealgood help </dev/null 2>&1; echo '```') > "$$@"
+endef
 
-# pages de help générées
-us/help_us.md : ../bin/sealgood ../bin/filetypes
-	(echo '```console'; LANGUAGE=us ../bin/sealgood help 2>&1; echo '```' ) >"$@"
+$(foreach LANG,$(LANGUAGES),$(eval $(call HELP_RULE,$(LANG))))
 
-fr/help_fr.md : ../bin/sealgood ../bin/filetypes ../locale/fr/LC_MESSAGES/sealgood.mo
-	(echo '```console'; LANGUAGE=fr ../bin/sealgood help 2>&1; echo '```' ) >"$@"
+# Règle spéciale pour l'anglais (us)
+us/help_us.md: $(SCRIPTS)
+	(echo '```console'; LANGUAGE=en ../bin/sealgood help </dev/null 2>&1; echo '```') > "$@"
 
-pt/help_pt.md : ../bin/sealgood ../bin/filetypes ../locale/pt/LC_MESSAGES/sealgood.mo
-	(echo '```console'; LANGUAGE=pt ../bin/sealgood help 2>&1; echo '```' ) >"$@"
+# Règle pour les fichiers de traduction
+../locale/%/LC_MESSAGES/sealgood.mo: ../locale/%/LC_MESSAGES/sealgood.po
+	cd "$(@D)" && msgfmt -o sealgood.mo sealgood.po
 
-es/help_es.md : ../bin/sealgood ../bin/filetypes ../locale/es/LC_MESSAGES/sealgood.mo
-	(echo '```console'; LANGUAGE=es ../bin/sealgood help 2>&1; echo '```' ) >"$@"
+# Règle pour les tests d'intégration
+../tests/integration/test_%.stdout: $(SCRIPTS) $(LOCALES)
+	echo "KO test non effectué depuis les dernières modifications" > "$@"
 
-# locales
-../locale/es/LC_MESSAGES/sealgood.mo : ../locale/es/LC_MESSAGES/sealgood.po
-	cd es/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po
-
-../locale/fr/LC_MESSAGES/sealgood.mo : ../locale/fr/LC_MESSAGES/sealgood.po
-	cd fr/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po
-
-../locale/pt/LC_MESSAGES/sealgood.mo : ../locale/pt/LC_MESSAGES/sealgood.po
-	cd pt/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po
-
-# signale lorsque les tests ne sont pas à jour
-../tests/integration/test_basic.stdout \
-../tests/integration/test_aa.stdout : ../bin/sealgood ../bin/filetypes \
-../locale/es/LC_MESSAGES/sealgood.mo ../locale/fr/LC_MESSAGES/sealgood.mo ../locale/pt/LC_MESSAGES/sealgood.mo
-	echo "KO test non effectué depuis les dernières modifications" >>"$@" && git add "$@"
+# Nettoyage
+.PHONY: clean
+clean:
+	rm -f $(LOCALES) $(PGHELP) us/help_us.md $(MARKDOWN) $(INTTEST)

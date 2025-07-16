@@ -1,21 +1,140 @@
 :<<'```bash'
 [view this file as Markdow](https://github.com/tibolpol/sealgood/blob/develop/docs/fr/filetypes.md)
 ```bash
-##########################################################
-# Copyright (c) 2025 Thibault Le Paul (@tibolpol)        #
-# Licence MIT - https://opensource.org/license/mit/      #
-##########################################################
-# Extensions par filetype
+#####################################################
+# Copyright (c) 2025 Thibault Le Paul (@tibolpol)   #
+# Licence MIT - https://opensource.org/license/mit/ #
+#                                                   #
+# Fonctions dépendantes des formats pris en charge  #
+#####################################################
+:<<'```bash'
+```
+## <a id=lookup>lookup</a>: Scan l'input pour valider les actions
+```mermaid
+flowchart TB
+l0((0)) -->|payload+data| x0{{"file -bi"}}
+subgraph lookup
+  x0 -->|payload+data| raw_input[/raw_input/]
+  x0 -->|payload| payload[/payload/]
+  x0 -->|data| data[/original_data/]
+end
+x0 -->|mime-type| l1((1))
+click lookup "sealgood.md#lookup"
+click clean "sealgood.md#clean"
+click date "sealgood.md#date"
+click end_of_pipe "sealgood.md#end_of_pipe"
+click enumerate "sealgood.md#enumerate"
+click file2tgz "sealgood.md#file2tgz"
+click genkey "sealgood.md#genkey"
+click help "sealgood.md#help"
+click main "sealgood.md#main"
+click sign "sealgood.md#sign"
+click verify "sealgood.md#verify"
+```
+```bash
+###########################################
+# Scan l'input pour valider les actions   #
+# <$1 : pour nommage de copie de l'entrée #
+# <stdin                                  #
+# >stdout : type de fichier               #
+# >lookup.$1  : copie stdin               #
+###########################################
+lookup() {
+  sfx="${1:-$RANDOM}"
+  local result="$(tcat lookup | tee --output-error=warn lookup."$sfx" | file -b -i -)"
+  if ! [[ $result =~ /x-empty ]];then
+    # find "$PWD"/* -type f -ls >&$fddebug
+    # Filetypes jouant sur le parsing de lookup."$sfx".payload
+    if [[ $result =~ application/octet-stream ]];then
+      if grep -aq '^%PDF-' lookup."$sfx" && grep -aq '^%%EOF' lookup."$sfx" ; then
+        result="${result/octet-stream/pdf+octet-stream}"
+      else
+        result="${result/octet-stream/$(check_crypto_file "$sfx" "$result")+octet-stream}"
+      fi
+    fi
+    # Parsing & lookup."$sfx".payload lookup."$sfx".original une seule fois
+    if ! [ -f lookup."$sfx".payload ];then
+      precise_result="$(extract_type "$sfx"  "$result")"
+      result="${precise_result:-$result}"
+      # fallback
+      if ! [ -f lookup."$sfx".payload ];then
+        <lookup."$sfx" >lookup."$sfx".payload 28>lookup."$sfx".original \
+        awk '/^(<!-- )?### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD ###/{state=0}'
+      fi
+      [ -f lookup."$sfx".unzip ] || cp -l lookup."$sfx".original lookup."$sfx".unzip
+      # Check du lookup."$sfx".payload obtenu sinon raz
+      if [ -s lookup."$sfx".payload ];then
+        if awk '
+          /^(<!-- )?### BEGIN SEALGOOD .*###$/ {begin=FNR}
+          /^### END SEALGOOD ###/{end=FNR}
+          # exactement 1ère et dernière ligne
+          END{exit (begin == 1 && end == FNR)}' lookup."$sfx".payload
+        then
+          local count=$(awk '/^wc *: /{print $5;exit}' lookup."$sfx".payload)
+          (( count == 0 || count == $(wc -c <lookup."$sfx".original) )) ||
+          rm -f lookup."$sfx".payload lookup."$sfx".original
+        else
+          rm -f lookup."$sfx".payload lookup."$sfx".original
+        fi
+      fi
+      [ -f lookup."$sfx".original ] || cp -l lookup."$sfx" lookup."$sfx".original
+      [ -f lookup."$sfx".payload ] || touch lookup."$sfx".payload
+      chmod -w lookup."$sfx" lookup."$sfx".unzip lookup."$sfx".original
+    fi
+    # Extraction réentrante terminée
+    # Filetypes dépendant de l'extraction
+    if [[ $result =~ gzip ]];then
+      content_filetype="$(mkdir wd;(cd wd&&lookup) <lookup."$sfx".unzip;rm -rf wd)"
+      if [[ $content_filetype =~ /(x-)tar ]];then
+        result="${result/gzip/tar+gzip}"
+      fi
+    elif [[ $result =~ text/plain ]];then
+      if grep -aq '^-----BEGIN' lookup."$sfx".original;then
+        result="${result/plain/$(check_crypto_file "$sfx" "$result")+plain}"
+      elif LC_ALL=C grep -aEq '^([^[:space:]]|https?://[^/]).{1,256}[^[:space:]]$' lookup."$sfx".original;then
+        result="${result/plain/$(check_file_or_url_list "$sfx" "$result")+plain}"
+      fi
+    fi
+    [ -s lookup."$sfx".payload ] && result="${result/\//\/sealgood+}"
+    [ -s lookup."$sfx" ] || die $LINENO "assert failure"
+  fi
+  echo "${result/\/+/\/}"
+  [ "$sfx" = "$1" ] || rm -f lookup."$sfx"{,.unzip,.payload,.original}
+}
+
+:<<'```bash'
+```
+## Extraction de original data & payload selon filetype
+Le filetype est d'abord déterminé par [lookup](sealgood#lookup) qui dépose
+les données dans lookup.$1.
+```mermaid
+flowchart TB
+t -->|true| x["extract_{type}"]
+$2[$2=filetype] -.-> t{"$2 =~ {type}?"}
+$1[$1=suffix] -.-> x
+lookup[/lookup.$1/] -->|payload+data| x
+x -->|payload| p[/lookup.$1.payload/]
+x -->|data| q[/lookup.$1.original/]
+t -->|false| result((result))
+x -->|true| result
+```
+```bash
 #############################
 # <$1: suffixe              #
 # <$2: resultat de file -bi #
-# >lookup.$1                #
+# <lookup.$1                #
 # >lookup.$1.original       #
 # >lookup.$1.payload        #
 # >lookup.$1.unzip          #
 # >?: 0 si $2 match         #
-# >stdout: precise filetype #
 #############################
+extract_type() {
+  extract_gzip   "$@"  ||
+  extract_xml    "$@"  ||
+  extract_html   "$@"  ||
+  extract_pdf    "$@"  ||
+  extract_plain  "$@"
+}
 extract_gzip(){
   local sfx="$1" result="$2"
   if [[ $result =~ application/gzip ]];then
@@ -70,6 +189,24 @@ extract_plain(){
   return 0;else return 1;fi
 }
 
+inject_type() {
+    filetype="$1"
+    # Le type d'injection dépend de filetype
+    if [[ $filetype =~ pdf ]];then
+      inject_pdf
+    elif [[ $filetype =~ xml  ]];then
+      inject_xml
+    elif [[ $filetype =~ html ]];then
+      inject_xml
+    elif [[ $filetype =~ gzip ]];then
+      inject_gzip
+    elif [[ $filetype =~ PEM..$(_ "Public key") ]];then
+      inject_after_eod
+    else
+      warning "$(_ "I don't know how to inject into") mimetype: $filetype"
+      cat lookup.inject.original
+    fi
+}
 :<<'```bash'
 ```
 ## <a id=inject_after_eod>inject_after_eod</a>: Injection d'informations cachées dans une copie du fichier
@@ -90,7 +227,6 @@ click enumerate "sealgood.md#enumerate"
 click file2tgz "sealgood.md#file2tgz"
 click genkey "sealgood.md#genkey"
 click help "sealgood.md#help"
-click inject "sealgood.md#inject"
 click main "sealgood.md#main"
 click sign "sealgood.md#sign"
 click verify "sealgood.md#verify"
@@ -98,13 +234,12 @@ click verify "sealgood.md#verify"
 ```bash
 ##############################################################
 # Injection d'informations cachées dans une copie du fichier #
-# <$1 : filetype                                             #
-# <stdin                                                     #
+# <lookup.inject.original                                    #
+# <lookup.inject.payload                                     #
 # >stdout : copie avec payload & PLACEHOLDER                 #
 ##############################################################
 inject_after_eod() {
-  tee original_data
-  [[ $1 =~ sealgood ]] || get_payload < original_data
+  cat lookup.inject.{original,payload}
 }
 
 :<<'```bash'
@@ -115,12 +250,12 @@ inject_after_eod() {
 # Injection d'informations cachées dans une copie du fichier pdf                                                           #
 # https://stackoverflow.com/questions/11896858/does-the-eof-in-a-pdf-have-to-appear-within-the-last-1024-bytes-of-the-file #
 # Un peu limite mais pas rencontré de cas rhédibitoire et clean rend le pdf récupérable anyway                             #
-# <$1 : filetype                                                                                                           #
-# <stdin                                                                                                                   #
+# <lookup.inject.original                                                                                                  #
+# <lookup.inject.payload                                                                                                   #
 # >stdout : copie avec payload & PLACEHOLDER                                                                               #
 ############################################################################################################################
 inject_pdf() {
-  inject_after_eod "$@"
+  inject_after_eod
 }
 
 :<<'```bash'
@@ -143,7 +278,6 @@ click enumerate "sealgood.md#enumerate"
 click file2tgz "sealgood.md#file2tgz"
 click genkey "sealgood.md#genkey"
 click help "sealgood.md#help"
-click inject "sealgood.md#inject"
 click main "sealgood.md#main"
 click sign "sealgood.md#sign"
 click verify "sealgood.md#verify"
@@ -151,13 +285,13 @@ click verify "sealgood.md#verify"
 ```bash
 ##################################################################
 # Injection d'informations cachées dans une copie du HTML | XML  #
-# <$1 : filetype                                                 #
-# <stdin                                                         #
+# <lookup.inject.original                                    #
+# <lookup.inject.payload                                     #
 # >stdout : copie avec payload & PLACEHOLDER                     #
 ##################################################################
 inject_xml() {
-  tee original_data
-  [[ $1 =~ sealgood ]] || echo "<!-- $(get_payload < original_data) -->"
+  cat lookup.inject.original
+  echo "<!-- $(cat lookup.inject.payload) -->"
 }
 
 :<<'```bash'
@@ -173,30 +307,31 @@ subgraph inject_gzip
   get_payload -->|payload+data| gzip
 end
 gzip -->|payload+data+gzip| l1((1))
-click lookup "sealgood.md#lookup"
-click clean "sealgood.md#clean"
-click date "sealgood.md#date"
-click end_of_pipe "sealgood.md#end_of_pipe"
-click enumerate "sealgood.md#enumerate"
-click file2tgz "sealgood.md#file2tgz"
-click genkey "sealgood.md#genkey"
-click help "sealgood.md#help"
-click inject "sealgood.md#inject"
-click main "sealgood.md#main"
-click sign "sealgood.md#sign"
-click verify "sealgood.md#verify"
+click  lookup       "sealgood.md#lookup"
+click  clean        "sealgood.md#clean"
+click  date         "sealgood.md#date"
+click  end_of_pipe  "sealgood.md#end_of_pipe"
+click  enumerate    "sealgood.md#enumerate"
+click  file2tgz     "sealgood.md#file2tgz"
+click  genkey       "sealgood.md#genkey"
+click  help         "sealgood.md#help"
+click  main         "sealgood.md#main"
+click  sign         "sealgood.md#sign"
+click  verify       "sealgood.md#verify"
 ```
 ```bash
 ##################################################################
 # Injection d'informations cachées dans une copie du gzip        #
 # https://www.gnu.org/software/gzip/manual/gzip#Advanced-usage   #
 # <$1 : filetype                                                 #
-# <stdin                                                         #
+# <lookup.inject                                                 #
 # >stdout : copie avec payload & PLACEHOLDER                     #
 ##################################################################
 inject_gzip() {
-  tee original_data
-  [[ $1 =~ sealgood ]] || get_payload < original_data | gzip -c
+  {
+    tee original_data
+    [[ $1 =~ sealgood ]] || get_payload < original_data | gzip -c
+  }<lookup.inject
 }
 
 :<<'```bash'

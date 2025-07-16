@@ -1,7 +1,9 @@
 #!/bin/bash
 export mydir="$(cd "$(dirname "$0")";pwd)" myname="$(basename "$0")"
-. "$mydir/test_prereq"
+(cd "$mydir/../../docs" && make ../tests/integration/$myname.stdout)
 exec 1> >(tee $mydir/$myname.stdout)
+
+. "$mydir/test_prereq"
 
 ########################################################################
 # help                                                                 #

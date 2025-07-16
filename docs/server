@@ -1,4 +1,36 @@
 #!/usr/bin/env python3
+"""
+## Serveur localhost adaptant la vue HTTP au plugin Markdown Viewer 
+
+Un fichier sans extension, et contenant du markdown, est servi par une url
+avec l'extension .md et le mime-type text/markdown.  [Markdown
+Viewer](https://github.com/simov/markdown-viewer) doit être installé et
+configuré pour gérer le site http://localhost:8003 et le contenu mermaid.
+
+L'idée est de fusionner la doc avec le source.
+
+github fournit une vue markdown en faisant une copie dans le répertoire de doc
+avec l'extension .md et transformation du code, faute de mieux, ça donne une vue
+doc + source, à jour par CI/CD.
+
+
+```mermaid
+flowchart TB
+    A[HTTP Request] --> B{location exist?}
+    B -->|no| F{location without md exist?}
+    F -->|yes| G[send 200 + location without md + markdown mime-type]
+    B -->|yes| C{location with md exist?}
+    C -->|no| D{location is markdown?}
+    D -->|yes| E[send 302 + location with md]
+    E --> B
+    
+    style A fill:#f9f,stroke:#333
+    style G fill:#bbf,stroke:#333
+    style E fill:#fbb,stroke:#333
+
+```
+```python
+"""
 # coding: utf-8
 import http.server
 import socketserver
@@ -7,7 +39,7 @@ import signal
 import sys
 import re
 
-PORT = 8002
+PORT = 8003
 RACINE = pathlib.Path(__file__).parent.parent.resolve()
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -40,11 +72,17 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     # Default behavior for other files
     super().do_GET()
 
-# Si le fichier contient un pattern
-def check_file_pattern(filepath, pattern, max_lines=10):
-    with open(filepath, 'r', encoding='utf-8') as f:
-        content = ''.join(f.readline() for _ in range(max_lines))
-    return re.search(pattern, content) is not None
+# bool: fichier contient pattern
+def check_file_pattern(filepath: pathlib.Path, pattern: str, max_lines: int = 10) -> bool:
+  if filepath.is_file():
+    with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
+      for _ in range(max_lines):
+        line = f.readline()
+        if not line:
+          break
+        elif re.match(pattern, line):
+          return True
+  return False
 
 # Configure server with address reuse
 class ReusableTCPServer(socketserver.TCPServer):

@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #######################################
 # <$1                   : LINENO      #
 # <stdin                : input       #
@@ -35,4 +34,3 @@ PATH="$(cd "$mydir/../../bin";pwd):$PATH"
 export TMPDIR=$(mktemp -d)
 exec {fdtty}</dev/null
 export fdtty # neutralise read <&$fdtty
-parallel "cd $mydir/../../locale/{}/LC_MESSAGES&& msgfmt -o sealgood.mo sealgood.po" ::: fr es pt
