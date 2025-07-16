@@ -1,8 +1,1 @@
-ok   16 ../samples/test_date_us
-ok   16 ../samples/test_date_es
-ok   16 ../samples/test_date_fr
-ok   16 ../samples/test_date_pt
-ok   23 ../samples/test_date_pdf
-ok   29 ../samples/svg.pdf
-ok   36 ../samples/test_date_tgz_pdf
-ok   44 ../samples/test_date_es_tgz_pdf
+KO test non effectué depuis les dernières modifications

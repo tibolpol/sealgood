@@ -212,12 +212,12 @@ extract_plain(){
 ```mermaid
 flowchart LR
 $1 -.->|filetype| inject_type{{filetype?}}
-inject_type -.->|pdf| inject_after_eod 
-inject_type -.->|xml| inject_html 
-inject_type -.->|html| inject_html 
-inject_type -.->|gzip| inject_gzip 
-inject_type -.->|PEM| inject_after_eod 
-inject_type -.->|None| warning 
+inject_type -.->|pdf| inject_after_eod
+inject_type -.->|xml| inject_html
+inject_type -.->|html| inject_html
+inject_type -.->|gzip| inject_gzip
+inject_type -.->|PEM| inject_after_eod
+inject_type -.->|None| warning
 lookup.original[/lookup.inject.original/] --> warning
 lookup.payload[/lookup.inject.payload/] -->|payload| inject_after_eod
 lookup.payload -->|payload| inject_html
