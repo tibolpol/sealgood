@@ -1,6 +1,9 @@
+!(export fddebug fdtty=$fdtty;../bin/sealgood clean verify <~/.ssh/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem) {fddebug}>&2  {fdtty}</dev/null 
+!(export fddebug fdtty=$fdtty;../bin/sealgood verify <~/.ssh/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem) {fddebug}>&2  {fdtty}</dev/null 
+
 !(export fddebug;../bin/sealgood clean) < recherche {fddebug}>&2
 !(export fddebug;../bin/sealgood clean) < ../tests/samples/pempub {fddebug}>&2
-!(export fddebug;../bin/sealgood inject) < ../tests/samples/pempub {fddebug}>&2
+!(export fddebug;../bin/sealgood date) < ../tests/samples/pempub {fddebug}>&2
 
 
 

@@ -65,10 +65,12 @@ lookup() {
       # Check du lookup."$sfx".payload obtenu sinon raz
       if [ -s lookup."$sfx".payload ];then
         if awk '
-          /^(<!-- )?### BEGIN SEALGOOD .*###$/ {begin=FNR}
+          !begin && /^(<!-- )?### BEGIN SEALGOOD .*###$/ {begin=FNR}
           /^### END SEALGOOD ###/{end=FNR}
           # exactement 1ère et dernière ligne
-          END{exit (begin == 1 && end == FNR)}' lookup."$sfx".payload
+          END{
+#printf("DEBUG 73 begin=%d end=%d FNR=%d"ORS, begin, end, FNR) >"/dev/stderr"
+          exit ! (begin == 1 && end == FNR)}' lookup."$sfx".payload
         then
           local count=$(awk '/^wc *: /{print $5;exit}' lookup."$sfx".payload)
           (( count == 0 || count == $(wc -c <lookup."$sfx".original) )) ||
@@ -87,12 +89,6 @@ lookup() {
       content_filetype="$(mkdir wd;(cd wd&&lookup) <lookup."$sfx".unzip;rm -rf wd)"
       if [[ $content_filetype =~ /(x-)tar ]];then
         result="${result/gzip/tar+gzip}"
-      fi
-    elif [[ $result =~ text/plain ]];then
-      if grep -aq '^-----BEGIN' lookup."$sfx".original;then
-        result="${result/plain/$(check_crypto_file "$sfx" "$result")+plain}"
-      elif LC_ALL=C grep -aEq '^([^[:space:]]|https?://[^/]).{1,256}[^[:space:]]$' lookup."$sfx".original;then
-        result="${result/plain/$(check_file_or_url_list "$sfx" "$result")+plain}"
       fi
     fi
     [ -s lookup."$sfx".payload ] && result="${result/\//\/sealgood+}"
@@ -212,22 +208,22 @@ extract_plain(){
 ```mermaid
 flowchart LR
 $1 -.->|filetype| inject_type{{filetype?}}
+lookup.payload[/lookup.inject.payload/] -->|payload| inject_after_eod
+lookup.payload -->|payload| inject_xml
+lookup.original[/lookup.inject.original/] -->|data| warning
+lookup.original -->|data| inject_after_eod
+lookup.original -->|data| inject_xml
 inject_type -.->|pdf| inject_after_eod
-inject_type -.->|xml| inject_html
-inject_type -.->|html| inject_html
+inject_type -.->|xml| inject_xml
+inject_type -.->|html| inject_xml
 inject_type -.->|gzip| inject_gzip
 inject_type -.->|PEM| inject_after_eod
 inject_type -.->|None| warning
-lookup.original[/lookup.inject.original/] --> warning
-lookup.payload[/lookup.inject.payload/] -->|payload| inject_after_eod
-lookup.payload -->|payload| inject_html
 lookup.$1[/lookup.inject/] -->|payload+data| inject_gzip
-lookup.original -->|data| inject_after_eod
-lookup.original -->|data| inject_html
 inject_after_eod --> l1((1))
-inject_html --> l1
-inject_gzip --> l1
+inject_xml --> l1
 warning --> l1
+inject_gzip --> l1
 click inject_after_eod "#inject_after_eod"
 click inject_html "#inject_html"
 click inject_xml "#inject_xml"

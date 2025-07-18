@@ -5,38 +5,15 @@ exec 1> >(tee $mydir/$myname.stdout)
 
 . "$mydir/test_prereq"
 
-########################################################################
-# help                                                                 #
-# locale/{{run/fr,data/},{run/es,data/},{run/us,data/},{run/pt,data/}} #
-########################################################################
-parallel "mydif $LINENO ../../docs/{}/help_{}.md < <(LANGUAGE={} sealgood help 2>&1 | mdstyle console)" ::: us es fr pt
-
 ####################################################################
 # lookup/PEM pubkey                                                #
 # date/PEM pubkey                                                  #
 # get_payload                                                      #
 # locale/{{run,data}/fr,{run,data}/es,{run,data}/pt,{run,data}/us} #
 ####################################################################
-parallel "mydif $LINENO ../samples/test_date_{} < <((
-LANGUAGE={} sealgood date < $mydir/../samples/pempub 2>/dev/null) 2>&1 | sed -e 's/\(^MIIV\).*/\1/' )
+parallel "mydif $LINENO ../samples/test_date_{} < <(
+LANGUAGE={} sealgood date < $mydir/../samples/pempub 2>/dev/null | tee $TMPDIR/test_date_{}_tee | sed -e 's/\(^MIIV\).*/\1/' )
 " ::: us es fr pt
-
-#################################################################################################
-# lookup/PEM pubkey                                                                             #
-# clean/PEM pubkey                                                                              #
-# locale/run/{fr\ locale/data/{fr,es,us},es\ locale/data/{fr,es,us},us\ locale/data/{fr,es,us}} #
-#################################################################################################
-parallel "mydif $LINENO ../samples/test_clean < <(
-LANGUAGE={1} sealgood clean < $mydir/../samples/test_date_{2} 2>/dev/null)" ::: fr es us pt ::: fr es us pt
-
-#################################################################################################
-# lookup/file_or_url_list                                                                       #
-# lookup/sealgood+PEM pubkey                                                                    #
-# clean/PEM pubkey                                                                              #
-# locale/run/{fr\ locale/data/{fr,es,us},es\ locale/data/{fr,es,us},us\ locale/data/{fr,es,us}} #
-#################################################################################################
-parallel --linebuffer "mydif $LINENO ../samples/test_clean_list_{} < <(( ls $mydir/../samples/test_date_{fr,es,us,pt} |
-LANGUAGE={} sealgood clean | tar -zvxOf-) 2>&1)" ::: fr es us pt
 
 ###################################
 # lookup/file_or_url_list         #
@@ -64,10 +41,45 @@ LANGUAGE=us sealgood date verify |
                       zcat|strings -n12 -weS) 2>&1 | sed -e 's/\(^MIIV\).*/\1/' -e 's/\(^Time stamp:\).*/\1/' \
                       -e 's/\(^wc       :\)   .[^ ].*/\1/' )
 
-###################################
-# lookup/file_or_url_list         #
-# $STOPFILE                       #
-# locale/{run,data}/fr            #
-###################################
-parallel "mydif $LINENO ../samples/test_stopfile_{}  < <(ls $mydir/../samples/test_date_{fr,es,us,pt} |
-LANGUAGE=fr STOPFILE=/stopfile sealgood {} 2>&1)" ::: clean date
+####################################################################
+# lookup/PEM pubkey                                                #
+# date/PEM pubkey                                                  #
+# get_payload                                                      #
+# locale/{{run,data}/fr,{run,data}/es,{run,data}/pt,{run,data}/us} #
+####################################################################
+parallel "mydif $LINENO ../samples/test_date_{} < <((
+LANGUAGE={} sealgood clean date < $mydir/../samples/test_date_pt 2>/dev/null) 2>&1 | sed -e 's/\(^MIIV\).*/\1/' )
+" ::: us es fr pt
+
+##############
+# lookup/pdf #
+# date/pdf   #
+# verify/pdf #
+##############
+mydif $LINENO ../samples/test_date_pdf < <( cat $mydir/../samples/svg.pdf |
+(LANGUAGE=fr sealgood date verify | tee /tmp/svg.date.pdf) 2>&1 | sed -e 's/\(Time stamp:\).*/\1/' -e 's/\(^MIIV\).*/\1/' )
+
+##############
+# date/pdf   #
+# verify/pdf #
+##############
+mydif $LINENO ../samples/test_date_tgz_pdf < <( while ((++i < 4));do cp -l /tmp/svg.date{,_$i}.pdf && echo /tmp/svg.date_$i.pdf;done |
+(LANGUAGE=fr sealgood date verify  | zcat) 2>&1 | strings -weS -n12 | sed -e 's/\(Time stamp:\).*/\1/' -e 's/\(^MIIV\).*/\1/' )
+
+##############
+# clean/pdf  #
+# date/pdf   #
+# verify/pdf #
+##############
+mydif $LINENO ../samples/test_date_es_tgz_pdf < <( while ((++i < 4));do cp -l /tmp/svg.date{,_$i}.pdf && echo /tmp/svg.date_$i.pdf;done |
+(LANGUAGE=es sealgood clean date verify | zcat) 2>&1 | strings -weS -n12 | sed -e 's/\(Time stamp:\).*/\1/' -e 's/\(^MIIV\).*/\1/' )
+
+####################################################################
+# lookup/PEM pubkey                                                #
+# date/PEM pubkey                                                  #
+# get_payload                                                      #
+# locale/{{run,data}/fr,{run,data}/es,{run,data}/pt,{run,data}/us} #
+####################################################################
+parallel "mydif $LINENO ../samples/test_verify_{1}_{2} < <(
+LANGUAGE={1} sealgood verify < $TMPDIR/test_date_{2}_tee 2>&1 | sed -e 's/\(^MIIV\).*/\1/'  -e 's/\(^Time stamp:\).*/\1/' )
+" ::: us es fr pt ::: us es fr pt

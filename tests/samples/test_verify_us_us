@@ -1,0 +1,121 @@
+
+[1;36m=== Extracting verification elements ===[0m
+[1;32mOriginal content extracted[0m
+[1;33mSignature not found in document[0m
+[1;32mTSR extracted and decoded[0m
+[1;32mTSA certificate extracted[0m
+
+[1;36m=== Verifying TSA timestamp ===[0m
++ openssl ts -verify -in tsr.bin -CAfile tsa_cert.pem -data lookup.verify.original
+[1;32mTimestamp successfully verified[0m
+
+Timestamp details:
+Using configuration from /usr/lib/ssl/openssl.cnf
+Time stamp:
+Accuracy: unspecified
+Ordering: yes
+
+[1;36m=== Verification summary ===[0m
+Signature status: [1;33mMISSING[0m
+Timestamp status: [1;32mVALID[0m
+[1;32mDocument is timestamped and intact[0m
+-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
+-----END PUBLIC KEY-----
+
+Déclaration de signataire : Thibault LE PAUL | tlp@laposte.net
+Clé publique ed25519 du signataire : https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealdate.pem
+
+### BEGIN SEALGOOD SIGNATURE ###
+SealGood - The 100% DIY Document Authenticator
+Copyright (c) 2025 Thibault Le Paul (@tibolpol)
+Licence MIT - https://opensource.org/license/mit/
+https://github.com/tibolpol/sealgood/
+
+WARNING!  As with a physical document, verifying authenticity and signature is
+harder than signing.  The key is to guarantee that the means exist, that they
+are freely and publicly available, and that they use recognized, documented
+and standard tools at each step for transparency of proof.  Each step can
+therefore be done manually with this guide.  A lightweight integration is
+proposed on the site:  https://github.com/tibolpol/sealgood
+
+Verification tools:
+- POSIX standard: awk, base64, file, wc
+- non-POSIX but recognized standard: openssl
+
+Free servlet:
+ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "$filename.pdf" > /tmp/result
+
+The signed document has the following properties:
+file -bi : text/[PEM] Public key+plain; charset=utf-8
+wc       :   7  23 290 -
+
+Signer declaration: Thibault LE PAUL | tlp@laposte.net
+Signer ed25519 public key: https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem
+
+WARNING!  The readable signer declaration here could have been forged.  What
+makes it valid is the trusted third party associated with this key (website,
+personal exchange, blockchain, public key sealed and published on an
+irrefutable address by the signer).
+
+The signature and timestamp remain valid as long as the content outside the
+BEGIN SEALGOOD and END SEALGOOD tags is not altered.
+
+If verification element 4 is not a PLACEHOLDER but a base64 signature code,
+the signer's identity can be proven.
+
+## Verification element 1:  Key presentation URL, presented by the
+# signer as trusted, so that they cannot repudiate this signature.
+# https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem
+
+## Verification element 2:  Signer's ed25519 public key
+# COPY the three lines below and PASTE into file /tmp/ "ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem"
+# or download  to /tmp/ "https://perso.tlp.name/~tlp/ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem" "ed25519_public_Thibault_LE_PAUL_sealgood:e037f239.pem"
+-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
+-----END PUBLIC KEY-----
+
+## Verification element 3:  Unsigned file without payload (just before signing)
+awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Unsigned file without payload
+
+## Verification element 4:  Signature of the original file hash
+# COPY the line below and PASTE into file /tmp/sig.64
+PLACEHOLDER_UNSIGNED_FILE
+base64 -d < /tmp/sig.64 > /tmp/sig.bin
+
+## Final verification:  Current file hash and validation of match using public key
+# Links the file hash to the private key owner's trust chain
+openssl dgst -sha256 -binary /tmp/file.pdf >/tmp/hash.bin
+openssl pkeyutl -verify -pubin -inkey /tmp/$(basename "$PUBLIC_KEY") -sigfile /tmp/sig.bin -in /tmp/hash.bin # verify signature
+
+### BEGIN SEALGOOD TIMESTAMP ###
+
+If verification element 2 is not a PLACEHOLDER but a base64 code, the signing
+date can be proven.
+
+## Verification element 1:  TSA authority root certificate
+# COPY the three lines below and PASTE into file /tmp/freetsa_cacert.pem
+# or download https://freetsa.org/files/cacert.pem to /tmp/freetsa_cacert.pem
+-----BEGIN CERTIFICATE-----
+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
+-----END CERTIFICATE-----
+openssl x509 -reply -text -in /tmp/freetsa_cacert.pem # show certificate details
+
+## Verification element 2:  Base64 encoding of TSA-validated tsr
+# COPY the line below and PASTE into file /tmp/tsr.64
+MIIV
+base64 -d < /tmp/tsr.64 > /tmp/tsr.bin
+openssl ts -reply -text -in /tmp/tsr.bin # show timestamp details
+
+## Verification element 3:  Untimestamped file without payload (just before timestamping)
+awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "$filename.pdf" > /tmp/$filename.pdf # Unsigned file without payload
+
+## Final verification:  Either current file or your signature hash, and validation of match
+# using tsr and certificate chain
+# Links your signature or file hash to the tsr date in the TSA trust chain
+openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig.bin # verify timestamp
+openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$filename.pdf # verify timestamp
+
+### END SEALGOOD ###
+verify output: text/sealgood+[PEM] Public key+plain; charset=utf-8
+[1;32mmain output: text/sealgood+[PEM] Public key+plain; charset=utf-8[0m

@@ -432,7 +432,7 @@ inject() {
       get_payload < lookup.inject.unzip > lookup.inject.payload
       chmod -w lookup.inject.payload
     fi
-    inject_type "$filetype" | tee >(echo "inject output: $(lookup)" >&2)
+    inject_type "$filetype" | tee >(tcat inject | echo "inject output: $(lookup)" >&2)
     rm -f lookup.inject{,.unzip,.payload,.original}
   else
     cat
@@ -605,11 +605,12 @@ sign() {
       get_profile
       if grep -aq "^PLACEHOLDER_UNSIGNED_FILE" lookup.sign.payload; then
         grep -q 'empty password' <( openssl pkey -in "$PRIVATE_KEY" -noout -passin pass: </dev/null 2>&1) | cat || die 4 "$(_ "%s is not encrypted" "$PRIVATE_KEY")"
+        REXP="s|^PLACEHOLDER_UNSIGNED_FILE|$(signraw | base64 -w 0)|"
         if [[ $filetype =~ gzip ]];then
           cat lookup.sign.original
-          <lookup.sign.payload sed "s|^PLACEHOLDER_UNSIGNED_FILE|$(<lookup.sign signraw | base64 -w 0)|" | gzip -nc
+          <lookup.sign.payload sed -e "$REXP" | gzip -nc
         else
-          <lookup.sign         sed "s|^PLACEHOLDER_UNSIGNED_FILE|$(<lookup.sign signraw | base64 -w 0)|"
+          <lookup.sign         sed -e "$REXP" # DANGER : lit tout le doc
         fi
       else
         cat lookup.sign
@@ -1081,13 +1082,12 @@ click verify "sealgood.md#verify"
 # >stdout : signature.bin #
 ###########################
 signraw() {
-  clean clean >original_data
   if ((fdpassin)); then
     echo ask >&"$fdpassask"
-    openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in original_data -passin stdin <&"$fdpassin"
+    openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in lookup.sign.original -passin stdin <&"$fdpassin"
   else
-    openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in original_data
-  fi
+    openssl pkeyutl -sign -inkey "$PRIVATE_KEY" -rawin -in lookup.sign.original
+  fi </dev/null
 }
 
 :<<'```bash'
@@ -1227,7 +1227,10 @@ shopt -s nullglob
 export fdtty
 
 tcat(){
-  cat #tee >( ((fddebug)) && echo "#tcat $* $(file -bi -)" >&$fddebug)
+  if true
+    then cat
+    else tee >( ((fddebug)) && echo "#tcat $* $(file -bi -)" >&$fddebug)
+  fi
 }
 export -f tcat
 
