@@ -27,7 +27,7 @@ mdstyle(){
   echo '```'
 }
 export -f mdstyle
-exec {fddebug}> >(stdbuf -oL sed -e 's/++[0-9]*++$/\n&/;p' -e 's/^/== /' >&2)
+(( fddebug )) && exec {fddebug}> >(stdbuf -oL sed -e 's/++[0-9]*++$/\n&/;p' -e 's/^/== /' >&$fddebug)
 export fddebug
 
 PATH="$(cd "$mydir/../../bin";pwd):$PATH"

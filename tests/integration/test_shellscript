@@ -1,0 +1,27 @@
+#!/bin/bash
+export mydir="$(cd "$(dirname "$0")";pwd)" myname="$(basename "$0")"
+(cd "$mydir/../../docs" && make ../tests/integration/$myname.stdout)
+exec 1> >(tee $mydir/$myname.stdout)
+
+. "$mydir/test_prereq"
+
+####################################################################
+# lookup/shellscript                                               #
+# date/shellscript                                                 #
+# get_payload                                                      #
+# locale/{{run,data}/fr,{run,data}/es,{run,data}/pt,{run,data}/us} #
+####################################################################
+mydif $LINENO ../samples/test_date_shell < <( ls $mydir/../../bin/{sealgood,filetypes} |
+(LANGUAGE=fr sealgood date verify | (cd $TMPDIR && tar --one-top-level=bin -zvxf-)) 2>&1 | sed -e 's/\(^Time stamp:\).*/\1/' -e 's/sealgood:[a-z0-9]\+/sealgood:000000000/' )
+
+(
+cd $TMPDIR/bin &&
+mv sealgood{_sealgood:*,} &&
+mv filetypes{_sealgood:*,}
+)
+
+parallel "
+mydif $LINENO ../../bin/{} < <( cat $TMPDIR/bin/{} |
+(LANGUAGE=fr $TMPDIR/bin/sealgood clean 2>/dev/null ))
+" ::: sealgood filetypes
+

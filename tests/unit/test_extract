@@ -1,0 +1,17 @@
+#!/bin/bash
+mydir="$(cd "$(dirname "$0")" && pwd)"
+source "$mydir"/../../bin/filetypes
+source "$mydir"/../../bin/sealgood
+tmpdir=$(mktemp -d)
+
+  cd $tmpdir
+  cp "$mydir"/../samples/pubkeys.tgz lookup.test
+  [[ "$(file -bi lookup.test)" == "application/gzip; charset=binary" ]] || echo KO $LINENO >&2
+
+extract_type test "application/gzip; charset=binary"
+
+  diff -q lookup.test{,.original}                           || echo KO $LINENO >&2
+  diff -q lookup.test.unzip      <(zcat lookup.test)        || echo KO $LINENO >&2
+  diff -q lookup.test      "$mydir"/../samples/pubkeys.tgz  || echo KO $LINENO >&2
+
+  ls $PWD/*

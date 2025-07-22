@@ -300,6 +300,7 @@ file2tgz(){
           <"$OUTFILE" clean "$args" >../tar/"$OUTFILE"
           rm -f lookup.tar* >&2
           local newfiletype="$(lookup tar <../tar/"$OUTFILE")"
+          [[ $filetype =~ shellscript ]] && chmod +x ../tar/"$OUTFILE"
           # Nommage en sortie, pattern _sealgood:<sha256sum:8>
           if [[ $newfiletype =~ sealgood ]];then
             hash=$(<lookup.tar.original sha256sum | cut -c1-8)
@@ -422,6 +423,7 @@ click inject_type "filetypes.md#inject_type"
 # >stdout : copie avec payload & PLACEHOLDER                 #
 ##############################################################
 inject() {
+  # !../tests/unit/test_lookup
   strip inject "$@" > args
   local rargs=$? args="$(cat args)"
   if ((rargs == 0));then
@@ -431,7 +433,7 @@ inject() {
       get_payload < lookup.inject.unzip > lookup.inject.payload
       chmod -w lookup.inject.payload
     fi
-    inject_type "$filetype" | tee >(tcat inject | echo "inject output: $(lookup)" >&2)
+    inject_type "$filetype" | tee >(echo "inject output: $(lookup)" >&2)
     rm -f lookup.inject{,.unzip,.payload,.original}
   else
     cat
@@ -875,103 +877,104 @@ strip() {
 # >stdout : payload                                                   #
 #######################################################################
 get_payload() {
-[ -s original_data ] || cat > original_data
+  # !../tests/unit/test_lookup
 get_profile
+local _0_=''
 cat <<EOD
-### BEGIN SEALGOOD SIGNATURE ###
-SealGood - $(_ "The 100%% DIY Document Authenticator")
-Copyright (c) 2025 Thibault Le Paul (@tibolpol)
-Licence MIT - https://opensource.org/license/mit/
-https://github.com/tibolpol/sealgood/
-
-$(_ "WARNING!  As with a physical document, verifying authenticity and signature is
-harder than signing.  The key is to guarantee that the means exist, that they
-are freely and publicly available, and that they use recognized, documented
-and standard tools at each step for transparency of proof.  Each step can
-therefore be done manually with this guide.  A lightweight integration is
-proposed on the site"):  https://github.com/tibolpol/sealgood
-
-$(_ "Verification tools"):
-- $(_ "POSIX standard"): awk, base64, file, wc
-- $(_ "non-POSIX but recognized standard"): openssl
-
-$(_ "Free servlet"):
-ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "\$filename.pdf" > /tmp/result
-
-$(_ "The signed document has the following properties"):
-file -bi : $(<original_data lookup)
-wc       : $(<original_data wc -)
-
-$(_ "Signer declaration"): $(cut -d' ' -f3- < $HOME/.ssh/id_rsa.pub)
-$(_ "Signer ed25519 public key"): $REPOS_KEY
-
-$(_ "WARNING!  The readable signer declaration here could have been forged.  What
-makes it valid is the trusted third party associated with this key (website,
-personal exchange, blockchain, public key sealed and published on an
-irrefutable address by the signer)").
-
-$(_ "The signature and timestamp remain valid as long as the content outside the
-BEGIN SEALGOOD and END SEALGOOD tags is not altered").
-
-$(_ "If verification element 4 is not a PLACEHOLDER but a base64 signature code,
-the signer's identity can be proven").
-
-## $(_ "Verification element") 1:  $(_ "Key presentation URL, presented by the
-# signer as trusted, so that they cannot repudiate this signature").
-# $REPOS_KEY
-
-## $(_ "Verification element") 2:  $(_ "Signer's ed25519 public key")
-# $(_ "COPY the three lines below and PASTE into file /tmp/%s") "$(basename "$PUBLIC_KEY")"
-# $(_ "or download %s to /tmp/%s") "$REPOS_KEY" "$(basename "$PUBLIC_KEY")"
------BEGIN PUBLIC KEY-----
-$(awk '/^-----BEGIN PUBLIC KEY/{getline;print;exit}' "$PUBLIC_KEY")
------END PUBLIC KEY-----
-
-## $(_ "Verification element") 3:  $(_ "Unsigned file without payload") ($(_ "just before signing"))
-awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "\$filename.pdf" > /tmp/\$filename.pdf # $(_ "Unsigned file without payload")
-
-## $(_ "Verification element") 4:  $(_ "Signature of the original file hash")
-# $(_ "COPY the line below and PASTE into file") /tmp/sig.64
-PLACEHOLDER_UNSIGNED_FILE
-base64 -d < /tmp/sig.64 > /tmp/sig.bin
-
-## $(_ "Final verification"):  $(_ "Current file hash and validation of match using public key")
-# $(_ "Links the file hash to the private key owner's trust chain")
-openssl dgst -sha256 -binary /tmp/file.pdf >/tmp/hash.bin
-openssl pkeyutl -verify -pubin -inkey /tmp/\$(basename "\$PUBLIC_KEY") -sigfile /tmp/sig.bin -in /tmp/hash.bin # $(_ "verify signature")
-
-### BEGIN SEALGOOD TIMESTAMP ###
-
-$(_ "If verification element 2 is not a PLACEHOLDER but a base64 code, the signing
-date can be proven").
-
-## $(_ "Verification element") 1:  $(_ "TSA authority root certificate")
-# $(_ "COPY the three lines below and PASTE into file") /tmp/freetsa_cacert.pem
-# $(_ "or download %s to %s" https://freetsa.org/files/cacert.pem /tmp/freetsa_cacert.pem)
-$(
-  [ -s freetsa_cacert.pem ] ||
-  curl -s https://freetsa.org/files/cacert.pem |
-  awk '$1~"^-----"{if(buf){print buf;buf=""};print;next}{buf=buf $0}END{printf("%s",buf)}' >tsa_cert.pem
-  cat tsa_cert.pem
-)
-openssl x509 -reply -text -in /tmp/freetsa_cacert.pem # $(_ "show certificate details")
-
-## $(_ "Verification element") 2:  $(_ "Base64 encoding of TSA-validated tsr")
-# $(_ "COPY the line below and PASTE into file") /tmp/tsr.64
-PLACEHOLDER_UNTIMESTAMPED_FILE
-base64 -d < /tmp/tsr.64 > /tmp/tsr.bin
-openssl ts -reply -text -in /tmp/tsr.bin # $(_ "show timestamp details")
-
-## $(_ "Verification element") 3:  $(_ "Untimestamped file without payload") ($(_ "just before timestamping"))
-awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "\$filename.pdf" > /tmp/\$filename.pdf # $(_ "Unsigned file without payload")
-
-## $(_ "Final verification"):  $(_ "Either current file or your signature hash, and validation of match
-# using tsr and certificate chain")
-# $(_ "Links your signature or file hash to the tsr date in the TSA trust chain")
-openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig.bin # $(_ "verify timestamp")
-openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/\$filename.pdf # $(_ "verify timestamp")
-
-### END SEALGOOD ###
+${_0_}### BEGIN SEALGOOD SIGNATURE ###
+${_0_}SealGood - $(_ "The 100%% DIY Document Authenticator")
+${_0_}Copyright (c) 2025 Thibault Le Paul (@tibolpol)
+${_0_}Licence MIT - https://opensource.org/license/mit/
+${_0_}https://github.com/tibolpol/sealgood/
+${_0_}
+${_0_}$(_ "WARNING!  As with a physical document, verifying authenticity and signature is
+${_0_}harder than signing.  The key is to guarantee that the means exist, that they
+${_0_}are freely and publicly available, and that they use recognized, documented
+${_0_}and standard tools at each step for transparency of proof.  Each step can
+${_0_}therefore be done manually with this guide.  A lightweight integration is
+${_0_}proposed on the site"):  https://github.com/tibolpol/sealgood
+${_0_}
+${_0_}$(_ "Verification tools"):
+${_0_}- $(_ "POSIX standard"): awk, base64, file, wc
+${_0_}- $(_ "non-POSIX but recognized standard"): openssl
+${_0_}
+${_0_}$(_ "Free servlet"):
+${_0_}ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "\$filename.pdf" > /tmp/result
+${_0_}
+${_0_}$(_ "The signed document has the following properties"):
+${_0_}file -bi : $(<lookup.inject.original lookup)
+${_0_}wc       : $(<lookup.inject.original wc -)
+${_0_}
+${_0_}$(_ "Signer declaration"): $(cut -d' ' -f3- < $HOME/.ssh/id_rsa.pub)
+${_0_}$(_ "Signer ed25519 public key"): $REPOS_KEY
+${_0_}
+${_0_}$(_ "WARNING!  The readable signer declaration here could have been forged.  What
+${_0_}makes it valid is the trusted third party associated with this key (website,
+${_0_}personal exchange, blockchain, public key sealed and published on an
+${_0_}irrefutable address by the signer)").
+${_0_}
+${_0_}$(_ "The signature and timestamp remain valid as long as the content outside the
+${_0_}BEGIN SEALGOOD and END SEALGOOD tags is not altered").
+${_0_}
+${_0_}$(_ "If verification element 4 is not a PLACEHOLDER but a base64 signature code,
+${_0_}the signer's identity can be proven").
+${_0_}
+${_0_}## $(_ "Verification element") 1:  $(_ "Key presentation URL, presented by the
+${_0_}# signer as trusted, so that they cannot repudiate this signature").
+${_0_}# $REPOS_KEY
+${_0_}
+${_0_}## $(_ "Verification element") 2:  $(_ "Signer's ed25519 public key")
+${_0_}# $(_ "COPY the three lines below and PASTE into file /tmp/%s") "$(basename "$PUBLIC_KEY")"
+${_0_}# $(_ "or download %s to /tmp/%s") "$REPOS_KEY" "$(basename "$PUBLIC_KEY")"
+${_0_}-----BEGIN PUBLIC KEY-----
+${_0_}$(awk '/^-----BEGIN PUBLIC KEY/{getline;print;exit}' "$PUBLIC_KEY")
+${_0_}-----END PUBLIC KEY-----
+${_0_}
+${_0_}## $(_ "Verification element") 3:  $(_ "Unsigned file without payload") ($(_ "just before signing"))
+${_0_}awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "\$filename.pdf" > /tmp/\$filename.pdf # $(_ "Unsigned file without payload")
+${_0_}
+${_0_}## $(_ "Verification element") 4:  $(_ "Signature of the original file hash")
+${_0_}# $(_ "COPY the line below and PASTE into file") /tmp/sig.64
+${_0_}PLACEHOLDER_UNSIGNED_FILE
+${_0_}base64 -d < /tmp/sig.64 > /tmp/sig.bin
+${_0_}
+${_0_}## $(_ "Final verification"):  $(_ "Current file hash and validation of match using public key")
+${_0_}# $(_ "Links the file hash to the private key owner's trust chain")
+${_0_}openssl dgst -sha256 -binary /tmp/file.pdf >/tmp/hash.bin
+${_0_}openssl pkeyutl -verify -pubin -inkey /tmp/\$(basename "\$PUBLIC_KEY") -sigfile /tmp/sig.bin -in /tmp/hash.bin # $(_ "verify signature")
+${_0_}
+${_0_}### BEGIN SEALGOOD TIMESTAMP ###
+${_0_}
+${_0_}$(_ "If verification element 2 is not a PLACEHOLDER but a base64 code, the signing
+${_0_}date can be proven").
+${_0_}
+${_0_}## $(_ "Verification element") 1:  $(_ "TSA authority root certificate")
+${_0_}# $(_ "COPY the three lines below and PASTE into file") /tmp/freetsa_cacert.pem
+${_0_}# $(_ "or download %s to %s" https://freetsa.org/files/cacert.pem /tmp/freetsa_cacert.pem)
+${_0_}$(
+${_0_}  [ -s freetsa_cacert.pem ] ||
+${_0_}  curl -s https://freetsa.org/files/cacert.pem |
+${_0_}  awk '$1~"^-----"{if(buf){print buf;buf=""};print;next}{buf=buf $0}END{printf("%s",buf)}' >tsa_cert.pem
+${_0_}  cat tsa_cert.pem
+${_0_})
+${_0_}openssl x509 -reply -text -in /tmp/freetsa_cacert.pem # $(_ "show certificate details")
+${_0_}
+${_0_}## $(_ "Verification element") 2:  $(_ "Base64 encoding of TSA-validated tsr")
+${_0_}# $(_ "COPY the line below and PASTE into file") /tmp/tsr.64
+${_0_}PLACEHOLDER_UNTIMESTAMPED_FILE
+${_0_}base64 -d < /tmp/tsr.64 > /tmp/tsr.bin
+${_0_}openssl ts -reply -text -in /tmp/tsr.bin # $(_ "show timestamp details")
+${_0_}
+${_0_}## $(_ "Verification element") 3:  $(_ "Untimestamped file without payload") ($(_ "just before timestamping"))
+${_0_}awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "\$filename.pdf" > /tmp/\$filename.pdf # $(_ "Unsigned file without payload")
+${_0_}
+${_0_}## $(_ "Final verification"):  $(_ "Either current file or your signature hash, and validation of match
+${_0_}# using tsr and certificate chain")
+${_0_}# $(_ "Links your signature or file hash to the tsr date in the TSA trust chain")
+${_0_}openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig.bin # $(_ "verify timestamp")
+${_0_}openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/\$filename.pdf # $(_ "verify timestamp")
+${_0_}
+${_0_}### END SEALGOOD ###
 EOD
 }
 
@@ -1202,6 +1205,10 @@ _(){
 ```
 ## <a id=run>run</a>: RUN
 ```bash
+
+# Si le script est sourcé
+[[ "${BASH_SOURCE[0]}" == "$0" ]] || return
+
 ################################
 # Vérification des dépendances #
 ################################
@@ -1224,13 +1231,5 @@ shopt -s nullglob
 
 (( fdtty )) || exec {fdtty}</dev/tty
 export fdtty
-
-tcat(){
-  if true
-    then cat
-    else tee >( ((fddebug)) && echo "#tcat $* $(file -bi -)" >&$fddebug)
-  fi
-}
-export -f tcat
 
 main "$@" | cat

@@ -4,7 +4,7 @@ SCRIPTS   := ../bin/sealgood ../bin/filetypes
 LOCALES   := $(foreach LANG,$(LANGUAGES),../locale/$(LANG)/LC_MESSAGES/sealgood.mo)
 PGHELP    := $(foreach LANG,$(LANGUAGES),$(LANG)/help_$(LANG).md)
 MARKDOWN  := fr/sealgood.md fr/filetypes.md
-INTTEST   := ../tests/integration/test_basic.stdout ../tests/integration/test_aa.stdout
+INTTEST   := ../tests/integration/test_basic.stdout ../tests/integration/test_aa.stdout ../tests/integration/test_shellscript.stdout
 
 # Cible par défaut
 .PHONY: default

@@ -33,16 +33,20 @@ click t1 "#check_crypto_file"
 click t2 "#file_or_url_list"
 ```
 ```bash
-###########################################
-# Scan l'input pour valider les actions   #
-# <$1 : pour nommage de copie de l'entrée #
-# <stdin                                  #
-# >stdout : type de fichier               #
-# >lookup.$1  : copie stdin               #
-###########################################
+#################################################
+# Scan l'input pour valider les actions         #
+# <$1 : séparation / réutilisation des fichiers #
+# <stdin : data+payload                         #
+# >stdout : type de l'entrée                    #
+# >lookup.$1 : copie stdin                      #
+# >lookup.$1.payload                            #
+# >lookup.$1.original                           #
+# >lookup.$1.unzip                              #
+#################################################
 lookup() {
+  # !../tests/unit/test_lookup
   sfx="${1:-$RANDOM}"
-  local result="$(tcat lookup | tee --output-error=warn lookup."$sfx" | file -b -i -)"
+  local result="$(tee --output-error=warn lookup."$sfx" | file -bi -)"
   if ! [[ $result =~ /x-empty ]];then
     # find "$PWD"/* -type f -ls >&$fddebug
     # Filetypes jouant sur le parsing de lookup."$sfx".payload
@@ -55,25 +59,24 @@ lookup() {
     fi
     # Parsing & lookup."$sfx".payload lookup."$sfx".original une seule fois
     if ! [ -f lookup."$sfx".payload ];then
-      precise_result="$(extract_type "$sfx"  "$result")"
+      precise_result="$(extract_type "$sfx" "$result")"
       result="${precise_result:-$result}"
       # fallback
       if ! [ -f lookup."$sfx".payload ];then
         <lookup."$sfx" >lookup."$sfx".payload 28>lookup."$sfx".original \
-        awk '/^(<!-- )?### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD ###/{state=0}'
+        awk '/^(<!-- \|:<<'\''### END SEALGOOD ###'\'' )?### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD ###/{state=0}'
       fi
       [ -f lookup."$sfx".unzip ] || cp -l lookup."$sfx".original lookup."$sfx".unzip
       # Check du lookup."$sfx".payload obtenu sinon raz
       if [ -s lookup."$sfx".payload ];then
         if awk '
-          !begin && /^(<!-- )?### BEGIN SEALGOOD .*###$/ {begin=FNR}
+          !begin && /^(<!-- \|:<<'\''### END SEALGOOD ###'\'' )?### BEGIN SEALGOOD .*###$/ {begin=FNR}
           /^### END SEALGOOD ###/{end=FNR}
           # exactement 1ère et dernière ligne
           END{
-#printf("DEBUG 73 begin=%d end=%d FNR=%d"ORS, begin, end, FNR) >"/dev/stderr"
           exit ! (begin == 1 && end == FNR)}' lookup."$sfx".payload
         then
-          local count=$(awk '/^wc *: /{print $5;exit}' lookup."$sfx".payload)
+          local count=$(awk '/^wc *:\([ 0-9]\+\)\{3\}$/ {print $5;exit}' lookup."$sfx".payload)
           (( count == 0 || count == $(wc -c <lookup."$sfx".original) )) ||
           rm -f lookup."$sfx".payload lookup."$sfx".original
         else
@@ -88,7 +91,7 @@ lookup() {
     # Filetypes dépendant de l'extraction
     if [[ $result =~ gzip ]];then
       content_filetype="$(mkdir wd;(cd wd&&lookup) <lookup."$sfx".unzip;rm -rf wd)"
-      if [[ $content_filetype =~ /(x-)tar ]];then
+      if [[ $content_filetype =~ [/+](x-)?tar ]];then
         result="${result/gzip/tar+gzip}"
       fi
     fi
@@ -143,30 +146,36 @@ extract_xml -->|payload| lookup.$1.payload
 # >?: 0 si $2 match         #
 #############################
 extract_type() {
-  extract_gzip   "$@"  ||
-  extract_xml    "$@"  ||
-  extract_html   "$@"  ||
-  extract_pdf    "$@"  ||
-  extract_plain  "$@"
+extract_gzip         "$@"  ||
+extract_html         "$@"  ||
+extract_pdf          "$@"  ||
+extract_plain        "$@"  ||  
+extract_shellscript  "$@"  ||
+extract_xml          "$@"
 }
 extract_gzip(){
+  # !../tests/unit/test_lookup
+  # !../tests/unit/test_extract
   local sfx="$1" result="$2"
   if [[ $result =~ application/gzip ]];then
-    (zcat lookup."$sfx" || die $LINENO assert) > lookup."$sfx".unzip
+    (zcat lookup."$sfx" || die $LINENO "assert lookup.$sfx est cassé $result") > lookup."$sfx".unzip
     if grep -aq '### BEGIN SEALGOOD' lookup."$sfx".unzip;then
       # count < dernier wc : x x x
       local count=$(< lookup."$sfx".unzip awk '
         /### BEGIN SEALGOOD /{state=1}
-        /### END SEALGOOD /{state=0}
-        state && /^wc *: /{count=$5}
-        END{if(count) print count}'
+        /^### END SEALGOOD /{state=0}
+        state && /^wc *:.* -$/{count=$5}
+        END{printf("%d"ORS, count)}'
       )
-      { head -c $count >lookup."$sfx".original 2>/dev/null &&
-        zcat >lookup."$sfx".payload 2>/dev/null &&
-        zcat lookup."$sfx".original >lookup."$sfx".unzip ||
-        rm -f lookup."$sfx".{original,payload}
-      } <lookup."$sfx"
+      if ((count)); then
+        head -c $count >lookup."$sfx".original &&
+        zcat >lookup."$sfx".payload &&
+        zcat lookup."$sfx".original >lookup."$sfx".unzip &&
+        return 0
+      fi <lookup."$sfx" 2>/dev/null
     fi
+    cp -lf lookup."$sfx"{,.original}
+    echo > lookup."$sfx".payload
   return 0;else return 1;fi
 }
 extract_xml(){
@@ -181,6 +190,13 @@ extract_html(){
   if [[ $result =~ text/html ]];then
     <lookup."$sfx" >lookup."$sfx".payload 28>lookup."$sfx".original \
     awk '/^<!-- ### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD ###/{state=0}'
+  return 0;else return 1;fi
+}
+extract_shellscript(){
+  local sfx="$1" result="$2"
+  if [[ $result =~ text/html ]];then
+    <lookup."$sfx" >lookup."$sfx".payload 28>lookup."$sfx".original \
+    awk '/^:<<'\''### END SEALGOOD ###'\'' #### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD ###/{state=0}'
   return 0;else return 1;fi
 }
 extract_pdf(){
@@ -242,6 +258,8 @@ inject_type() {
       inject_xml
     elif [[ $filetype =~ gzip ]];then
       inject_gzip
+    elif [[ $filetype =~ shellscript ]];then
+      inject_shellscript
     elif [[ $filetype =~ PEM..$(_ "Public key") ]];then
       inject_after_eod
     else
@@ -314,15 +332,19 @@ click get_payload "sealgood.md#get_payload"
 ##################################################################
 # Injection d'informations cachées dans une copie du gzip        #
 # https://www.gnu.org/software/gzip/manual/gzip#Advanced-usage   #
-# <$1 : filetype                                                 #
 # <lookup.inject                                                 #
 # >stdout : copie avec payload & PLACEHOLDER                     #
 ##################################################################
 inject_gzip() {
   {
-    tee original_data
-    [[ $1 =~ sealgood ]] || get_payload < original_data | gzip -c
-  }<lookup.inject
+    cat lookup.inject.original
+    gzip -c lookup.inject.payload
+  }
+}
+
+inject_shellscript() {
+  cat lookup.inject.original
+  echo ":<<'### END SEALGOOD ###' $(cat lookup.inject.payload)"
 }
 
 :<<'```bash'
