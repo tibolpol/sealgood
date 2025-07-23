@@ -6,8 +6,6 @@
 [1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_date_pt -> test_date_pt ===[0m
 
 [1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_date_us -> test_date_us ===[0m
-
-[1;36m=== End of verifications ===[0m
 [1;32mmain output: application/tar+gzip; charset=binary[0m
 test_date_es
 -----BEGIN PUBLIC KEY-----

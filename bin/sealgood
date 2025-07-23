@@ -339,10 +339,11 @@ file2tgz(){
   )) {fdverifyout}> >(
     # Résumé des messages de vérification à la fin
     cat > fdverifyout
-    [ -s fdverifyout ] &&
+    [ -s fdverifyout ] && {
       step "$(_ "Verification summary")"
       cat fdverifyout >&2
       step "$(_ "End of verifications")"
+    }
   ) | cat
 }
 

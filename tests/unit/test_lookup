@@ -14,10 +14,10 @@ cd $tmpdir
   chmod -w lookup.inject{,.original,.unzip}
 
   [ -s lookup.inject.payload ]                                 && echo KO $LINENO >&2
-get_payload < lookup.inject.unzip > lookup.inject.payload
+>lookup.inject.payload get_payload <lookup.inject.unzip
   [ -s lookup.inject.payload ]                                 || echo KO $LINENO >&2
 
-inject_type      "application/tar+gzip; charset=binary" > lookup.test2
+>lookup.test2 inject_type  "application/tar+gzip; charset=binary"
   [[ "$(file -bi  lookup.test2)" == "application/gzip; charset=binary" ]] || echo KO $LINENO >&2
 extract_gzip     test2      "application/gzip; charset=binary"
   [ -s lookup.test2.payload ]                                  || echo KO $LINENO >&2
@@ -25,6 +25,6 @@ extract_gzip     test2      "application/gzip; charset=binary"
   diff -q lookup.{test2,inject}.original                       || echo KO $LINENO >&2
   diff -q lookup.{test2,inject}.unzip                          || echo KO $LINENO >&2
 
-[[ "$(lookup < lookup.test2)" == "application/sealgood+tar+gzip; charset=binary" ]] || echo KO $LINENO >&2
+[[ "$(lookup <lookup.test2)" == "application/sealgood+tar+gzip; charset=binary" ]] || echo KO $LINENO >&2
 
 ls $PWD/*
