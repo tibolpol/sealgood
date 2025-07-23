@@ -25,6 +25,7 @@ LANGUAGE=fr sealgood clean 2>/dev/null )
 parallel "mydif $LINENO ../samples/test_clean < <(
 LANGUAGE={1} sealgood clean < $mydir/../samples/test_date_{2} 2>/dev/null)" ::: fr es us pt ::: fr es us pt
 
+
 #################################################################################################
 # lookup/file_or_url_list                                                                       #
 # lookup/sealgood+PEM pubkey                                                                    #
@@ -33,6 +34,17 @@ LANGUAGE={1} sealgood clean < $mydir/../samples/test_date_{2} 2>/dev/null)" ::: 
 #################################################################################################
 parallel --linebuffer "mydif $LINENO ../samples/test_clean_list_{} < <(( ls $mydir/../samples/test_date_{fr,es,us,pt} |
 LANGUAGE={} sealgood clean | tar -zvxOf-) 2>&1)" ::: fr es us pt
+
+mydif $LINENO ../samples/test_clean_tar < <( cd $mydir/../samples && ls test_date_{es,fr,pt,us} pempub |
+tee /dev/stdout | tee /dev/stdout | shuf |
+fddebug=3 3>&2 2>/dev/null sealgood clean |
+tar -zxf- --to-command='echo diff $TAR_FILENAME pempub;diff pempub -' | sort)
+
+mydif $LINENO ../samples/test_verify_tar < <( cd $mydir/../samples && ls test_date_{es,fr,pt,us} pempub |
+# tee /dev/stdout |
+# shuf |
+fddebug=3 3>&2 2>/dev/null sealgood verify |
+tar -zxf- --to-command='echo diff $TAR_FILENAME ${TAR_FILENAME%%_sealgood:*};diff -c1 ${TAR_FILENAME%%_sealgood:*} -' | sort)
 
 ###################################
 # lookup/file_or_url_list         #

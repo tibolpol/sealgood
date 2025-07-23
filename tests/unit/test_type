@@ -1,0 +1,33 @@
+#!/bin/bash
+# Ce script a pour but de valider les fonctions liées à un format d'injection
+# de payload
+# <$1 : original sans payload
+# <$2 : filetype
+
+mydir="$(cd "$(dirname "$0")" && pwd)"
+source "$mydir"/../../bin/filetypes
+source "$mydir"/../../bin/sealgood
+tmpdir=$(mktemp -d)
+cd $tmpdir
+
+echo "!$0 \"$1\" \"$2\"" >&2 
+[[ "$(lookup inject < "$mydir/$1")" == "$2" ]]                 || echo KO $LINENO >&2
+
+  diff -q lookup.inject{,.original}                            || echo KO $LINENO >&2
+  diff -q lookup.inject.unzip <(zcat lookup.inject 2>/dev/null||cat lookup.inject) || echo KO $LINENO >&2
+  diff -q lookup.inject        "$mydir/$1"                     || echo KO $LINENO >&2
+  chmod -w lookup.inject{,.original,.unzip}
+
+  [ -s lookup.inject.payload ]                                 && echo KO $LINENO >&2
+>lookup.inject.payload get_payload <lookup.inject.original
+  [ -s lookup.inject.payload ]                                 || echo KO $LINENO >&2
+
+>lookup.test2 inject_type inject "$2"
+[[ "$(lookup test1 <lookup.test2 | tee /dev/stderr)" =~ "sealgood+" ]] || echo KO $LINENO >&2
+extract_type     test2      "$2"                               || echo KO $LINENO >&2
+  [ -s lookup.test2.payload ]                                  || echo KO $LINENO >&2
+
+  diff -q lookup.{test2,inject}.original                       || echo KO $LINENO >&2
+  diff -q lookup.{test1,inject}.unzip                          || echo KO $LINENO >&2
+
+ls -tr $PWD/* >&2

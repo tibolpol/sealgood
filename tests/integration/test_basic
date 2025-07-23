@@ -83,3 +83,7 @@ mydif $LINENO ../samples/test_date_es_tgz_pdf < <( while ((++i < 4));do cp -l /t
 parallel "mydif $LINENO ../samples/test_verify_{1}_{2} < <(
 LANGUAGE={1} sealgood verify < $TMPDIR/test_date_{2}_tee 2>&1 | sed -e 's/\(^MIIV\).*/\1/'  -e 's/\(^Time stamp:\).*/\1/' )
 " ::: us es fr pt ::: us es fr pt
+
+mydif $LINENO ../samples/test_date_tar < <( cd $mydir/../samples && ls test_date_{es,fr,pt,us} |
+2>/dev/null sealgood date |
+tar -zxf- --to-command='echo diff ${TAR_FILENAME%%_sealgood:*} $TAR_FILENAME;sed -e "s/\(^MIIV\).*/\1/" | diff ${TAR_FILENAME%%_sealgood:*} -')

@@ -1,1 +1,3 @@
-KO test non effectué depuis les dernières modifications
+ok   14 ../samples/test_date_shell
+ok   31 ../../bin/sealgood
+ok   31 ../../bin/filetypes

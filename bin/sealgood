@@ -327,6 +327,7 @@ file2tgz(){
           then
             step "enumerate $FILE -> $OUTFILE"
             echo "$OUTFILE" # pris en charge par --remove-files
+((fddebug)) && echo "$OUTFILE" >&$fddebug
           else
             rm -f ../tar/"$OUTFILE"
           fi
@@ -432,10 +433,10 @@ inject() {
     local filetype="$(lookup inject)"
     if ! [[ $filetype =~ sealgood ]]; then
       rm -f lookup.inject.payload
-      get_payload < lookup.inject.unzip > lookup.inject.payload
+      get_payload <lookup.inject.original >lookup.inject.payload
       chmod -w lookup.inject.payload
     fi
-    inject_type "$filetype" | tee >(echo "inject output: $(lookup)" >&2)
+    inject_type inject "$filetype" | tee >(echo "inject output: $(lookup)" >&2)
     rm -f lookup.inject{,.unzip,.payload,.original}
   else
     cat
@@ -871,7 +872,7 @@ strip() {
 #######################################################################
 # PAYLOAD : Incorpore les explications et les signatures              #
 # C'est juste du plaintext qui commence et termine par des balises    #
-# <stdin : original data                                              #
+# <stdin: original data                                               #
 # <$REPOS_KEY : nom web de la clé publique                            #
 # <$PUBLIC_KEY : nom local de la clé publique                         #
 # <$HOME/.ssh/id_rsa.pub : emplacement du nom du signataire           #
@@ -880,10 +881,11 @@ strip() {
 #######################################################################
 get_payload() {
   # !../tests/unit/test_lookup
+cat >original_data
 get_profile
 local _0_=''
 cat <<EOD
-${_0_}### BEGIN SEALGOOD SIGNATURE ###
+${_0_}${BTAG}SIGNATURE ###
 ${_0_}SealGood - $(_ "The 100%% DIY Document Authenticator")
 ${_0_}Copyright (c) 2025 Thibault Le Paul (@tibolpol)
 ${_0_}Licence MIT - https://opensource.org/license/mit/
@@ -904,8 +906,8 @@ ${_0_}$(_ "Free servlet"):
 ${_0_}ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "\$filename.pdf" > /tmp/result
 ${_0_}
 ${_0_}$(_ "The signed document has the following properties"):
-${_0_}file -bi : $(<lookup.inject.original lookup)
-${_0_}wc       : $(<lookup.inject.original wc -)
+${_0_}file -bi : $(<original_data lookup)
+${_0_}wc       : $(<original_data wc -)
 ${_0_}
 ${_0_}$(_ "Signer declaration"): $(cut -d' ' -f3- < $HOME/.ssh/id_rsa.pub)
 ${_0_}$(_ "Signer ed25519 public key"): $REPOS_KEY
@@ -933,7 +935,7 @@ ${_0_}$(awk '/^-----BEGIN PUBLIC KEY/{getline;print;exit}' "$PUBLIC_KEY")
 ${_0_}-----END PUBLIC KEY-----
 ${_0_}
 ${_0_}## $(_ "Verification element") 3:  $(_ "Unsigned file without payload") ($(_ "just before signing"))
-${_0_}awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "\$filename.pdf" > /tmp/\$filename.pdf # $(_ "Unsigned file without payload")
+${_0_}awk '/^${BTAG}/{state=1}!state{print}/^$ETAG/{state=0}' < "\$filename.pdf" > /tmp/\$filename.pdf # $(_ "Unsigned file without payload")
 ${_0_}
 ${_0_}## $(_ "Verification element") 4:  $(_ "Signature of the original file hash")
 ${_0_}# $(_ "COPY the line below and PASTE into file") /tmp/sig.64
@@ -945,7 +947,7 @@ ${_0_}# $(_ "Links the file hash to the private key owner's trust chain")
 ${_0_}openssl dgst -sha256 -binary /tmp/file.pdf >/tmp/hash.bin
 ${_0_}openssl pkeyutl -verify -pubin -inkey /tmp/\$(basename "\$PUBLIC_KEY") -sigfile /tmp/sig.bin -in /tmp/hash.bin # $(_ "verify signature")
 ${_0_}
-${_0_}### BEGIN SEALGOOD TIMESTAMP ###
+${_0_}${BTAG}TIMESTAMP ###
 ${_0_}
 ${_0_}$(_ "If verification element 2 is not a PLACEHOLDER but a base64 code, the signing
 ${_0_}date can be proven").
@@ -968,7 +970,7 @@ ${_0_}base64 -d < /tmp/tsr.64 > /tmp/tsr.bin
 ${_0_}openssl ts -reply -text -in /tmp/tsr.bin # $(_ "show timestamp details")
 ${_0_}
 ${_0_}## $(_ "Verification element") 3:  $(_ "Untimestamped file without payload") ($(_ "just before timestamping"))
-${_0_}awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' < "\$filename.pdf" > /tmp/\$filename.pdf # $(_ "Unsigned file without payload")
+${_0_}awk '/^${BTAG}/{state=1}!state{print}/^$ETAG/{state=0}' < "\$filename.pdf" > /tmp/\$filename.pdf # $(_ "Unsigned file without payload")
 ${_0_}
 ${_0_}## $(_ "Final verification"):  $(_ "Either current file or your signature hash, and validation of match
 ${_0_}# using tsr and certificate chain")
@@ -976,7 +978,7 @@ ${_0_}# $(_ "Links your signature or file hash to the tsr date in the TSA trust 
 ${_0_}openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig.bin # $(_ "verify timestamp")
 ${_0_}openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/\$filename.pdf # $(_ "verify timestamp")
 ${_0_}
-${_0_}### END SEALGOOD ###
+${_0_}$ETAG###
 EOD
 }
 
@@ -1207,6 +1209,9 @@ _(){
 ```
 ## <a id=run>run</a>: RUN
 ```bash
+
+export BTAG="### BEGIN SEALGOOD "
+export ETAG="### END SEALGOOD "
 
 # Si le script est sourcé
 [[ "${BASH_SOURCE[0]}" == "$0" ]] || return

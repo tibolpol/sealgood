@@ -1,7 +1,9 @@
 !../integration/test_basic
 !../integration/test_aa
-!../unit/test_lookup
-!../unit/test_extract
+!../integration/test_shellscript
+!../unit/test_type ../samples/pempub "text/[PEM] Public key+plain; charset=utf-8"
+!../unit/test_type ../samples/pubkeys.tgz "application/tar+gzip; charset=binary"
+!../unit/test_type ../../bin/sealgood "text/x-shellscript; charset=utf-8"
 
 !3</dev/null fdtty=3 sealgood clean verify <~/.ssh/ed25519_public_*sealgood:*.pem
 !3</dev/null fdtty=3 sealgood       verify <~/.ssh/ed25519_public_*sealgood:*.pem
@@ -13,16 +15,18 @@
 !ls test_date_{es,fr} | LANG=en            sealgood date >/dev/null
 !ls test_date_{es,us} | STOPFILE=/stopfile sealgood date
 
-# verify : un membre n'apparaît pas en sortie, compression ??
-!while ((ii++<1));do ls test_date_{es,fr,pt,us};done | tee >(while read ff;do wc - <$ff;done >&2) | 2>/dev/null fddebug=2 sealgood verify | tar  -zxf- --to-command='wc -'
-!while ((ii++<1));do ls test_date_{es,fr,pt,us};done | tee >(while read ff;do wc - <$ff;done >&2) | 2>/dev/null fddebug=2 sealgood verify | tar  -zxf- --to-command='diff ${TAR_FILENAME:1:13} -'
-# il est dans l'index
+# verify : le dernier membre n'apparaît pas en sortie
+!while ((ii++<1));do ls test_date_{es,fr,pt,us};done | sort -R | tee /dev/stderr | 2>/dev/null fddebug=2 sealgood verify | tar  -zxf- --to-command='echo ${TAR_FILENAME%%_sealgood*}'
+!while ((ii++<1));do ls test_date_{es,fr,pt,us};done | sort -R | tee /dev/stderr | 2>/dev/null fddebug=2 sealgood verify | tar  -ztf-
+
+# date, clean : ok
+!while ((ii++<1));do ls test_date_{es,fr,pt,us};done | sort -R | tee /dev/stderr | 2>/dev/null fddebug=2 sealgood date   | tar  -zxf- --to-command='echo ${TAR_FILENAME%%_sealgood*}'
+!while ((ii++<1));do ls test_date_{es,fr,pt,us};done | sort -R | tee /dev/stderr | 2>/dev/null fddebug=2 sealgood clean  | tar  -zxf- --to-command='echo ${TAR_FILENAME%%_sealgood*}'
+
+# alors qu'il est dans l'index
 !while ((ii++<1));do ls test_date_{es,fr,pt,us};done | tee >(while read ff;do wc - <$ff;done >&2) | 2>/dev/null fddebug=2 sealgood verify | tar  -ztf-
 
 # clean : ok
-!while ((ii++<1));do ls test_date_{es,fr,pt,us};done | tee >(while read ff;do wc - <$ff;done >&2) | 2>/dev/null fddebug=2 sealgood clean  | tar  -zxf- --to-command='wc -'
-!while ((ii++<1));do ls test_date_{es,fr,pt,us};done | tee >(while read ff;do wc - <$ff;done >&2) | 2>/dev/null fddebug=2 sealgood clean  | tar  -zxf- --to-command='diff pempub -'
-!while ((ii++<1));do ls test_date_{es,fr,pt,us};done | tee >(while read ff;do wc - <$ff;done >&2) | 2>/dev/null fddebug=2 sealgood clean  | tar  -ztf-
 
 !3</dev/null fdtty=3 fddebug=2 LANGUAGE=us sealgood date verify <pubkeys.tgz | tar -ztf-
 !3</dev/null fdtty=3 fddebug=2 LANGUAGE=us sealgood date verify <pubkeys.tgz | zcat | strings -n12 -weS

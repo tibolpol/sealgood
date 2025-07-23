@@ -63,17 +63,14 @@ lookup() {
       # fallback
       if ! [ -f lookup."$sfx".payload ];then
         <lookup."$sfx" >lookup."$sfx".payload 28>lookup."$sfx".original \
-        awk '/^(<!-- \|:<<'\''### END SEALGOOD ###'\'' )?### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD ###/{state=0}'
+        awk '/^(<!-- \|:<<'"'$ETAG###' )?${BTAG}"'/{ state=1 } { if (state) print; else print >"/dev/fd/28"}/'"^$ETAG###/{state=0}"
       fi
       [ -f lookup."$sfx".unzip ] || cp -l lookup."$sfx".original lookup."$sfx".unzip
       # Check du lookup."$sfx".payload obtenu sinon raz
       if [ -s lookup."$sfx".payload ];then
-        if awk '
-          !begin && /^(<!-- \|:<<'\''### END SEALGOOD ###'\'' )?### BEGIN SEALGOOD .*###$/ {begin=FNR}
-          /^### END SEALGOOD ###/{end=FNR}
-          # exactement 1ère et dernière ligne
-          END{
-          exit ! (begin == 1 && end == FNR)}' lookup."$sfx".payload
+        # exactement 1ère et dernière ligne
+        if
+          awk '!begin && /^(<!-- |:<<'"'$ETAG###' )?${BTAG}"'/{begin=FNR} /^'"$ETAG"'###/{end=FNR} END{ exit ! (begin == 1 && end == FNR)}' lookup."$sfx".payload
         then
           local count=$(awk '/^wc *:\([ 0-9]\+\)\{3\}$/ {print $5;exit}' lookup."$sfx".payload)
           (( count == 0 || count == $(wc -c <lookup."$sfx".original) )) ||
@@ -156,13 +153,13 @@ extract_gzip(){
   # !../tests/unit/test_lookup
   # !../tests/unit/test_extract
   local sfx="$1" result="$2"
-  if [[ $result =~ application/gzip ]];then
+  if [[ $result =~ application/.*gzip ]];then
     (zcat lookup."$sfx" || die $LINENO "assert lookup.$sfx est cassé $result") > lookup."$sfx".unzip
-    if grep -aq '### BEGIN SEALGOOD' lookup."$sfx".unzip;then
+    if grep -aq "$BTAG" lookup."$sfx".unzip;then
       # count < dernier wc : x x x
       local count=$(< lookup."$sfx".unzip awk '
-        /### BEGIN SEALGOOD /{state=1}
-        /^### END SEALGOOD /{state=0}
+        /'"$BTAG"'/{state=1}
+        /'"^$ETAG"'/{state=0}
         state && /^wc *:.* -$/{count=$5}
         END{printf("%d"ORS, count)}'
       )
@@ -179,38 +176,38 @@ extract_gzip(){
 }
 extract_xml(){
   local sfx="$1" result="$2"
-  if [[ $result =~ text/xml ]];then
+  if [[ $result =~ text/.*xml ]];then
     <lookup."$sfx" >lookup."$sfx".payload 28>lookup."$sfx".original \
-    awk '/^<!-- ### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD ###/{state=0}'
+    awk '/^<!-- '"$BTAG"'/{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^'"$ETAG###/{state=0}"
   return 0;else return 1;fi
 }
 extract_html(){
   local sfx="$1" result="$2"
-  if [[ $result =~ text/html ]];then
+  if [[ $result =~ text/.*html ]];then
     <lookup."$sfx" >lookup."$sfx".payload 28>lookup."$sfx".original \
-    awk '/^<!-- ### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD ###/{state=0}'
+    awk '/^<!-- '"$BTAG"'/{ state=1 } { if (state) print; else print >"/dev/fd/28"}/'"^$ETAG###/{state=0}"
   return 0;else return 1;fi
 }
 extract_shellscript(){
   local sfx="$1" result="$2"
-  if [[ $result =~ text/html ]];then
+  if [[ $result =~ text/.*x-shellscript ]];then
     <lookup."$sfx" >lookup."$sfx".payload 28>lookup."$sfx".original \
-    awk '/^:<<'\''### END SEALGOOD ###'\'' #### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD ###/{state=0}'
+    awk '/^:<<'"'$ETAG###' *$BTAG"'/{state=1} { if (state) print; else print >"/dev/fd/28"}/'"^$ETAG###/{state=0}"
   return 0;else return 1;fi
 }
 extract_pdf(){
   local sfx="$1" result="$2"
-  if [[ $result =~ application/pdf ]];then
+  if [[ $result =~ application/.*pdf ]];then
     <lookup."$sfx" >lookup."$sfx".payload 28>lookup."$sfx".original \
-    awk '/^### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD ###/{state=0}'
+    awk '/^'"$BTAG"'/{ state=1 } { if (state) print; else print >"/dev/fd/28"}/'"^$ETAG###/{state=0}"
   return 0;else return 1;fi
 }
 extract_plain(){
   local sfx="$1" result="$2"
-  if [[ $result =~ text/plain ]];then
+  if [[ $result =~ text/.*plain ]];then
     if grep -aq '^-----BEGIN' lookup."$sfx";then
       <lookup."$sfx" >lookup."$sfx".payload 28>lookup."$sfx".original \
-      awk '/^### BEGIN SEALGOOD /{ state=1 } { if (state) print; else print >"/dev/fd/28"}/^### END SEALGOOD ###/{state=0}'
+      awk "/^$BTAG"'/{ state=1 } { if (state) print; else print >"/dev/fd/28"}/'"^$ETAG###/{state=0}"
       echo "${result/plain/$(check_crypto_file "$sfx" "$result")+plain}"
     elif LC_ALL=C grep -aEq '^([^[:space:]]|https?://[^/]).{1,256}[^[:space:]]$' lookup."$sfx";then
       echo "${result/plain/$(check_file_or_url_list "$sfx" "$result")+plain}"
@@ -224,9 +221,9 @@ extract_plain(){
 ```mermaid
 flowchart LR
 $1 -.->|filetype| inject_type{{filetype?}}
-lookup.payload[/lookup.inject.payload/] -->|payload| inject_after_eod
+lookup.payload[/lookup.$sfx.payload/] -->|payload| inject_after_eod
 lookup.payload -->|payload| inject_xml
-lookup.original[/lookup.inject.original/] -->|data| warning
+lookup.original[/lookup.$sfx.original/] -->|data| warning
 lookup.original -->|data| inject_after_eod
 lookup.original -->|data| inject_xml
 inject_type -.->|pdf| inject_after_eod
@@ -235,7 +232,7 @@ inject_type -.->|html| inject_xml
 inject_type -.->|gzip| inject_gzip
 inject_type -.->|PEM| inject_after_eod
 inject_type -.->|None| warning
-lookup.$1[/lookup.inject/] -->|payload+data| inject_gzip
+lookup.$1[/lookup.$sfx/] -->|payload+data| inject_gzip
 inject_after_eod --> l1((1))
 inject_xml --> l1
 warning --> l1
@@ -247,23 +244,23 @@ click inject_gzip "#inject_gzip"
 ```
 ```bash
 inject_type() {
-    filetype="$1"
+    local sfx="$1" filetype="$2"
     # Le type d'injection dépend de filetype
     if [[ $filetype =~ pdf ]];then
-      inject_after_eod
+      inject_after_eod "$sfx"
     elif [[ $filetype =~ xml  ]];then
-      inject_xml
+      inject_xml "$sfx"
     elif [[ $filetype =~ html ]];then
-      inject_xml
+      inject_xml "$sfx"
     elif [[ $filetype =~ gzip ]];then
-      inject_gzip
+      inject_gzip "$sfx"
     elif [[ $filetype =~ shellscript ]];then
-      inject_shellscript
-    elif [[ $filetype =~ PEM..$(_ "Public key") ]];then
-      inject_after_eod
+      inject_shellscript "$sfx"
+    elif [[ $filetype =~ PEM ]];then
+      inject_after_eod "$sfx"
     else
       warning "$(_ "I don't know how to inject into") mimetype: $filetype"
-      cat lookup.inject.original
+      cat lookup."$sfx".original
     fi
 }
 :<<'```bash'
@@ -271,8 +268,8 @@ inject_type() {
 ## <a id=inject_after_eod>inject_after_eod</a>: Injection d'informations cachées dans une copie du fichier
 ```mermaid
 flowchart TB
-od[/lookup.inject.original/]
-pl[/lookup.inject.payload/]
+od[/lookup.$sfx.original/]
+pl[/lookup.$sfx.payload/]
 od -->|data| inject_after_eod
 pl -->|payload| inject_after_eod
 inject_after_eod -->|payload+data| l1((1))
@@ -280,12 +277,12 @@ inject_after_eod -->|payload+data| l1((1))
 ```bash
 ##############################################################
 # Injection d'informations cachées dans une copie du fichier #
-# <lookup.inject.original                                    #
-# <lookup.inject.payload                                     #
+# <lookup.$sfx.original                                      #
+# <lookup.$sfx.payload                                       #
 # >stdout : copie avec payload & PLACEHOLDER                 #
 ##############################################################
 inject_after_eod() {
-  cat lookup.inject.{original,payload}
+  cat lookup."$sfx".{original,payload}
 }
 
 :<<'```bash'
@@ -293,8 +290,8 @@ inject_after_eod() {
 ## <a id=inject_xml>inject_xml</a>: Injection d'informations cachées dans une copie du HTML | XML
 ```mermaid
 flowchart TB
-od[/lookup.inject.original/]
-pl[/lookup.inject.payload/]
+od[/lookup.$sfx.original/]
+pl[/lookup.$sfx.payload/]
 od -->|data| inject_xml
 pl -->|payload| inject_xml
 inject_xml -->|payload+data| l1((1))
@@ -302,13 +299,13 @@ inject_xml -->|payload+data| l1((1))
 ```bash
 #################################################################
 # Injection d'informations cachées dans une copie du HTML | XML #
-# <lookup.inject.original                                       #
-# <lookup.inject.payload                                        #
+# <lookup.$sfx.original                                       #
+# <lookup.$sfx.payload                                        #
 # >stdout : copie avec payload & PLACEHOLDER                    #
 #################################################################
 inject_xml() {
-  cat lookup.inject.original
-  echo "<!-- $(cat lookup.inject.payload) -->"
+  cat lookup."$sfx".original
+  echo "<!-- $(cat lookup."$sfx".payload) -->"
 }
 
 :<<'```bash'
@@ -316,7 +313,7 @@ inject_xml() {
 ## <a id=inject_gzip>inject_gzip</a>: Injection d'informations cachées dans une copie du gzip
 ```mermaid
 flowchart TB
-lookup.inject[/lookup.inject/] -->|payload+data| tee
+lookup.$sfx[/lookup.$sfx/] -->|payload+data| tee
 filetype[filetype=$1] -.-> inject_gzip
 subgraph inject_gzip
   tee -->|data| od[/original_data/]
@@ -331,19 +328,19 @@ click get_payload "sealgood.md#get_payload"
 ##################################################################
 # Injection d'informations cachées dans une copie du gzip        #
 # https://www.gnu.org/software/gzip/manual/gzip#Advanced-usage   #
-# <lookup.inject                                                 #
+# <lookup.$sfx                                                 #
 # >stdout : copie avec payload & PLACEHOLDER                     #
 ##################################################################
 inject_gzip() {
   {
-    cat lookup.inject.original
-    gzip -c lookup.inject.payload
+    cat lookup."$sfx".original
+    gzip -c lookup."$sfx".payload
   }
 }
 
 inject_shellscript() {
-  cat lookup.inject.original
-  echo ":<<'### END SEALGOOD ###' $(cat lookup.inject.payload)"
+  cat lookup."$sfx".original
+  echo ":<<'$ETAG###' $(cat lookup."$sfx".payload)"
 }
 
 :<<'```bash'

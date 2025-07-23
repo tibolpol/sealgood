@@ -11,17 +11,21 @@ exec 1> >(tee $mydir/$myname.stdout)
 # get_payload                                                      #
 # locale/{{run,data}/fr,{run,data}/es,{run,data}/pt,{run,data}/us} #
 ####################################################################
-mydif $LINENO ../samples/test_date_shell < <( ls $mydir/../../bin/{sealgood,filetypes} |
+mydif $LINENO ../samples/test_date_shell < <( cd $mydir/../../bin/ && ls {sealgood,filetypes} |
 (LANGUAGE=fr sealgood date verify | (cd $TMPDIR && tar --one-top-level=bin -zvxf-)) 2>&1 | sed -e 's/\(^Time stamp:\).*/\1/' -e 's/sealgood:[a-z0-9]\+/sealgood:000000000/' )
 
 (
-cd $TMPDIR/bin &&
-mv sealgood{_sealgood:*,} &&
-mv filetypes{_sealgood:*,}
+cd $TMPDIR &&
+mv bin/sealgood{_sealgood:*,} &&
+mv bin/filetypes{_sealgood:*,}
+ln -sf  $mydir/../../locale .
 )
 
+#########################
+# bash/shellscript      #
+# clean/shellscript     #
+#########################
 parallel "
 mydif $LINENO ../../bin/{} < <( cat $TMPDIR/bin/{} |
 (LANGUAGE=fr $TMPDIR/bin/sealgood clean 2>/dev/null ))
 " ::: sealgood filetypes
-
