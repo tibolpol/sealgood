@@ -14,7 +14,7 @@ parallel "mydif $LINENO ../../docs/{}/help_{}.md < <(LANGUAGE={} sealgood help 2
 #############
 # clean/pdf #
 #############
-mydif $LINENO ../samples/svg.pdf < <( cat /tmp/svg.date.pdf |
+mydif $LINENO ../samples/svg.pdf < <( cat $mydir/../samples/svg.date.pdf |
 LANGUAGE=fr sealgood clean 2>/dev/null )
 
 #################################################################################################

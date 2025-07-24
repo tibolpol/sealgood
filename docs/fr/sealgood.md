@@ -502,18 +502,23 @@ date() {
       )"
     fi <lookup.date
     if [[ $filetype =~ sealgood ]];then
+      # recherche de la signature existante
       <lookup.date.payload awk '/\/sig\.64$/,/\/sig\.bin$/' | grep -vE '/sig\.64$|/sig\.bin$|^PLACEHOLDER' | tr -d ' \n'                  | base64 -d >sig.tmp
+      # recherche de l'horodatage existant
       <lookup.date.payload awk '/\/tsr\.64$/,/\/tsr\.bin$/' | grep -vE '/tsr\.64$|/tsr\.bin$|^PLACEHOLDER' | tr -d ' \n' | tee tsr.tmp.64 | base64 -d >tsr.tmp
       # parse payload existing sign + existing tsr
       if <lookup.date.payload grep -aq "^PLACEHOLDER_UNTIMESTAMPED_FILE" ||
         ! openssl ts -verify -in tsr.tmp -CAfile <(<lookup.date.payload tsa_cert) -data sig.tmp &> ts_result; then
+          set -o pipefail
           if [ -s sig.tmp ]; then
             cat sig.tmp # Horodatage sur la signature (préférable ? obligatoire ?)
             ts_verify="openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig.bin # $(_ "verify timestamp")"
           else
-            cat lookup.date.original # Horodatage sur le document clean (ancienne méthode)
+            cat lookup.date.original # Horodatage sur le document original (ancienne méthode)
             ts_verify="openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/\$filename.pdf # $(_ "verify timestamp")"
-          fi | timestamp | base64 -w 0 | tr -d ' \n' >tsr.64
+          fi |
+          timestamp | base64 -w 0 | tr -d ' \n' >tsr.64 ||
+          die 8 "$(_ "Timestamp failed")"
       fi
       if [ -s tsr.64 ];then
         local REXP="^PLACEHOLDER_UNTIMESTAMPED_FILE"
@@ -1052,8 +1057,19 @@ click verify "sealgood.md#verify"
 # >stdout : tsr.bin    #
 ########################
 timestamp() {
-  openssl ts -query -data /dev/stdin -sha256 -cert |
-  curl -s -H "Content-Type: application/timestamp-query" --data-binary @- --output - https://freetsa.org/tsr
+  2> >(grep -av 'Using configuration from' >&2) \
+  openssl ts -query -no_nonce -data /dev/stdin -sha512 -cert |
+  curl -s -H "Content-Type: application/timestamp-query" --data-binary @- --output - https://freetsa.org/tsr |
+  perl -ne 'BEGIN { binmode STDIN; binmode STDOUT; $err = 0 }
+    if (/error/i) {
+      $clean = $_;
+      $clean =~ s/[^[:print:]\t\n\r]//g;
+      print STDERR "https://freetsa.org/tsr: ".$clean."\n";
+      $err++;
+      next
+    }
+    print;
+    END { exit $err ? 1 : 0 }'
 }
 
 :<<'```bash'

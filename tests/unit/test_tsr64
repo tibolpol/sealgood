@@ -1,0 +1,29 @@
+#!/bin/bash
+# <$1 : original sans payload
+# <$2 : filetype
+
+mydir="$(cd "$(dirname "$0")" && pwd)"
+source "$mydir"/../../bin/filetypes
+source "$mydir"/../../bin/sealgood
+tmpdir=$(mktemp -d)
+cd $tmpdir
+
+filetype="$(lookup inject <$mydir/../samples/pempub)"
+>lookup.inject.payload get_payload <lookup.inject.original
+>lookup.test2 inject_type inject "$filetype"
+extract_type  test2   "$filetype"    || echo KO $LINENO >&2
+
+<lookup.inject.payload awk '/\/sig\.64$/,/\/sig\.bin$/' | grep -vE '/sig\.64$|/sig\.bin$|^PLACEHOLDER' | tr -d ' \n'
+<lookup.inject.payload awk '/\/tsr\.64$/,/\/tsr\.bin$/' | grep -vE '/tsr\.64$|/tsr\.bin$|^PLACEHOLDER' | tr -d ' \n'
+<lookup.inject.payload grep -a "^PLACEHOLDER_UNTIMESTAMPED_FILE"
+
+#<lookup.inject.original | openssl ts -query -no_nonce -data /dev/stdin -sha512 -cert > tsq.bin || echo KO $LINENO >&2
+#2> >(sed 's|^|https://freetsa.org/tsr:|') curl -s -H "Content-Type: application/timestamp-query" --data-binary @tsq.bin --output tsr.bin https://freetsa.org/tsr || echo KO $LINENO >&2
+#grep -ai error tsr.bin && echo KO $LINENO
+
+#<lookup.inject.original timestamp >tsr.bin || echo KO $LINENO >&2
+
+date date <lookup.test2
+
+
+ls -tr $PWD/* >&2
