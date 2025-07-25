@@ -9,6 +9,7 @@ tmpdir=$(mktemp -d)
 cd $tmpdir
 
 filetype="$(lookup inject <$mydir/../samples/pempub)"
+
 >lookup.inject.payload get_payload <lookup.inject.original
 >lookup.test2 inject_type inject "$filetype"
 extract_type  test2   "$filetype"    || echo KO $LINENO >&2
@@ -17,13 +18,20 @@ extract_type  test2   "$filetype"    || echo KO $LINENO >&2
 <lookup.inject.payload awk '/\/tsr\.64$/,/\/tsr\.bin$/' | grep -vE '/tsr\.64$|/tsr\.bin$|^PLACEHOLDER' | tr -d ' \n'
 <lookup.inject.payload grep -a "^PLACEHOLDER_UNTIMESTAMPED_FILE"
 
-#<lookup.inject.original | openssl ts -query -no_nonce -data /dev/stdin -sha512 -cert > tsq.bin || echo KO $LINENO >&2
-#2> >(sed 's|^|https://freetsa.org/tsr:|') curl -s -H "Content-Type: application/timestamp-query" --data-binary @tsq.bin --output tsr.bin https://freetsa.org/tsr || echo KO $LINENO >&2
-#grep -ai error tsr.bin && echo KO $LINENO
+<lookup.inject.original | openssl ts -query -no_nonce -data /dev/stdin -sha512 -cert >tsq.bin || echo KO $LINENO >&2
 
-#<lookup.inject.original timestamp >tsr.bin || echo KO $LINENO >&2
+2> >(sed 's|^|https://freetsa.org/tsr:|') curl -s -H "Content-Type: application/timestamp-query" --data-binary @tsq.bin https://freetsa.org/tsr >tsr.freetsa.bin || echo KO $LINENO >&2
+grep -ai error tsr.freetsa.bin && echo KO $LINENO freetsa || {
+curl -s https://freetsa.org/files/cacert.pem >cacert.pem
+<lookup.inject.original | openssl ts -verify -data /dev/stdin -in tsr.freetsa.bin -CAfile cacert.pem
+}
 
-date date <lookup.test2
+2> >(sed 's|^|http://timestamp.digicert.com:|') curl -s -H "Content-Type: application/timestamp-query" --data-binary @tsq.bin http://timestamp.digicert.com >tsr.digicert.bin || echo KO $LINENO >&2
+grep -ai error tsr.digicert.bin && echo KO $LINENO digicert || {
+curl -s http://cacerts.digicert.com/DigiCertAssuredIDRootCA.crt.pem >DigiCertAssuredIDRootCA.crt.pem
+<lookup.inject.original | openssl ts -verify -data /dev/stdin -in tsr.digicert.bin -CAfile DigiCertAssuredIDRootCA.crt.pem
+}
 
+#!</tmp/tmp.dEZHAUOebj/lookup.verify.original |  openssl ts -verify -data /dev/stdin -in /tmp/tmp.dEZHAUOebj/tsr.bin -CAfile /tmp/tmp.dEZHAUOebj/tsa_cert.pem
 
 ls -tr $PWD/* >&2

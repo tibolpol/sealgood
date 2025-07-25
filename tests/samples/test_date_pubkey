@@ -1,4 +1,3 @@
-Using configuration from /usr/lib/ssl/openssl.cnf
 date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
 [1;36m=== Extrayendo elementos de verificación ===[0m
@@ -15,7 +14,7 @@ Detalles del sello temporal:
 Using configuration from /usr/lib/ssl/openssl.cnf
 Time stamp:
 Accuracy: unspecified
-Ordering: yes
+Ordering: no
 
 [1;36m=== Resumen de verificación ===[0m
 Estado de la firma: [1;33mAUSENTE[0m
@@ -23,8 +22,7 @@ Estado del sello temporal: [1;32mVÃLIDO[0m
 [1;32mEl documento tiene sello temporal e intacto[0m
 verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
-[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_date_es -> test_date_es_sealgood:e037f239 ===[0m
-Using configuration from /usr/lib/ssl/openssl.cnf
+[1;36m=== enumerate $TMPDIR/test_date_es_tee -> test_date_es_tee_sealgood:e037f239 ===[0m
 date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
 [1;36m=== Extrayendo elementos de verificación ===[0m
@@ -41,7 +39,7 @@ Detalles del sello temporal:
 Using configuration from /usr/lib/ssl/openssl.cnf
 Time stamp:
 Accuracy: unspecified
-Ordering: yes
+Ordering: no
 
 [1;36m=== Resumen de verificación ===[0m
 Estado de la firma: [1;33mAUSENTE[0m
@@ -49,8 +47,7 @@ Estado del sello temporal: [1;32mVÃLIDO[0m
 [1;32mEl documento tiene sello temporal e intacto[0m
 verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
-[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_date_fr -> test_date_fr_sealgood:e037f239 ===[0m
-Using configuration from /usr/lib/ssl/openssl.cnf
+[1;36m=== enumerate $TMPDIR/test_date_fr_tee -> test_date_fr_tee_sealgood:e037f239 ===[0m
 date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
 [1;36m=== Extrayendo elementos de verificación ===[0m
@@ -67,7 +64,7 @@ Detalles del sello temporal:
 Using configuration from /usr/lib/ssl/openssl.cnf
 Time stamp:
 Accuracy: unspecified
-Ordering: yes
+Ordering: no
 
 [1;36m=== Resumen de verificación ===[0m
 Estado de la firma: [1;33mAUSENTE[0m
@@ -75,16 +72,16 @@ Estado del sello temporal: [1;32mVÃLIDO[0m
 [1;32mEl documento tiene sello temporal e intacto[0m
 verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
 
-[1;36m=== enumerate /home/tlp/sealgood/tests/integration/../samples/test_date_pt -> test_date_pt_sealgood:e037f239 ===[0m
+[1;36m=== enumerate $TMPDIR/test_date_pt_tee -> test_date_pt_tee_sealgood:e037f239 ===[0m
 
 [1;36m=== Resumen de verificación ===[0m
-[1;32m1: test_date_es tiene sello temporal e intacto[0m
-[1;32m2: test_date_fr tiene sello temporal e intacto[0m
-[1;32m3: test_date_pt tiene sello temporal e intacto[0m
+[1;32m1: test_date_es_tee tiene sello temporal e intacto[0m
+[1;32m2: test_date_fr_tee tiene sello temporal e intacto[0m
+[1;32m3: test_date_pt_tee tiene sello temporal e intacto[0m
 
 [1;36m=== Fin de verificaciones ===[0m
 [1;32mmain output: application/tar+gzip; charset=binary[0m
-test_date_es_sealgood:e037f239
+test_date_es_tee_sealgood:e037f239
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----
@@ -161,16 +158,16 @@ Si el elemento de verificación 2 no es un PLACEHOLDER sino un código base64,
 la fecha de firma puede probarse.
 
 ## Elemento de verificación 1:  Certificado raíz de autoridad TSA
-# COPIAR las tres líneas siguientes y PEGAR en el archivo /tmp/freetsa_cacert.pem
-# o descargar https://freetsa.org/files/cacert.pem a /tmp/freetsa_cacert.pem
+# COPIAR las tres líneas siguientes y PEGAR en el archivo /tmp/cacert.pem
+# o descargar http://cacerts.digicert.com/DigiCertAssuredIDRootCA.crt.pem a /tmp/cacert.pem
 -----BEGIN CERTIFICATE-----
-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
+MII
 -----END CERTIFICATE-----
-openssl x509 -reply -text -in /tmp/freetsa_cacert.pem # mostrar detalles del certificado
+openssl x509 -reply -text -in /tmp/cacert.pem # mostrar detalles del certificado
 
 ## Elemento de verificación 2:  Codificación base64 del tsr validado por TSA
 # COPIAR la línea siguiente y PEGAR en el archivo /tmp/tsr.64
-MIIV
+MII
 base64 -d < /tmp/tsr.64 > /tmp/tsr.bin
 openssl ts -reply -text -in /tmp/tsr.bin # mostrar detalles del sello temporal
 
@@ -181,12 +178,12 @@ awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' 
 # usando tsr y cadena de certificados
 # Vincula tu firma o el hash del archivo a la fecha del TSR en la cadena
 # de confianza de la TSA
-openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig.bin # verificar sello temporal
-openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$filename.pdf # verificar sello temporal
+openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/cacert.pem -data /tmp/sig.bin # verificar sello temporal
+openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/cacert.pem -data /tmp/$filename.pdf # verificar sello temporal
 
 ### END SEALGOOD ###
 
-test_date_fr_sealgood:e037f239
+test_date_fr_tee_sealgood:e037f239
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----
@@ -264,16 +261,16 @@ Si l'élément de vérification 2 n'est pas un PLACEHOLDER mais un code en base6
 la date de signature peut être prouvée.
 
 ## Élément de vérification 1:  Certificat racine de l'autorité TSA
-# COPIER les trois lignes suivantes et COLLER dans le fichier /tmp/freetsa_cacert.pem
-# ou télécharger https://freetsa.org/files/cacert.pem dans /tmp/freetsa_cacert.pem
+# COPIER les trois lignes suivantes et COLLER dans le fichier /tmp/cacert.pem
+# ou télécharger http://cacerts.digicert.com/DigiCertAssuredIDRootCA.crt.pem dans /tmp/cacert.pem
 -----BEGIN CERTIFICATE-----
-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
+MII
 -----END CERTIFICATE-----
-openssl x509 -reply -text -in /tmp/freetsa_cacert.pem # montrer les détails di certificat
+openssl x509 -reply -text -in /tmp/cacert.pem # montrer les détails di certificat
 
 ## Élément de vérification 2:  Encodage 64 du tsr validé par la TSA
 # COPIER la ligne ci-dessous et COLLER dans le fichier /tmp/tsr.64
-MIIV
+MII
 base64 -d < /tmp/tsr.64 > /tmp/tsr.bin
 openssl ts -reply -text -in /tmp/tsr.bin # montrer les détails de l'horodatage
 
@@ -283,12 +280,12 @@ awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' 
 ## Vérification finale:  Fichier actuel ou hash de votre signature, et validation de la correspondance
 # avec le tsr et la chaîne de certificats
 # Lie votre signature ou le hash du fichier à la date du tsr dans la chaîne de confiance de la TSA
-openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig.bin # vérifier l'horodatage
-openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$filename.pdf # vérifier l'horodatage
+openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/cacert.pem -data /tmp/sig.bin # vérifier l'horodatage
+openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/cacert.pem -data /tmp/$filename.pdf # vérifier l'horodatage
 
 ### END SEALGOOD ###
 
-test_date_pt_sealgood:e037f239
+test_date_pt_tee_sealgood:e037f239
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEArgT83NQOh56X/DtqqSGdII34kjK4/XTv3XLEaPZm7wE=
 -----END PUBLIC KEY-----
@@ -364,16 +361,16 @@ Se elemento 2 não for PLACEHOLDER mas código base64, a data
 de assinatura pode ser provada.
 
 ## Elemento de verificação 1:  Certificado raiz da autoridade TSA
-# COPIE as três linhas abaixo e COLE no arquivo /tmp/freetsa_cacert.pem
-# ou baixe https://freetsa.org/files/cacert.pem para /tmp/freetsa_cacert.pem
+# COPIE as três linhas abaixo e COLE no arquivo /tmp/cacert.pem
+# ou baixe http://cacerts.digicert.com/DigiCertAssuredIDRootCA.crt.pem para /tmp/cacert.pem
 -----BEGIN CERTIFICATE-----
-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
+MII
 -----END CERTIFICATE-----
-openssl x509 -reply -text -in /tmp/freetsa_cacert.pem # mostrar detalhes do certificado
+openssl x509 -reply -text -in /tmp/cacert.pem # mostrar detalhes do certificado
 
 ## Elemento de verificação 2:  Codificação Base64 do tsr validado por TSA
 # COPIE a linha abaixo e COLE no arquivo /tmp/tsr.64
-MIIV
+MII
 base64 -d < /tmp/tsr.64 > /tmp/tsr.bin
 openssl ts -reply -text -in /tmp/tsr.bin # mostrar detalhes do carimbo
 
@@ -383,8 +380,8 @@ awk '/^### BEGIN SEALGOOD /{state=1}!state{print}/^### END SEALGOOD /{state=0}' 
 ## Verificação final:  Arquivo atual ou hash de sua assinatura, e validação de correspondência
 # usando tsr e cadeia de certificados
 # Vincula sua assinatura ou hash do arquivo à data tsr na cadeia TSA
-openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/sig.bin # verificar carimbo
-openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/freetsa_cacert.pem -data /tmp/$filename.pdf # verificar carimbo
+openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/cacert.pem -data /tmp/sig.bin # verificar carimbo
+openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/cacert.pem -data /tmp/$filename.pdf # verificar carimbo
 
 ### END SEALGOOD ###
 

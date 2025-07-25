@@ -1,3 +1,4 @@
 ok   14 ../samples/test_date_shell
-ok   31 ../../bin/sealgood
 ok   31 ../../bin/filetypes
+ok   31 ../../bin/sealgood
+ok   33 ../samples/test_shell_self

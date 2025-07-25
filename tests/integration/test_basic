@@ -12,7 +12,7 @@ exec 1> >(tee $mydir/$myname.stdout)
 # locale/{{run,data}/fr,{run,data}/es,{run,data}/pt,{run,data}/us} #
 ####################################################################
 parallel "mydif $LINENO ../samples/test_date_{} < <(
-LANGUAGE={} sealgood date < $mydir/../samples/pempub 2>/dev/null | tee $TMPDIR/test_date_{}_tee | sed -e 's/\(^MIIV\).*/\1/' )
+LANGUAGE={} sealgood date < $mydir/../samples/pempub 2>/dev/null | tee $TMPDIR/test_date_{}_tee | sed -e 's/\(^MII\).*/\1/' )
 " ::: us es fr pt
 
 ###################################
@@ -24,10 +24,10 @@ LANGUAGE={} sealgood date < $mydir/../samples/pempub 2>/dev/null | tee $TMPDIR/t
 # verify/sealgood+PEM pubkey      #
 # locale/{run/es,data/{fr,es,us}} #
 ###################################
-mydif $LINENO ../samples/test_date_pubkey  < <(( ls $mydir/../samples/test_date_{es,fr,pt} |
+mydif $LINENO ../samples/test_date_pubkey  < <(( ls $TMPDIR/test_date_{es,fr,pt}_tee |
 LANGUAGE=es sealgood date verify |
                       tee $TMPDIR/pubkeys.tgz | # garde pour le test suivant
-                      zcat|strings -n12 -weS) 2>&1 | sed -e 's/\(^MIIV\).*/\1/' -e 's/\(^Time stamp:\).*/\1/' )
+                      zcat|strings -n12 -weS) 2>&1 | sed -e 's/\(^MII\).*/\1/' -e 's/\(^Time stamp:\).*/\1/' -e "s|$TMPDIR|\$TMPDIR|" )
 
 ############################
 # lookup/tar+gzip          #
@@ -38,7 +38,7 @@ LANGUAGE=es sealgood date verify |
 ############################
 mydif $LINENO ../samples/test_date_gzip  < <(( cat $TMPDIR/pubkeys.tgz |
 LANGUAGE=us sealgood date verify |
-                      zcat|strings -n12 -weS) 2>&1 | sed -e 's/\(^MIIV\).*/\1/' -e 's/\(^Time stamp:\).*/\1/' \
+                      zcat|strings -n12 -weS) 2>&1 | sed -e 's/\(^MII\).*/\1/' -e 's/\(^Time stamp:\).*/\1/' \
                       -e 's/\(^wc       :\)   .[^ ].*/\1/' )
 
 ####################################################################
@@ -48,7 +48,7 @@ LANGUAGE=us sealgood date verify |
 # locale/{{run,data}/fr,{run,data}/es,{run,data}/pt,{run,data}/us} #
 ####################################################################
 parallel "mydif $LINENO ../samples/test_date_{} < <((
-LANGUAGE={} sealgood clean date < $mydir/../samples/test_date_pt 2>/dev/null) 2>&1 | sed -e 's/\(^MIIV\).*/\1/' )
+LANGUAGE={} sealgood clean date < $mydir/../samples/test_date_pt 2>/dev/null) 2>&1 | sed -e 's/\(^MII\).*/\1/' )
 " ::: us es fr pt
 
 ##############
@@ -57,14 +57,14 @@ LANGUAGE={} sealgood clean date < $mydir/../samples/test_date_pt 2>/dev/null) 2>
 # verify/pdf #
 ##############
 mydif $LINENO ../samples/test_date_pdf < <( cat $mydir/../samples/svg.pdf |
-(LANGUAGE=fr sealgood date verify | tee /tmp/svg.date.pdf) 2>&1 | sed -e 's/\(Time stamp:\).*/\1/' -e 's/\(^MIIV\).*/\1/' )
+(LANGUAGE=fr sealgood date verify | tee /tmp/svg.date.pdf) 2>&1 | sed -e 's/\(Time stamp:\).*/\1/' -e 's/\(^MII\).*/\1/' )
 
 ##############
 # date/pdf   #
 # verify/pdf #
 ##############
-mydif $LINENO ../samples/test_date_tgz_pdf < <( while ((++i < 4));do cp -l /tmp/svg.date{,_$i}.pdf && echo /tmp/svg.date_$i.pdf;done |
-(LANGUAGE=fr sealgood date verify  | zcat) 2>&1 | strings -weS -n12 | sed -e 's/\(Time stamp:\).*/\1/' -e 's/\(^MIIV\).*/\1/' )
+mydif $LINENO ../samples/test_date_tgz_pdf < <( while ((++i < 4));do cp -fl /tmp/svg.date{,_$i}.pdf && echo /tmp/svg.date_$i.pdf;done |
+(LANGUAGE=fr sealgood date verify  | zcat) 2>&1 | strings -weS -n12 | sed -e 's/\(Time stamp:\).*/\1/' -e 's/\(^MII\).*/\1/' )
 
 ##############
 # clean/pdf  #
@@ -72,7 +72,7 @@ mydif $LINENO ../samples/test_date_tgz_pdf < <( while ((++i < 4));do cp -l /tmp/
 # verify/pdf #
 ##############
 mydif $LINENO ../samples/test_date_es_tgz_pdf < <( while ((++i < 4));do cp -l /tmp/svg.date{,_$i}.pdf && echo /tmp/svg.date_$i.pdf;done |
-(LANGUAGE=es sealgood clean date verify | zcat) 2>&1 | strings -weS -n12 | sed -e 's/\(Time stamp:\).*/\1/' -e 's/\(^MIIV\).*/\1/' )
+(LANGUAGE=es sealgood clean date verify | zcat) 2>&1 | strings -weS -n12 | sed -e 's/\(Time stamp:\).*/\1/' -e 's/\(^MII\).*/\1/' )
 
 ####################################################################
 # lookup/PEM pubkey                                                #
@@ -81,9 +81,9 @@ mydif $LINENO ../samples/test_date_es_tgz_pdf < <( while ((++i < 4));do cp -l /t
 # locale/{{run,data}/fr,{run,data}/es,{run,data}/pt,{run,data}/us} #
 ####################################################################
 parallel "mydif $LINENO ../samples/test_verify_{1}_{2} < <(
-LANGUAGE={1} sealgood verify < $TMPDIR/test_date_{2}_tee 2>&1 | sed -e 's/\(^MIIV\).*/\1/'  -e 's/\(^Time stamp:\).*/\1/' )
+LANGUAGE={1} sealgood verify < $TMPDIR/test_date_{2}_tee 2>&1 | sed -e 's/\(^MII\).*/\1/'  -e 's/\(^Time stamp:\).*/\1/' )
 " ::: us es fr pt ::: us es fr pt
 
 mydif $LINENO ../samples/test_date_tar < <( cd $mydir/../samples && ls test_date_{es,fr,pt,us} |
 2>/dev/null sealgood date |
-tar -zxf- --to-command='echo diff ${TAR_FILENAME%%_sealgood:*} $TAR_FILENAME;sed -e "s/\(^MIIV\).*/\1/" | diff ${TAR_FILENAME%%_sealgood:*} -')
+tar -zxf- --to-command='echo diff ${TAR_FILENAME%%_sealgood:*} $TAR_FILENAME;sed -e "s/\(^MII\).*/\1/" | diff ${TAR_FILENAME%%_sealgood:*} -')

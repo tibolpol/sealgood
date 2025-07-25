@@ -1,5 +1,3 @@
-inject output: text/sealgood+x-shellscript; charset=utf-8
-date output: text/sealgood+x-shellscript; charset=utf-8
 
 [1;36m=== Extraction des éléments de vérification ===[0m
 [1;32mContenu original extrait[0m
@@ -24,8 +22,6 @@ Statut de l'horodatage: [1;32mVALIDE[0m
 verify output: text/sealgood+x-shellscript; charset=utf-8
 
 [1;36m=== enumerate filetypes -> filetypes_sealgood:000000000 ===[0m
-inject output: text/sealgood+x-shellscript; charset=utf-8
-date output: text/sealgood+x-shellscript; charset=utf-8
 
 [1;36m=== Extraction des éléments de vérification ===[0m
 [1;32mContenu original extrait[0m

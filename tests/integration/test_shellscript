@@ -29,3 +29,6 @@ parallel "
 mydif $LINENO ../../bin/{} < <( cat $TMPDIR/bin/{} |
 (LANGUAGE=fr $TMPDIR/bin/sealgood clean 2>/dev/null ))
 " ::: sealgood filetypes
+
+mydif $LINENO ../samples/test_shell_self < <( cd $TMPDIR/bin/ && ls sealgood filetypes |
+(LANGUAGE=fr ./sealgood verify | tar -ztf-) 2>&1 | sed -e 's/\(^Time stamp:\).*/\1/' -e 's/sealgood:[a-z0-9]\+/sealgood:000000000/' )

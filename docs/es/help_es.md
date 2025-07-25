@@ -39,7 +39,7 @@ Archivos utilizados:
   $HOME/.ssh/ed25519_private_*.pem  : claves privadas del firmante
   $HOME/.ssh/ed25519_public_*.pem   : claves públicas asociadas
   $HOME/.ssh/id_rsa.pub             : declaración de identidad del firmante
-  https://freetsa.org/files/cacert.pem : certificado raíz TSA
+  http://cacerts.digicert.com/DigiCertAssuredIDRootCA.crt.pem : certificado raíz TSA
 
 Servlet gratuita :
   ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify}
