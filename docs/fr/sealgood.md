@@ -875,16 +875,16 @@ strip() {
 ```
 ## <a id=get_payload>get_payload</a>: PAYLOAD : Incorpore les explications et les signatures
 ```bash
-#######################################################################
-# PAYLOAD : Incorpore les explications et les signatures              #
-# C'est juste du plaintext qui commence et termine par des balises    #
-# <stdin: original data                                               #
-# <$REPOS_KEY : nom web de la clé publique                            #
-# <$PUBLIC_KEY : nom local de la clé publique                         #
-# <$HOME/.ssh/id_rsa.pub : emplacement du nom du signataire           #
-# <https://freetsa.org/files/cacert.pem : cartificat racine de la TSA #
-# >stdout : payload                                                   #
-#######################################################################
+####################################################################
+# PAYLOAD : Incorpore les explications et les signatures           #
+# C'est juste du plaintext qui commence et termine par des balises #
+# <stdin: original data                                            #
+# <$REPOS_KEY : nom web de la clé publique                         #
+# <$PUBLIC_KEY : nom local de la clé publique                      #
+# <$HOME/.ssh/id_rsa.pub : emplacement du nom du signataire        #
+# <$tsa_ca : cartificat racine de la TSA                           #
+# >stdout : payload                                                #
+####################################################################
 get_payload() {
   # !../tests/unit/test_lookup
 cat >original_data
@@ -994,7 +994,7 @@ EOD
 ```mermaid
 flowchart TB
 l0((0)) -->|payload| awk
-net[/https://freetsa.org/files/cacert.pem/] -->|pem| curl
+net[$tsa_serv] -->|pem| curl
 subgraph tsa_cert
   awk
   curl
@@ -1037,7 +1037,7 @@ tsa_cert() {
 flowchart TB
 l0((0)) -->|data| ts[openssl ts -query]
 subgraph timestamp
-  ts -->|tsq| curl[freetsa.org/tsr]
+  ts -->|tsq| curl[$tsa_serv]
 end
 curl -->|tsr.bin| l1((1))
 curl -->|error| l2((2))
@@ -1231,8 +1231,8 @@ _(){
 export BTAG="### BEGIN SEALGOOD "
 export ETAG="### END SEALGOOD "
 export tsa_serv=http://timestamp.digicert.com
-# https://freetsa.org/tsr
 export tsa_ca=http://cacerts.digicert.com/DigiCertAssuredIDRootCA.crt.pem
+# https://freetsa.org/tsr
 # https://freetsa.org/files/cacert.pem
 
 # Si le script est sourcé

@@ -4,6 +4,7 @@
 !../unit/test_type ../samples/pempub "text/[PEM] Public key+plain; charset=utf-8"
 !../unit/test_type ../samples/pubkeys.tgz "application/tar+gzip; charset=binary"
 !../unit/test_type ../../bin/sealgood "text/x-shellscript; charset=utf-8"
+!../unit/test_tsr64
 
 !3</dev/null fdtty=3 sealgood clean verify <~/.ssh/ed25519_public_*sealgood:*.pem
 !3</dev/null fdtty=3 sealgood       verify <~/.ssh/ed25519_public_*sealgood:*.pem
