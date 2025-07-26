@@ -4,8 +4,8 @@ remote="$1"
 url="$2"
 zero=$(git hash-object --stdin </dev/null | tr '[0-9a-f]' '0')
 
-# vérifier que le fichier tests/integration/test_basic.stdout du dernier
-# commit de chaque branche concernée ne contient pas la chaîne KO
+# vÃ©rifier que le fichier tests/integration/test_basic.stdout du dernier
+# commit de chaque branche concernÃ©e ne contient pas la chaÃ®ne KO
 TEST_OUTPUT_FILE="tests/integration/test_basic"
 FORBIDDEN_STRING="^KO"
 failed=0

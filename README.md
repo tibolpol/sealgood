@@ -1,23 +1,50 @@
+﻿<title>Sealgood - Présentation</title>
+
 # SealGood - Signature et horodatage de documents
 
 SealGood est un script Bash permettant de signer et d'horodater des documents
-(PDF, XML, HTML, etc.) de manière non intrusive en utilisant OpenSSL et des
+(PDF, XML, HTML, Certificats et public keys PEM, gzip, shellscripts) de manière non intrusive en utilisant OpenSSL et des
 services TSA (Time Stamp Authority).
 
 ## Fonctionnalités principales
 
--  **Signature numérique** avec clés Ed25519 protégées par mot de passe
-- ⏱ **Horodatage** via le service gratuit FreeTSA
+-  **Signature numérique** avec clés Ed25519
+-  ⏱ **Horodatage** via Digicert
 -  **Préservation** du format original des documents
 -  **Vérification** complète des signatures et horodatages
 -  **Transparence** - Toutes les étapes sont reproductibles manuellement
 -  **Traitement par lot** des fichiers
+-  **Facile à distribuer**
+-  **Compatible avec une servlet SSH**
+
+### Particularités
+
+- **Le scellement est intégré au document** sans nécessiter d'enveloppe
+  ajoutée, tant que le type de document supporte une forme d'ajout compatible
+  avec son format interne.
+- **La conception en shell** avec un script [`filetypes`](bin/filetypes) séparé
+  a pour but de faciliter le scellement de nouveaux formats.
+- **L'horodatage inclut le certificat racine** de la TSA, pour garantir sa vérifiabilité sans perte du certificat.
+- **Le scellement est self-documenté** et utilise des outils standards et gratuits.
+- **La signature et horodatage de shellscript** (autres langages possibles) permet de sécuriser une pile d'exécution.
+- **L'horodatage de clé la publique PEM** ferme la répudiation des documents signés avec cette clé.
+- **L'ensemble ne nécessite aucune ressource ni compte** dans une
+  infrastructure, un seul ou des milliers de documents sont scellés en toute autonomie.
+- **Le document signé retrouve facilement sa forme originelle**.
+- **gzip peut servir de format d'enveloppe** pour le scellement de tout
+  document non pris en charge nativement
+- **Les destinataires n'ont aucune précaution particulière à prendre** pour
+  conserver des documents signés ou horodatés, à condition de les utiliser en
+  lecture seule.  Les documents restent pleinement compatibles avec les outils
+  habituels (lecteurs PDF, décompresseurs), grâce à l'intégration du
+  scellement dans le format d'origine sans altérer leur comportement.
 
 ## Cas d'utilisation
 
 - Preuve d'intégrité et d'antériorité de documents
 - Signature électronique simple et vérifiable
-- Archivage de documents avec preuve temporelle
+- Sécurisation de workflows DevOps ou d'installation
+- Scellement de clés publiques pour renforcer les signatures ultérieures
 
 ## Prérequis
 
@@ -29,31 +56,26 @@ services TSA (Time Stamp Authority).
 
 ## Installation
 
-1. Copiez le script dans un fichier nommé `sealgood`
-2. Rendez-le exécutable :
+1. Copiez les scripts [`sealgood`](bin/sealgood) et [`filetypes`](bin/filetypes) dans le même répertoire ;
+2. Rendez-les exécutables :
    ```bash
-   chmod +x sealgood
+   chmod +x sealgood filetypes
+   ```
 
-# SealGood - *The 100% DIY Document Authenticator*  
+### Internationalisation
+- Copiez [`locale/{}/LC_MESSAGES/sealgood.mo`](locale/fr/LC_MESSAGES/sealgood.mo) avec le même chemin relatif au répertoire des scripts, en remplaçant `{}` par la langue désirée ; 
 
-> **No servers. No subscriptions. No bullshit.**  
-> Just cryptographic truth in filenames and files.  
+### Installation par github
+   ```bash
+   git clone https://github.com/tibolpol/sealgood.git
+   ```
 
-### Philosophy  
-- 🔥 **Single-file script** (~ 900 lines of Bash)  
-- 🧱 **Zero dependencies** (just `openssl` and your OS)  
-
-### How It Stays Pure  
-1. Rejects PKI complexity  
-2. Never phones home  
-3. Your keys = your property (generated locally, managed as you like)
-
-
-### Help ###
-[help fr](docs/fr/help_fr.md)
-[help es](docs/es/help_es.md)
-[help pt](docs/pt/help_pt.md)
-[help us](docs/us/help_us.md)
+### Pages d'aide
+- [help fr](docs/fr/help_fr.md)
+- [help es](docs/es/help_es.md)
+- [help pt](docs/pt/help_pt.md)
+- [help us](docs/us/help_us.md)
 
 ### Source ###
-[markdow/mermaid view](docs/fr/sealgood.md)
+- [markdow/mermaid view sealgood](docs/fr/sealgood.md)
+- [markdow/mermaid view filetypes](docs/fr/filetypes.md)

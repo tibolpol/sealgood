@@ -61,13 +61,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     else:
       # présente file en markdown
-      if rel_path.suffix == '.md' and (RACINE / rel_path.with_suffix('')).exists():
-        self.send_response(200)
-        self.send_header('Content-type', 'text/markdown; charset=utf-8')
-        self.end_headers()
-        with open(RACINE / rel_path.with_suffix(''), 'rb') as f:
-            self.wfile.write(f.read())
-        return
+      if rel_path.suffix == '.md':
+        if (RACINE / rel_path.with_suffix('')).exists():
+          self.send_response(200)
+          self.send_header("Content-type", "text/markdown; charset=utf-8")
+          self.end_headers()
+          with open(RACINE / rel_path.with_suffix(''), 'rb') as f:
+              self.wfile.write(f.read())
+          return
 
     # Default behavior for other files
     super().do_GET()
