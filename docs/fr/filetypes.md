@@ -145,7 +145,7 @@ extract_type() {
 extract_gzip         "$@"  ||
 extract_html         "$@"  ||
 extract_pdf          "$@"  ||
-extract_plain        "$@"  ||  
+extract_plain        "$@"  ||
 extract_shellscript  "$@"  ||
 extract_xml          "$@"
 }

@@ -19,10 +19,10 @@ ok   26 ../samples/test_clean
 ok   26 ../samples/test_clean
 ok   26 ../samples/test_clean
 ok   26 ../samples/test_clean
-ok   35 ../samples/test_clean_list_us
 ok   35 ../samples/test_clean_list_fr
-ok   35 ../samples/test_clean_list_es
+ok   35 ../samples/test_clean_list_us
 ok   35 ../samples/test_clean_list_pt
+ok   35 ../samples/test_clean_list_es
 ok   38 ../samples/test_clean_tar
 ok   43 ../samples/test_verify_tar
 ok   55 ../samples/test_stopfile_clean

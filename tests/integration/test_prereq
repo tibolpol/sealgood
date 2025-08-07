@@ -22,7 +22,7 @@ mydif(){
 }
 export -f mydif
 mdstyle(){
-  echo '```'$1
+  echo $'\xef\xbb\xbf```'$1
   cat
   echo '```'
 }

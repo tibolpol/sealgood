@@ -1,4 +1,4 @@
-﻿<title>Sealgood - Présentation</title>
+﻿<title>SealGood - Présentation</title>
 
 # SealGood - Signature et horodatage de documents
 
@@ -8,10 +8,11 @@ services TSA (Time Stamp Authority).
 
 ## Fonctionnalités principales
 
--  **Signature numérique** avec clés Ed25519
--  ⏱ **Horodatage** via Digicert
+-  **Signature numérique** avec clés Ed25519 (`sign`)
+-  ⏱ **Horodatage** via Digicert (`date`)
+-  **Vérification** complète des signatures et horodatages (`verify`)
+-  **Génération** d'une paire de clés Ed25519 (`genkey`)
 -  **Préservation** du format original des documents
--  **Vérification** complète des signatures et horodatages
 -  **Transparence** - Toutes les étapes sont reproductibles manuellement
 -  **Traitement par lot** des fichiers
 -  **Facile à distribuer**
@@ -23,11 +24,13 @@ services TSA (Time Stamp Authority).
   ajoutée, tant que le type de document supporte une forme d'ajout compatible
   avec son format interne.
 - **La conception en shell** avec un script [`filetypes`](bin/filetypes) séparé
-  a pour but de faciliter le scellement de nouveaux formats.
-- **L'horodatage inclut le certificat racine** de la TSA, pour garantir sa vérifiabilité sans perte du certificat.
-- **Le scellement est self-documenté** et utilise des outils standards et gratuits.
-- **La signature et horodatage de shellscript** (autres langages possibles) permet de sécuriser une pile d'exécution.
-- **L'horodatage de clé la publique PEM** ferme la répudiation des documents signés avec cette clé.
+  a pour but de faciliter l'adaptation du scellement à de nouveaux types de
+  fichiers sur le même principe.
+- **L'horodatage inclut le certificat racine** de la TSA, pour garantir sa vérifiabilité sans perte du
+  certificat.
+- **Le scellement est auto-documenté** et utilise des outils standards et gratuits.
+- **La signature et horodatage de shellscript** (et autres langages possibles) permet de sécuriser une pile d'exécution.
+- **L'horodatage de clé publique PEM** ferme la répudiation des documents signés avec cette clé.
 - **L'ensemble ne nécessite aucune ressource ni compte** dans une
   infrastructure, un seul ou des milliers de documents sont scellés en toute autonomie.
 - **Le document signé retrouve facilement sa forme originelle**.
@@ -63,12 +66,14 @@ services TSA (Time Stamp Authority).
    ```
 
 ### Internationalisation
-- Copiez [`locale/{}/LC_MESSAGES/sealgood.mo`](locale/fr/LC_MESSAGES/sealgood.mo) avec le même chemin relatif au répertoire des scripts, en remplaçant `{}` par la langue désirée ; 
+- Copiez [`locale/{}/LC_MESSAGES/sealgood.mo`](locale/fr/LC_MESSAGES/sealgood.mo), avec ce même chemin relatif au répertoire des scripts, en remplaçant `{}` par la langue désirée ;
 
 ### Installation par github
    ```bash
    git clone https://github.com/tibolpol/sealgood.git
    ```
+
+   Le dépôt cloné constitue un déploiement valide.
 
 ### Pages d'aide
 - [help fr](docs/fr/help_fr.md)
@@ -77,5 +82,15 @@ services TSA (Time Stamp Authority).
 - [help us](docs/us/help_us.md)
 
 ### Source ###
-- [markdow/mermaid view sealgood](docs/fr/sealgood.md)
-- [markdow/mermaid view filetypes](docs/fr/filetypes.md)
+- [markdown/mermaid view sealgood](docs/fr/sealgood.md)
+- [markdown/mermaid view filetypes](docs/fr/filetypes.md)
+
+## Servlet de test gratuite
+
+Une servlet SSH permet de tester SealGood, excepté la signature parce que
+celle-ci requiert votre propre clé privée chiffrée. Le génération de clés et
+la signature doivent être effectués dans un environnement privé.
+
+```bash
+ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify}
+```
