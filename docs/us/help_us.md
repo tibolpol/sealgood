@@ -1,4 +1,4 @@
-```console
+﻿```console
 [1;36mSealGood - Document signing and timestamping via OpenSSL + TSA[0m
 
 Usage: sealgood help genkey { clean date sign verify }

@@ -1,4 +1,4 @@
-```console
+﻿```console
 [1;36mSealGood - Signature et horodatage de documents via OpenSSL + TSA[0m
 
 Utilisation: sealgood help genkey { clean date sign verify }

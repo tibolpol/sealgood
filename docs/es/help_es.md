@@ -1,4 +1,4 @@
-```console
+﻿```console
 [1;36mSealGood - Firma y sellado temporal de documentos mediante OpenSSL + TSA[0m
 
 Uso: sealgood help genkey { clean date sign verify }

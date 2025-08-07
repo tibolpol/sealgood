@@ -1,7 +1,27 @@
-ok   12 ../../docs/us/help_us.md
-ok   12 ../../docs/es/help_es.md
-ok   12 ../../docs/fr/help_fr.md
-ok   12 ../../docs/pt/help_pt.md
+1c1
+< ```console
+---
+> ﻿```console
+KO   12 ../../docs/us/help_us.md
+!cp /tmp/tmp.MHxpVPF574/help_us.md /home/tlp/sealgood/tests/integration/../../docs/us/help_us.md
+1c1
+< ```console
+---
+> ﻿```console
+KO   12 ../../docs/es/help_es.md
+!cp /tmp/tmp.MHxpVPF574/help_es.md /home/tlp/sealgood/tests/integration/../../docs/es/help_es.md
+1c1
+< ```console
+---
+> ﻿```console
+KO   12 ../../docs/fr/help_fr.md
+!cp /tmp/tmp.MHxpVPF574/help_fr.md /home/tlp/sealgood/tests/integration/../../docs/fr/help_fr.md
+1c1
+< ```console
+---
+> ﻿```console
+KO   12 ../../docs/pt/help_pt.md
+!cp /tmp/tmp.MHxpVPF574/help_pt.md /home/tlp/sealgood/tests/integration/../../docs/pt/help_pt.md
 ok   17 ../samples/svg.pdf
 ok   26 ../samples/test_clean
 ok   26 ../samples/test_clean
