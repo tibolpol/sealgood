@@ -47,7 +47,7 @@ Servlet gratuita:
 ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "$filename.pdf" > /tmp/result
 
 El documento firmado tiene las siguientes propiedades:
-file -bi : text/[PEM] Clave pública+plain; charset=utf-8
+file -bi : text/x-ssh-public-key; charset=utf-8
 wc       :   7  23 290 -
 
 Declaración del firmante: Thibault LE PAUL | tlp@laposte.net
@@ -119,5 +119,5 @@ openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/cacert.pem -data /tmp/sig.bin #
 openssl ts -verify -in /tmp/tsr.bin -CAfile /tmp/cacert.pem -data /tmp/$filename.pdf # verificar sello temporal
 
 ### END SEALGOOD ###
-verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
-[1;32mmain output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8[0m
+verify output: text/sealgood+x-ssh-public-key; charset=utf-8
+[1;32mmain output: text/sealgood+x-ssh-public-key; charset=utf-8[0m

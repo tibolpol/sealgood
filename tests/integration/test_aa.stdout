@@ -1,27 +1,7 @@
-1c1
-< ```console
----
-> ﻿```console
-KO   12 ../../docs/us/help_us.md
-!cp /tmp/tmp.MHxpVPF574/help_us.md /home/tlp/sealgood/tests/integration/../../docs/us/help_us.md
-1c1
-< ```console
----
-> ﻿```console
-KO   12 ../../docs/es/help_es.md
-!cp /tmp/tmp.MHxpVPF574/help_es.md /home/tlp/sealgood/tests/integration/../../docs/es/help_es.md
-1c1
-< ```console
----
-> ﻿```console
-KO   12 ../../docs/fr/help_fr.md
-!cp /tmp/tmp.MHxpVPF574/help_fr.md /home/tlp/sealgood/tests/integration/../../docs/fr/help_fr.md
-1c1
-< ```console
----
-> ﻿```console
-KO   12 ../../docs/pt/help_pt.md
-!cp /tmp/tmp.MHxpVPF574/help_pt.md /home/tlp/sealgood/tests/integration/../../docs/pt/help_pt.md
+ok   12 ../../docs/us/help_us.md
+ok   12 ../../docs/es/help_es.md
+ok   12 ../../docs/fr/help_fr.md
+ok   12 ../../docs/pt/help_pt.md
 ok   17 ../samples/svg.pdf
 ok   26 ../samples/test_clean
 ok   26 ../samples/test_clean
@@ -40,10 +20,18 @@ ok   26 ../samples/test_clean
 ok   26 ../samples/test_clean
 ok   26 ../samples/test_clean
 ok   35 ../samples/test_clean_list_fr
+ok   35 ../samples/test_clean_list_es
 ok   35 ../samples/test_clean_list_us
 ok   35 ../samples/test_clean_list_pt
-ok   35 ../samples/test_clean_list_es
-ok   38 ../samples/test_clean_tar
-ok   43 ../samples/test_verify_tar
+1d0
+< diff pempub pempub
+KO   38 ../samples/test_clean_tar
+!cp /tmp/tmp.zkMdYhS8vg/test_clean_tar /home/tlp/sealgood/tests/integration/../samples/test_clean_tar
+1d0
+< diff pempub pempub
+3a3
+> diff test_date_pt_sealgood:e037f239 test_date_pt
+KO   43 ../samples/test_verify_tar
+!cp /tmp/tmp.zkMdYhS8vg/test_verify_tar /home/tlp/sealgood/tests/integration/../samples/test_verify_tar
 ok   55 ../samples/test_stopfile_clean
 ok   55 ../samples/test_stopfile_date

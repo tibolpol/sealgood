@@ -1,4 +1,4 @@
-date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
+date output: text/sealgood+x-ssh-public-key; charset=utf-8
 
 [1;36m=== Extrayendo elementos de verificación ===[0m
 [1;32mContenido original extraído[0m
@@ -20,10 +20,10 @@ Ordering: no
 Estado de la firma: [1;33mAUSENTE[0m
 Estado del sello temporal: [1;32mVÃLIDO[0m
 [1;32mEl documento tiene sello temporal e intacto[0m
-verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
+verify output: text/sealgood+x-ssh-public-key; charset=utf-8
 
 [1;36m=== enumerate $TMPDIR/test_date_es_tee -> test_date_es_tee_sealgood:e037f239 ===[0m
-date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
+date output: text/sealgood+x-ssh-public-key; charset=utf-8
 
 [1;36m=== Extrayendo elementos de verificación ===[0m
 [1;32mContenido original extraído[0m
@@ -45,10 +45,10 @@ Ordering: no
 Estado de la firma: [1;33mAUSENTE[0m
 Estado del sello temporal: [1;32mVÃLIDO[0m
 [1;32mEl documento tiene sello temporal e intacto[0m
-verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
+verify output: text/sealgood+x-ssh-public-key; charset=utf-8
 
 [1;36m=== enumerate $TMPDIR/test_date_fr_tee -> test_date_fr_tee_sealgood:e037f239 ===[0m
-date output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
+date output: text/sealgood+x-ssh-public-key; charset=utf-8
 
 [1;36m=== Extrayendo elementos de verificación ===[0m
 [1;32mContenido original extraído[0m
@@ -70,7 +70,7 @@ Ordering: no
 Estado de la firma: [1;33mAUSENTE[0m
 Estado del sello temporal: [1;32mVÃLIDO[0m
 [1;32mEl documento tiene sello temporal e intacto[0m
-verify output: text/sealgood+[PEM] Clave pública+plain; charset=utf-8
+verify output: text/sealgood+x-ssh-public-key; charset=utf-8
 
 [1;36m=== enumerate $TMPDIR/test_date_pt_tee -> test_date_pt_tee_sealgood:e037f239 ===[0m
 
@@ -110,7 +110,7 @@ Servlet gratuita:
 ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "$filename.pdf" > /tmp/result
 
 El documento firmado tiene las siguientes propiedades:
-file -bi : text/[PEM] Clave pública+plain; charset=utf-8
+file -bi : text/x-ssh-public-key; charset=utf-8
 wc       :   7  23 290 -
 
 Declaración del firmante: Thibault LE PAUL | tlp@laposte.net
@@ -213,7 +213,7 @@ Servlet ouverte:
 ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "$filename.pdf" > /tmp/result
 
 Le document signé a les propriétés suivantes:
-file -bi : text/[PEM] Clé publique+plain; charset=utf-8
+file -bi : text/x-ssh-public-key; charset=utf-8
 wc       :   7  23 290 -
 
 Déclaration de signataire: Thibault LE PAUL | tlp@laposte.net
@@ -314,7 +314,7 @@ Servlet livre:
 ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "$filename.pdf" > /tmp/result
 
 O documento assinado tem as seguintes propriedades:
-file -bi : text/[PEM] Chave pública+plain; charset=utf-8
+file -bi : text/x-ssh-public-key; charset=utf-8
 wc       :   7  23 290 -
 
 Declaração do signatário: Thibault LE PAUL | tlp@laposte.net

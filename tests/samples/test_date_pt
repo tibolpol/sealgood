@@ -26,7 +26,7 @@ Servlet livre:
 ssh -o SendEnv=LANGUAGE sealgood@perso.tlp.name {clean date verify} < "$filename.pdf" > /tmp/result
 
 O documento assinado tem as seguintes propriedades:
-file -bi : text/[PEM] Chave pública+plain; charset=utf-8
+file -bi : text/x-ssh-public-key; charset=utf-8
 wc       :   7  23 290 -
 
 Declaração do signatário: Thibault LE PAUL | tlp@laposte.net

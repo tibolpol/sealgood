@@ -110,11 +110,13 @@ $1,$2 -.->|suffix&filetype| extract_html
 $1,$2 -.->|suffix&filetype| extract_xml
 $1,$2 -.->|suffix&filetype| extract_pdf
 $1,$2 -.->|suffix&filetype| extract_plain
+$1,$2 -.->|suffix&filetype| extract_pubkey
 lookup[/lookup.$1/] -->|payload+data| extract_gzip
 lookup[/lookup.$1/] -->|payload+data| extract_xml
 lookup[/lookup.$1/] -->|payload+data| extract_html
 lookup[/lookup.$1/] -->|payload+data| extract_pdf
 lookup[/lookup.$1/] -->|payload+data| extract_plain
+lookup[/lookup.$1/] -->|payload+data| extract_pubkey
 extract_gzip -->|unzip| lookup.$1.unzip[/lookup.$1.unzip/]
 extract_html -->|unzip| lookup.$1.unzip
 extract_pdf -->|unzip| lookup.$1.unzip
@@ -124,11 +126,13 @@ extract_gzip -->|original| lookup.$1.original[/lookup.$1.original/]
 extract_html -->|original| lookup.$1.original
 extract_pdf -->|original| lookup.$1.original
 extract_plain -->|original| lookup.$1.original
+extract_pubkey -->|original| lookup.$1.original
 extract_xml -->|original| lookup.$1.original
 extract_gzip -->|payload| lookup.$1.payload[/lookup.$1.payload/]
 extract_html -->|payload| lookup.$1.payload
 extract_pdf -->|payload| lookup.$1.payload
 extract_plain -->|payload| lookup.$1.payload
+extract_pubkey -->|payload| lookup.$1.payload
 extract_xml -->|payload| lookup.$1.payload
 ```
 ```bash
@@ -146,6 +150,7 @@ extract_gzip         "$@"  ||
 extract_html         "$@"  ||
 extract_pdf          "$@"  ||
 extract_plain        "$@"  ||
+extract_pubkey       "$@"  ||
 extract_shellscript  "$@"  ||
 extract_xml          "$@"
 }
@@ -214,6 +219,15 @@ extract_plain(){
     fi
   return 0;else return 1;fi
 }
+extract_pubkey(){
+  local sfx="$1" result="$2"
+  if [[ $result =~ text/.*x-ssh-public-key ]];then
+    if grep -aq '^-----BEGIN' lookup."$sfx";then
+      <lookup."$sfx" >lookup."$sfx".payload 28>lookup."$sfx".original \
+      awk "/^$BTAG"'/{ state=1 } { if (state) print; else print >"/dev/fd/28"}/'"^$ETAG###/{state=0}"
+    fi
+  return 0;else return 1;fi
+}
 
 :<<'```bash'
 ```
@@ -257,6 +271,8 @@ inject_type() {
     elif [[ $filetype =~ shellscript ]];then
       inject_shellscript "$sfx"
     elif [[ $filetype =~ PEM ]];then
+      inject_after_eod "$sfx"
+    elif [[ $filetype =~ ssh-public-key ]];then
       inject_after_eod "$sfx"
     else
       warning "$(_ "I don't know how to inject into") mimetype: $filetype"
