@@ -1263,3 +1263,4 @@ shopt -s nullglob
 export fdtty
 
 main "$@" | cat
+echo "------------ $LOGNAME@$HOSTNAME ------------" >&2
